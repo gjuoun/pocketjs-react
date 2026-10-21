@@ -10,11 +10,13 @@ React on [PocketJS](https://github.com/pocket-nexus/pocketjs): a UI framework ba
 - **Tailwind + clsx + cn** — `className` takes any string React code builds: literals, ternaries, `clsx(...)`, `cn(...)` (clsx + tailwind-merge). Each class combination becomes a native style record, so `focus:`, `active:` and transitions stay native.
 - **Inline styles** — the standard React `style` prop with camelCase CSS names, mapped to the core's properties.
 - **D-pad input** — `FocusScope` (traps focus, restores it on close) and `useButton` (face and shoulder buttons, innermost handler wins), built on PocketJS's own focus manager. Confirm = CIRCLE, back = CROSS.
-- **Components** — `List` (d-pad-operable rows) and `Dialog` (portaled overlay that traps focus and closes on back).
+- **Components** — `List` (d-pad-operable rows, optionally a scrolling window), `Dialog` (portaled overlay that traps focus and closes on back), `Grid` (row/column d-pad movement), `Tabs` (shoulder buttons switch, focus remembered per tab) and `Menu`.
+- **Mouse as a second layer** — a click focuses and presses what it points at, through the same focus system (an open dialog keeps clicks behind it inert).
+- **E-book reader example** — `examples/reader`: an EPUB reader with the Bitcoin whitepaper bundled (see below).
 - **Build** — `tools/build.ts` turns TSX and Tailwind class strings into one guest bundle and a `.pak` (styles + baked font atlases), using PocketJS's own compiler.
 - **Two hosts** — the browser WASM host and the macOS desktop host. Both run the same example with measured numbers (below).
 
-Not here yet: handhelds and phones, pointer and touch input, tabs, menus, toggles, geometric spatial navigation, and full Tailwind (see the inventory).
+Not here yet: handhelds and phones, touch input, toggles, geometric spatial navigation (the core has no node-rect query), and full Tailwind (see the inventory).
 
 ## Quick start
 
@@ -54,6 +56,36 @@ mount(<App />);
 ```
 
 `View`, `Text` and `Image` are the host elements. React's DOM typings already claim lowercase `view`/`text`/`image` for SVG, so they are exported as components. At runtime each one is the host type string, with no wrapper.
+
+## E-book reader
+
+```sh
+bun run build:reader      # dist/reader.js + dist/reader.pak, with the whitepaper EPUB bundled
+bun run serve:reader      # browser host page: http://127.0.0.1:8140/ (file picker, saved state, mouse)
+bun tools/web/shots.ts    # screenshots of library, contents and two reading pages in headless Chrome
+POCKETJS_ROOT=../pocketjs bun run measure:desktop -- --app reader
+```
+
+- **Screens** — library (Bundled / Files tabs), contents, reading view, and a START menu with settings (font size S/M/L, light/dark).
+- **Controls** — the d-pad moves focus, CIRCLE confirms, CROSS goes back. In the reading view LEFT/RIGHT turn pages, UP/DOWN scroll three lines and L/R switch chapters. A mouse click presses what it points at; clicking the left or right half of a page turns it.
+- **Keys** — desktop: arrows, X = CIRCLE, Z = CROSS, Q/W = L/R, Space = START. Browser host page: arrows, Enter/Z = CIRCLE, X = CROSS, Q/E = L/R, Space = START.
+- **Formats** — EPUB (2 and 3, reflowable). Chapters are read lazily: opening a book inflates only its package files. Images in books are shown as their caption or alt text. PDF, TXT and Markdown are not supported yet.
+- **Where books come from**:
+  - Bundled: `tools/build.ts --asset name=file.epub` embeds a book in the app.
+  - Files (browser host page): EPUBs picked with the page's file input appear under `books/`.
+  - The desktop host mounts no file system for apps, so it shows bundled books only.
+- **Saved state** — font size, theme and the reading position per book are saved where the host offers a writable file system (the browser host page, backed by localStorage), and the app reopens on the saved page. On the desktop host they last for the session.
+- **Characters** — book text arrives at runtime, so the build bakes ASCII, Latin-1, General Punctuation and every character of the bundled book (`--glyphs`). Other characters draw as a placeholder box.
+- **Bundled book** — *Bitcoin: A Peer-to-Peer Electronic Cash System* (Satoshi Nakamoto, 2008), an EPUB 3 edition built in this repo from the PDF distributed by bitcoin.org under the MIT licence. Figures are described by captions. Source, hashes and licence: [assets/books/NOTICE.md](./assets/books/NOTICE.md).
+
+Measured with the minified reader, 3 runs per host, on the same machine as below:
+
+| Host | Command | First render | Page turn (median / max) | Chapter switch | Opening a chapter |
+|---|---|---|---|---|---|
+| Browser WASM host | `bun run measure:web -- --app reader` | 20.8–21.4 ms | 0.7–1.1 / ≤2.7 ms | 1.7–2.3 ms | 2.1–5.8 ms |
+| macOS desktop host (QuickJS) | `POCKETJS_ROOT=../pocketjs bun run measure:desktop -- --app reader` | 30.6–31.4 ms | 4.2–4.4 / ≤10.0 ms | 9.8–10.3 ms | 12.9–17.6 ms |
+
+Reader bundle 302,067 bytes minified (110,981 gzip); pak 907,760 bytes (eight font slots with Latin-1 and punctuation).
 
 ## The className rule
 
