@@ -23,6 +23,7 @@ import {
   keyFont,
   pack,
   suspectClassLiteral,
+  unknownUtilities,
 } from "../src/internal/pocket-build.ts";
 
 const ROOT = resolve(import.meta.dir, "..");
@@ -65,6 +66,12 @@ export async function build(entryArg: string, opts: { outdir?: string; name?: st
     if (bad) console.warn("  warning: not a supported utility: " + bad.join(", ") + " in " + JSON.stringify(lit));
   }
   const fontSlots = slotCrossProduct(scanned.literals, styles.usedFontSlots);
+  // Every complete utility token in the source. The runtime compiles only class strings
+  // made of these tokens: like Tailwind, a name assembled at runtime is not supported.
+  const tokens = new Set<string>();
+  for (const lit of scanned.literals) {
+    for (const tok of lit.split(/\s+/)) if (tok && !tokens.has(tok) && unknownUtilities(tok).length === 0) tokens.add(tok);
+  }
   const atlases = await bakeAtlases({ codepoints: scanned.codepoints, slots: fontSlots, extraChars: "", rasterDensity: 1 });
   const pak = pack([
     { key: KEY_STYLES, dtype: PAK_DTYPE.u8, data: styles.bin },
@@ -73,15 +80,18 @@ export async function build(entryArg: string, opts: { outdir?: string; name?: st
   const pakPath = join(outdir, name + ".pak");
   await Bun.write(pakPath, pak);
   console.log("  pass 1: " + scanned.files.length + " files, " + scanned.literals.length + " literals, " + styles.records.length + " style records");
-  console.log("  fontSlots=" + fontSlots.join(","));
+  console.log("  fontSlots=" + fontSlots.join(",") + " utilityTokens=" + tokens.size);
   console.log("  pak: " + pak.length + " bytes -> " + pakPath);
 
   // ---- pass 2 -------------------------------------------------------------
-  const stylesModule = generateStylesModule(styles) + "\nexport const STYLE_BIN = new Uint8Array([" + Array.from(styles.bin).join(",") + "]);\n";
+  const stylesModule =
+    generateStylesModule(styles) +
+    "\nexport const STYLE_BIN = new Uint8Array([" + Array.from(styles.bin).join(",") + "]);\n" +
+    "export const STYLE_TOKENS = " + JSON.stringify([...tokens]) + ";\n";
   const install = [
     "import { installBuildStyles } from " + JSON.stringify(join(ROOT, "src/style/build-styles.ts")) + ";",
-    'import { STYLE_IDS, STYLE_BIN } from "pocketjs-react:styles";',
-    "installBuildStyles(STYLE_IDS, STYLE_BIN);",
+    'import { STYLE_IDS, STYLE_BIN, STYLE_TOKENS } from "pocketjs-react:styles";',
+    "installBuildStyles(STYLE_IDS, STYLE_BIN, STYLE_TOKENS);",
   ].join("\n");
   const virtualEntry = 'import "pocketjs-react:install-styles";\nimport ' + JSON.stringify(entry) + ";\n";
   const result = await Bun.build({

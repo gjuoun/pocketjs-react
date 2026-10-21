@@ -3,7 +3,7 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { BTN } from "@pocketjs/framework/input";
 import { build, type BuildResult } from "../tools/build.ts";
-import { bootApp, type Core, type TextRun } from "./harness.ts";
+import { bootApp, bootCore, type Core, type TextRun } from "./harness.ts";
 
 let built: BuildResult;
 let core: Core;
@@ -82,4 +82,13 @@ test("200 new class combinations in one commit cost one loadStyles, earlier ids 
   expect(records).toBeGreaterThanOrEqual(223 + 200); // build table + 200 runtime records
   expect(rowBg("Alpha")).toBe(swatch("emerald"));
   expect(badge("Bravo")).toBe(swatch("dim"));
+});
+test("a utility name assembled at runtime is rejected, as with Tailwind", async () => {
+  const name = await build("test/fixtures/built-name/main.tsx", { outdir: "/tmp/pocketjs-react-test/class-runtime" });
+  const other = await bootCore({ pak: await Bun.file(name.pak).arrayBuffer() });
+  try {
+    expect(() => (0, eval)(require("node:fs").readFileSync(name.js, "utf8"))).toThrow('"w-[40px]" does not appear in the source');
+  } finally {
+    other.dispose();
+  }
 });

@@ -26,7 +26,7 @@ import {
   type NodeMirror,
 } from "../internal/pocket.ts";
 import { reconciler, withPriority } from "./host-config.ts";
-import { buildStyleBin, buildStyleIds } from "../style/build-styles.ts";
+import { buildStyleBin, buildStyleIds, buildStyleTokens } from "../style/build-styles.ts";
 import { initClassRuntime } from "../style/class-runtime.ts";
 import { installStyleLayer } from "../style/props.ts";
 
@@ -72,7 +72,7 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
   installHost(host);
   setStyleResolver(resolveStyle);
   registerStyles(opts.styles ?? buildStyleIds());
-  initClassRuntime(opts.styleBin ?? (opts.styles ? new Uint8Array(0) : buildStyleBin()));
+  initClassRuntime(opts.styleBin ?? (opts.styles ? new Uint8Array(0) : buildStyleBin()), buildStyleTokens());
   installStyleLayer();
 
   const nativeTextures = host.kind === "native" ? (host.ops as HostOps & { __textures?: Record<string, number> }).__textures : undefined;

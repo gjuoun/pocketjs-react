@@ -7,8 +7,10 @@
 //     so ids stay stable and focus:/active:/transitions stay native;
 //   - new records are encoded incrementally (only the new record's bytes) and the grown
 //     table is loaded ONCE per React commit; nodes waiting on a new id get it after that load.
-// Utility names must still appear as complete tokens in source: fonts are baked from the
-// build scan, so the runtime never invents a utility the build did not see.
+// As with Tailwind, every utility must appear as a complete token somewhere in the source.
+// The runtime only compiles class strings made of tokens the build scan found; a name
+// assembled at runtime (`p-${n}`) is rejected (thrown on strict hosts such as the browser,
+// reported and dropped on native ones), never compiled behind the author's back.
 import {
   PROP,
   PROP_VALUE_KIND,
@@ -23,11 +25,13 @@ import {
   type PropName,
   type StyleRecord,
 } from "../internal/pocket.ts";
-import { getOps } from "@pocketjs/framework/host";
+import { getHost, getOps } from "@pocketjs/framework/host";
 
 const HEADER_SIZE = 12;
 
 let enabled = false;
+let known = new Set<string>();
+const reported = new Set<string>();
 let header = new Uint8Array(0);
 let recordBytes = new Uint8Array(0);
 let animBytes = new Uint8Array(0);
@@ -47,7 +51,8 @@ function body(table: Uint8Array): Uint8Array {
 }
 
 /** Start from the build's styles.bin (the table the host already loaded from the pak). */
-export function initClassRuntime(bin: Uint8Array): void {
+export function initClassRuntime(bin: Uint8Array, tokens: readonly string[] = []): void {
+  known = new Set(tokens);
   pending.length = 0;
   cache.clear();
   canonical.clear();
@@ -93,6 +98,23 @@ export function resolveClass(cls: string): number | null {
   const cached = cache.get(norm);
   if (cached !== undefined) return cached;
   if (!enabled) return null;
+  const parts = norm.split(" ");
+  const unseen = parts.filter((tok) => !known.has(tok));
+  if (unseen.length > 0) {
+    const message = "pocketjs-react: class token " + unseen.map((t) => JSON.stringify(t)).join(", ") +
+      " does not appear in the source; write Tailwind utilities as complete tokens (a name built at runtime cannot be found by the build scan)";
+    if (getHost().strict) throw new Error(message);
+    if (!reported.has(norm)) {
+      reported.add(norm);
+      console.error(message);
+    }
+  }
+  const kept = parts.filter((tok) => known.has(tok)).join(" ");
+  if (kept !== norm) {
+    const id = kept === "" ? null : resolveClass(kept);
+    cache.set(norm, id);
+    return id;
+  }
   classRuntimeStats.compiled++;
   const record = parseClassLiteral(norm);
   let id: number | null = null;
