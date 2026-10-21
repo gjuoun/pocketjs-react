@@ -23,6 +23,8 @@ const HOST_TYPES = new Set(["view", "text", "image"]);
 export interface PropsTransform {
   /** Turn React props into native-tree props (children removed). */
   toHost(props: Props): Props;
+  /** Called after a node's host props were applied (create and update). */
+  afterProps(node: NodeMirror, props: Props): void;
   /** Called once after every React commit (for example to load a grown style table). */
   afterCommit(): void;
 }
@@ -33,6 +35,7 @@ let transform: PropsTransform = {
     for (const key in props) if (key !== "children") out[key] = props[key];
     return out;
   },
+  afterProps() {},
   afterCommit() {},
 };
 
@@ -68,6 +71,7 @@ const hostConfig = {
     if (!HOST_TYPES.has(type)) throw new Error("pocketjs-react: unknown host element <" + type + ">");
     const node = createElement(type);
     applyProps(node, transform.toHost(props));
+    transform.afterProps(node, props);
     return node;
   },
   createTextInstance(text: string): NodeMirror {
@@ -83,6 +87,7 @@ const hostConfig = {
   commitTextUpdate(node: NodeMirror, _old: string, next: string) { replaceText(node, next); },
   commitUpdate(node: NodeMirror, _type: string, oldProps: Props, newProps: Props) {
     applyProps(node, transform.toHost(newProps), transform.toHost(oldProps));
+    transform.afterProps(node, newProps);
   },
   finalizeInitialChildren() { return false; },
   shouldSetTextContent() { return false; },
