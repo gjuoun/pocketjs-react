@@ -1,0 +1,12 @@
+{
+  "name": "pocketjs-react",
+  "version": "0.0.0",
+  "private": true,
+  "description": "React on PocketJS: a d-pad-first UI framework base.",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gjuoun/pocketjs-react.git"
+  }
+}
