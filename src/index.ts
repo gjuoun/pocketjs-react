@@ -4,4 +4,6 @@ export { Image, Text, View, type PocketCSSProperties, type PocketHostProps, type
 export { cn } from "./style/cn.ts";
 export { useButton } from "./input/buttons.ts";
 export { FocusScope, type FocusScopeProps } from "./focus/FocusScope.tsx";
+export { List, LIST_ITEM_CLASS, type ListProps } from "./components/List.tsx";
+export { Dialog, type DialogProps } from "./components/Dialog.tsx";
 export { BTN } from "@pocketjs/framework/input";
