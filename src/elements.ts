@@ -1,5 +1,10 @@
-// Intrinsic PocketJS host elements for React's JSX: <view>, <text>, <image>.
-import type { Ref, ReactNode } from "react";
+// PocketJS host elements for React: View, Text, Image.
+//
+// The native node types are "view", "text" and "image". React's DOM typings already
+// claim lowercase <view>, <text> and <image> for SVG, so the elements are exported as typed
+// components instead. Each one IS the host type string at runtime: <View> compiles to
+// jsx("view", ...) and creates a native view directly, with no wrapper component.
+import type { ReactElement, Ref, ReactNode } from "react";
 import type { NodeMirror } from "./internal/pocket.ts";
 
 /** Inline styles: camelCase CSS properties the PocketJS core can draw (see README). */
@@ -39,12 +44,8 @@ export interface PocketImageProps extends PocketHostProps {
   src?: string;
 }
 
-declare module "react" {
-  namespace JSX {
-    interface IntrinsicElements {
-      view: PocketHostProps;
-      text: PocketHostProps;
-      image: PocketImageProps;
-    }
-  }
-}
+type HostElement<P> = (props: P) => ReactElement | null;
+
+export const View = "view" as unknown as HostElement<PocketHostProps>;
+export const Text = "text" as unknown as HostElement<PocketHostProps>;
+export const Image = "image" as unknown as HostElement<PocketImageProps>;
