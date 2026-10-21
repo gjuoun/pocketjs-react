@@ -29,6 +29,7 @@ import { reconciler, withPriority } from "./host-config.ts";
 import { buildStyleBin, buildStyleIds, buildStyleTokens } from "../style/build-styles.ts";
 import { initClassRuntime } from "../style/class-runtime.ts";
 import { installStyleLayer } from "../style/props.ts";
+import { installPointer } from "../input/pointer.ts";
 
 export interface MountOptions {
   /** Class literal -> style id table; defaults to the table tools/build.ts compiled. */
@@ -41,6 +42,16 @@ export interface MountOptions {
 
 type FrameListener = (pressed: number, buttons: number) => void;
 const frameListeners: FrameListener[] = [];
+const framePumps: (() => void)[] = [];
+
+/** Register work that runs every frame, before button handling (e.g. draining pointer events). */
+export function addFramePump(fn: () => void): () => void {
+  framePumps.push(fn);
+  return () => {
+    const i = framePumps.indexOf(fn);
+    if (i >= 0) framePumps.splice(i, 1);
+  };
+}
 
 /** Register a pressed-edge listener that runs before focus navigation each frame. */
 export function addFrameListener(fn: FrameListener): () => void {
@@ -74,6 +85,7 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
   registerStyles(opts.styles ?? buildStyleIds());
   initClassRuntime(opts.styleBin ?? (opts.styles ? new Uint8Array(0) : buildStyleBin()), buildStyleTokens());
   installStyleLayer();
+  const removePointer = installPointer();
 
   const nativeTextures = host.kind === "native" ? (host.ops as HostOps & { __textures?: Record<string, number> }).__textures : undefined;
   if (nativeTextures) for (const key in nativeTextures) registerTexture(key, nativeTextures[key]);
@@ -114,6 +126,7 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
     const pressed = buttons & ~prevButtons;
     prevButtons = buttons;
     withPriority(DiscreteEventPriority, () => {
+      for (const pump of [...framePumps]) pump();
       if (pressed) for (const fn of [...frameListeners]) fn(pressed, buttons);
       handleFrame(buttons);
     });
@@ -133,6 +146,7 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
     setInputRoot(null);
     setHitRoot(null);
     overlayLayer = null;
+    removePointer();
     (globalThis as { frame?: unknown }).frame = undefined;
   };
 }
