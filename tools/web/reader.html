@@ -1,0 +1,42 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>pocketjs-react reader</title>
+<style>
+  body { background: #0f172a; color: #e2e8f0; font: 13px system-ui, sans-serif; margin: 16px; }
+  canvas { width: 960px; height: 544px; image-rendering: pixelated; display: block; margin: 8px 0; }
+  #bar { display: flex; gap: 12px; align-items: center; }
+</style>
+<div id="bar">
+  <label>Add books (EPUB): <input id="pick" type="file" multiple accept=".epub"></label>
+  <span id="status"></span>
+</div>
+<canvas id="screen"></canvas>
+<div>Keys: arrows = d-pad, Enter/Z = CIRCLE (confirm), X = CROSS (back), Q/E = L/R, Space = START. Mouse clicks press what they point at.</div>
+<script type="module">
+  // The page owns what the stock browser host does not offer: a file picker and a writable fs
+  // (globalThis.fs, installed before the app loads) and mouse clicks (globalThis.__pocketPointer).
+  import { mount, load } from "/engine.js";
+  import { createBrowserFs } from "/fs-shim.js";
+  const fs = createBrowserFs();
+  globalThis.fs = fs.ns;
+  const canvas = document.getElementById("screen");
+  await mount(canvas, { onLog: (line) => (window.__log ??= []).push(line) });
+  const start = async () => {
+    globalThis.fs = fs.ns;
+    await load("app");
+    document.getElementById("status").textContent = fs.pickedNames().length ? "books/: " + fs.pickedNames().join(", ") : "";
+  };
+  document.getElementById("pick").addEventListener("change", async (event) => {
+    await fs.addFiles(event.target.files);
+    await start(); // reload the app so its library lists the new files
+    window.__picked = true;
+  });
+  const point = (event, down) => {
+    const r = canvas.getBoundingClientRect();
+    ((globalThis.__pocketPointer ??= [])).push({ x: ((event.clientX - r.left) / r.width) * canvas.width, y: ((event.clientY - r.top) / r.height) * canvas.height, down });
+  };
+  canvas.addEventListener("mousedown", (e) => point(e, true));
+  canvas.addEventListener("mouseup", (e) => point(e, false));
+  window.__ready = true;
+  await start();
+</script>
