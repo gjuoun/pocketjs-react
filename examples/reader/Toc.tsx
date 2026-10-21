@@ -15,7 +15,8 @@ export function Toc(props: { book: EpubBook; current: number; theme: Theme; onRe
         initialIndex={initial}
         keyOf={(e, i) => i + ":" + e.title}
         onSelect={(e) => props.onRead(e.index)}
-        renderItem={(e) => <Text className="text-sm text-white">{e.title}</Text>}
+        itemClassName={props.theme.row}
+        renderItem={(e) => <Text className={props.theme.rowText}>{e.title}</Text>}
       />
       <Text className={props.theme.muted}>CIRCLE read  ·  CROSS library</Text>
     </View>

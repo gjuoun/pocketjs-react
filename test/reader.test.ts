@@ -12,8 +12,13 @@ test("library -> contents -> reading -> page and chapter turns -> back to the li
     expect(drawn()).toContain("Bitcoin: A Peer-to-Peer Electronic Cash System");
     expect(drawn()).toContain("Library");
 
+    const libraryBg = core.pixel(470, 262);
     core.press(BTN.CIRCLE); // open the focused (first) book
     const toc = drawn();
+    // The contents follow the library's (light) theme: same page background, no dark rows.
+    const intro = core.texts().find((r) => r.text === "1. Introduction")!;
+    expect(core.pixel(470, 262)).toBe(libraryBg);
+    expect(core.pixel(intro.x - 4, intro.y + 2)).not.toBe("#1e293b");
     expect(toc).toContain("Abstract");
     expect(toc).toContain("4. Proof-of-Work");
     for (let i = 0; i < 13; i++) core.press(BTN.DOWN); // every entry is reachable through the window
@@ -23,6 +28,15 @@ test("library -> contents -> reading -> page and chapter turns -> back to the li
     core.press(BTN.CIRCLE);
     let page = drawn();
     expect(page[0]).toBe("4. Proof-of-Work");
+    expect(page.filter((t) => t === "4. Proof-of-Work").length).toBe(1); // the title is drawn once
+    // The page indicator overlaps no other text and is not on the title's row.
+    const runs = core.texts();
+    const indicator = runs.find((r) => r.text === "page 1/4")!;
+    const titleRun = runs.find((r) => r.text === "4. Proof-of-Work")!;
+    const glyphW = (r: { text: string; w: number }) => Math.min(r.w, r.text.length * 9); // text runs report the box width
+    const overlaps = (a: typeof indicator, b: typeof indicator) => a.x < b.x + glyphW(b) && b.x < a.x + glyphW(a) && a.y < b.y + b.h && b.y < a.y + a.h;
+    expect(runs.filter((r) => r !== indicator && r.text.trim() && overlaps(r, indicator)).map((r) => r.text)).toEqual([]);
+    expect(indicator.y).toBeGreaterThanOrEqual(titleRun.y + titleRun.h);
     expect(page).toContain("page 1/4");
     expect(page.some((t) => t.startsWith("To implement a distributed timestamp server"))).toBe(true);
 

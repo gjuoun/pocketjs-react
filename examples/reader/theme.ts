@@ -4,6 +4,9 @@ export interface Theme {
   title: string;
   muted: string;
   card: string;
+  /** Contents rows, merged over the List defaults with cn. */
+  row: string;
+  rowText: string;
 }
 
 export const LIGHT: Theme = {
@@ -11,6 +14,8 @@ export const LIGHT: Theme = {
   title: "text-sm text-slate-900 font-bold",
   muted: "text-xs text-slate-500",
   card: "w-[456px] h-[52px] flex-col justify-center gap-1 px-3 rounded-lg bg-slate-100 focus:bg-blue-200",
+  row: "bg-slate-100 focus:bg-blue-200",
+  rowText: "text-sm text-slate-900",
 };
 
 export const DARK: Theme = {
@@ -18,4 +23,6 @@ export const DARK: Theme = {
   title: "text-sm text-slate-100 font-bold",
   muted: "text-xs text-slate-400",
   card: "w-[456px] h-[52px] flex-col justify-center gap-1 px-3 rounded-lg bg-slate-800 focus:bg-blue-700",
+  row: "bg-slate-800 focus:bg-blue-700",
+  rowText: "text-sm text-slate-100",
 };

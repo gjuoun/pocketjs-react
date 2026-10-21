@@ -28,7 +28,13 @@ export function ReadingView(props: {
 }) {
   const { book, position, size } = props;
   const chapters = book.spine.length;
-  const layout = useMemo(() => paginate(book.chapter(position.chapter), { size, width: PAGE.width, height: PAGE.height }), [book, position.chapter, size]);
+  const blocksOf = (chapter: number) => {
+    // The header row shows the chapter title, so a leading heading with the same text is dropped.
+    const blocks = book.chapter(chapter);
+    const name = book.toc.find((e) => e.index === chapter)?.title;
+    return blocks[0]?.kind === "heading" && blocks[0].text === name ? blocks.slice(1) : blocks;
+  };
+  const layout = useMemo(() => paginate(blocksOf(position.chapter), { size, width: PAGE.width, height: PAGE.height }), [book, position.chapter, size]);
   const per = layout.linesPerPage;
   const total = Math.max(1, Math.ceil(layout.lines.length / per));
   const line = layout.lineOf(position);
@@ -41,7 +47,7 @@ export function ReadingView(props: {
 
   const start = (chapter: number): Position => ({ chapter, block: 0, offset: 0 });
   const lastPageOf = (chapter: number): Position => {
-    const l = paginate(book.chapter(chapter), { size, width: PAGE.width, height: PAGE.height });
+    const l = paginate(blocksOf(chapter), { size, width: PAGE.width, height: PAGE.height });
     return at(chapter, Math.floor((l.lines.length - 1) / l.linesPerPage) * l.linesPerPage, l.lines);
   };
   const next = () => {
@@ -62,10 +68,7 @@ export function ReadingView(props: {
 
   return (
     <View className={props.theme.screen}>
-      <View className="flex-row justify-between h-[18px]">
-        <Text className={props.theme.title}>{title}</Text>
-        <Text className={props.theme.muted}>{"page " + page + "/" + total}</Text>
-      </View>
+      <Text className={props.theme.title}>{title}</Text>
       <View className="flex-row h-[198px]">
         <View className="absolute inset-0 flex-row">
           <View className="w-[228px] h-[198px]" focusable onPress={prev} />
@@ -73,7 +76,10 @@ export function ReadingView(props: {
         </View>
         <PageView lines={layout.lines.slice(line, line + per)} size={size} width={PAGE.width} dark={props.dark} />
       </View>
-      <Text className={props.theme.muted}>LEFT/RIGHT page  ·  UP/DOWN scroll  ·  L/R chapter  ·  START menu</Text>
+      <View className="flex-row justify-between">
+        <Text className={props.theme.muted}>LEFT/RIGHT page  ·  L/R chapter  ·  START menu</Text>
+        <Text className={props.theme.muted}>{"page " + page + "/" + total}</Text>
+      </View>
     </View>
   );
 }
