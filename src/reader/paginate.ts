@@ -34,6 +34,8 @@ export interface Pages {
   linesPerPage: number;
   /** Page holding a block/offset position (for restoring a position after a size change). */
   pageOf(anchor: Anchor): number;
+  /** Index of the line that holds a block/offset position. */
+  lineOf(anchor: Anchor): number;
 }
 
 type WrapText = (text: string, slot: number, maxWidth: number) => ArrayLike<number>;
@@ -82,6 +84,16 @@ export function paginate(blocks: Block[], opts: { size: FontSize; width: number;
     lines,
     pages,
     linesPerPage,
+    lineOf(anchor: Anchor): number {
+      let found = 0;
+      for (let i = 0; i < lines.length; i++) {
+        const l = lines[i];
+        if (l.kind === "blank") continue;
+        if (l.block < anchor.block || (l.block === anchor.block && l.offset <= anchor.offset)) found = i;
+        else break;
+      }
+      return found;
+    },
     pageOf(anchor: Anchor): number {
       let found = 0;
       for (let i = 0; i < firstOf.length; i++) {

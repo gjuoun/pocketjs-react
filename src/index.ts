@@ -16,4 +16,5 @@ export { bundledAsset, bundledAssetNames } from "./books/assets.ts";
 export { bundledBooks, fileBooks, type BookEntry, type FileBooks } from "./books/source.ts";
 export { anchorOf, FONT_SIZES, paginate, type Anchor, type FontSize, type Line, type Pages } from "./reader/paginate.ts";
 export { PageView } from "./reader/PageView.tsx";
+export { loadState, saveState, stateIsPersistent, type ReaderState, type SavedPosition } from "./reader/state.ts";
 export { takeHostMessages } from "./input/pointer.ts";
