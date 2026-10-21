@@ -28,6 +28,8 @@ export interface Anchor {
 }
 
 export interface Pages {
+  /** Every line of the chapter, in order (a reading view may scroll by lines). */
+  lines: Line[];
   pages: Line[][];
   linesPerPage: number;
   /** Page holding a block/offset position (for restoring a position after a size change). */
@@ -77,6 +79,7 @@ export function paginate(blocks: Block[], opts: { size: FontSize; width: number;
   if (pages.length === 0) pages.push([]);
   const firstOf = pages.map((p) => p.find((l) => l.kind !== "blank") ?? p[0]);
   return {
+    lines,
     pages,
     linesPerPage,
     pageOf(anchor: Anchor): number {
