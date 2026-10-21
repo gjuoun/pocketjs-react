@@ -10,13 +10,17 @@
 // Utility names must still appear as complete tokens in source: fonts are baked from the
 // build scan, so the runtime never invents a utility the build did not see.
 import {
+  PROP,
+  PROP_VALUE_KIND,
   STYLE_ID_NONE,
+  VALUE_KIND,
   decodeStyleTable,
   encodeStyleTable,
   parseClassLiteral,
   resolveStyle,
   setProp,
   type NodeMirror,
+  type PropName,
   type StyleRecord,
 } from "../internal/pocket.ts";
 import { getOps } from "@pocketjs/framework/host";
@@ -33,6 +37,8 @@ const canonical = new Map<string, number>();
 const cache = new Map<string, number | null>();
 const pending: Array<[NodeMirror, number]> = [];
 const applied = new WeakMap<NodeMirror, string>();
+const appliedId = new WeakMap<NodeMirror, number>();
+let records: StyleRecord[] = [];
 
 export const classRuntimeStats = { compiled: 0, appended: 0, loads: 0 };
 
@@ -48,6 +54,7 @@ export function initClassRuntime(bin: Uint8Array): void {
   enabled = bin.length > 0;
   if (!enabled) return;
   const table = decodeStyleTable(bin);
+  records = table.styles.slice();
   table.styles.forEach((record: StyleRecord, id: number) => {
     const key = JSON.stringify(record);
     if (!canonical.has(key)) canonical.set(key, id);
@@ -65,6 +72,7 @@ function append(record: StyleRecord): number {
   grown.set(bytes, recordBytes.length);
   recordBytes = grown;
   classRuntimeStats.appended++;
+  records.push(record);
   return recordCount++;
 }
 
@@ -106,10 +114,13 @@ export function applyClassName(node: NodeMirror, cls: unknown): void {
   if (applied.get(node) === next) return;
   applied.set(node, next);
   if (next.trim() === "") {
+    appliedId.delete(node);
     getOps().setStyle(node.id, STYLE_ID_NONE);
     return;
   }
   const id = resolveClass(next);
+  if (id !== null) appliedId.set(node, id);
+  else appliedId.delete(node);
   if (id === null) {
     // Not compilable: let the framework report it (throws on strict hosts, counts a miss on native ones).
     setProp(node, "class", next);
@@ -130,4 +141,19 @@ export function flushClassTable(): void {
   const ops = getOps();
   for (const [node, id] of pending) ops.setStyle(node.id, id);
   pending.length = 0;
+}
+const PROP_NAMES: Record<number, PropName> = Object.fromEntries(
+  Object.entries(PROP).map(([name, id]) => [id as number, name as PropName]),
+);
+const f32 = new DataView(new ArrayBuffer(4));
+
+/** The base-variant value the node's current class record sets for `prop`, in setProp form. */
+export function classBaseValue(node: NodeMirror, prop: PropName): number | undefined {
+  const id = appliedId.get(node);
+  if (id === undefined) return undefined;
+  const entry = records[id]?.base?.find((p) => PROP_NAMES[p.prop] === prop);
+  if (!entry) return undefined;
+  if (PROP_VALUE_KIND[prop] !== VALUE_KIND.f32) return entry.value;
+  f32.setUint32(0, entry.value, true);
+  return f32.getFloat32(0, true);
 }
