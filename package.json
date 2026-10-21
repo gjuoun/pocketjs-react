@@ -15,7 +15,10 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "build": "bun tools/build.ts"
+    "build": "bun tools/build.ts",
+    "measure:web": "bun tools/measure/web.ts",
+    "measure:desktop": "bun tools/measure/desktop.ts",
+    "measure:desktop-shot": "bun tools/measure/desktop-shot.ts"
   },
   "dependencies": {
     "@babel/parser": "7.29.3",
