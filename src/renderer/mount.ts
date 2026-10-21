@@ -114,7 +114,7 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
     const pressed = buttons & ~prevButtons;
     prevButtons = buttons;
     withPriority(DiscreteEventPriority, () => {
-      if (pressed) for (const fn of [...frameListeners].reverse()) fn(pressed, buttons);
+      if (pressed) for (const fn of [...frameListeners]) fn(pressed, buttons);
       handleFrame(buttons);
     });
     reconciler.flushSyncWork();
