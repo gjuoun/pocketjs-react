@@ -8,5 +8,34 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/gjuoun/pocketjs-react.git"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "build": "bun tools/build.ts",
+    "measure:web": "bun tools/measure/web.ts",
+    "measure:desktop": "bun tools/measure/desktop.ts",
+    "measure:desktop-shot": "bun tools/measure/desktop-shot.ts"
+  },
+  "dependencies": {
+    "@babel/parser": "7.29.3",
+    "@pocketjs/framework": "0.15.0",
+    "clsx": "2.1.1",
+    "react": "19.3.1",
+    "react-reconciler": "0.34.0"
+  },
+  "peerDependencies": {
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.14",
+    "@types/opentype.js": "1.3.10",
+    "@types/react": "19.3.0",
+    "@types/react-reconciler": "0.34.1",
+    "tailwind-merge": "3.7.0",
+    "typescript": "5.9.3"
   }
 }
