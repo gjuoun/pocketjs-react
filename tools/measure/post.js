@@ -3,7 +3,7 @@
 (function () {
   var g = globalThis, M = g.__measure, now = M.now;
   var mountMs = now() - M.t0, mountOps = M.ops;
-  var NAMES = { 16: "up", 32: "right", 64: "down", 128: "left", 8192: "circle", 16384: "cross" };
+  var NAMES = { 8: "start", 16: "up", 32: "right", 64: "down", 128: "left", 256: "ltrigger", 512: "rtrigger", 8192: "circle", 16384: "cross" };
   var frame = g.frame, n = 0, prev = 0, circles = [];
   function out(s) { M.lines.push("MEASURE " + s); console.log("MEASURE " + s); }
   g.frame = function (b) {

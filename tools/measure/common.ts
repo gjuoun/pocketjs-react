@@ -1,18 +1,52 @@
-// Shared pieces of the measurement scripts: build the example, wrap it with the timing
-// prelude/postlude, the d-pad script, and the budget gates.
+// Shared pieces of the measurement scripts: the app profiles (build, d-pad script, metrics,
+// budgets), the timing prelude/postlude wrapper, and the report.
 import { join, resolve } from "node:path";
 import { build, type BuildResult } from "../build.ts";
+import { buildReader } from "../build-reader.ts";
 
 export const ROOT = resolve(import.meta.dir, "../..");
 export const OUT = join(ROOT, "dist/measure");
 export const RUNS = 3;
-/** Budgets: about 4x the measured values; exceeding one fails the run. */
-export const BUDGET = { firstRenderMs: 100, medianUpdateMs: 8 };
-/** Focus Alpha, toggle it, toggle Bravo on and off, open the dialog, try to leave it, close it. */
-export const SCRIPT = "down circle down circle circle down down down down down circle down down up circle up".split(" ");
 
-export async function buildExample(): Promise<BuildResult> {
-  return build(join(ROOT, "examples/list-dialog/main.tsx"), { outdir: OUT, minify: true });
+export interface Profile {
+  name: string;
+  build(): Promise<BuildResult>;
+  /** Button names in press order (see post.js / DESKTOP_KEY). */
+  script: string[];
+  /** Metric name -> indexes into the script whose press frames it summarizes. */
+  metrics: Record<string, number[]>;
+  /** first_render plus metric medians; exceeding one fails the run. */
+  budgets: Record<string, number>;
+}
+
+const LIST_DIALOG_SCRIPT = "down circle down circle circle down down down down down circle down down up circle up".split(" ");
+/** Open the bundled book, open chapter 4, turn 5 pages, switch chapter twice, open the menu. */
+const READER_SCRIPT = "circle down down down down circle right right right right right rtrigger rtrigger start cross".split(" ");
+
+export const PROFILES: Record<string, Profile> = {
+  "list-dialog": {
+    name: "list-dialog",
+    build: () => build(join(ROOT, "examples/list-dialog/main.tsx"), { outdir: OUT, minify: true }),
+    script: LIST_DIALOG_SCRIPT,
+    metrics: { update: LIST_DIALOG_SCRIPT.flatMap((b, i) => (b === "circle" ? [i] : [])) },
+    budgets: { first_render: 100, update: 8 },
+  },
+  reader: {
+    name: "reader",
+    build: () => buildReader({ outdir: OUT, minify: true }),
+    script: READER_SCRIPT,
+    metrics: { open: [0], chapter_open: [5], page: [6, 7, 8, 9, 10], chapter: [11, 12], menu: [13] },
+    budgets: { first_render: 100, open: 60, chapter_open: 30, page: 8, chapter: 30 },
+  },
+};
+
+export function profileFromArgs(): Profile {
+  const args = process.argv.slice(2);
+  const i = args.indexOf("--app");
+  const name = i >= 0 ? args[i + 1] : args.find((a) => a.startsWith("--app="))?.slice(6) ?? "list-dialog";
+  const profile = PROFILES[name];
+  if (!profile) throw new Error("unknown --app " + name + " (one of " + Object.keys(PROFILES).join(", ") + ")");
+  return profile;
 }
 
 /** guest.js = prelude + indirect eval of the bundle source (parse is timed) + postlude. */
@@ -25,23 +59,35 @@ export async function wrapGuest(bundle: string, out: string): Promise<string> {
   return out;
 }
 
-export interface RunSummary { firstRenderMs: number; medianMs: number; maxMs: number }
+/** One run: first render plus, per metric, the median and max guest frame time of its presses. */
+export type RunSummary = Record<string, { median: number; max: number }> & { first_render: { median: number; max: number } };
 
-export function summarize(lines: string[]): RunSummary {
+export function summarize(lines: string[], profile: Profile): RunSummary {
   const first = /first-render total_ms=([\d.]+)/.exec(lines.join("\n"));
-  const sum = /summary circlePresses=5 median_ms=([\d.]+) max_ms=([\d.]+)/.exec(lines.join("\n"));
-  if (!first || !sum) throw new Error("measurement lines missing:\n" + lines.join("\n"));
-  return { firstRenderMs: Number(first[1]), medianMs: Number(sum[1]), maxMs: Number(sum[2]) };
+  const presses = lines.flatMap((l) => { const m = /press (\w+) frame_ms=([\d.]+)/.exec(l); return m ? [{ name: m[1], ms: Number(m[2]) }] : []; });
+  if (!first || presses.length < profile.script.length) throw new Error("measurement lines missing (" + presses.length + "/" + profile.script.length + " presses):\n" + lines.join("\n"));
+  const out = { first_render: { median: Number(first[1]), max: Number(first[1]) } } as RunSummary;
+  for (const [metric, indexes] of Object.entries(profile.metrics)) {
+    const xs = indexes.map((i) => {
+      if (presses[i].name !== profile.script[i]) throw new Error("press " + i + " was " + presses[i].name + ", expected " + profile.script[i]);
+      return presses[i].ms;
+    }).sort((a, b) => a - b);
+    out[metric] = { median: xs[xs.length >> 1], max: xs[xs.length - 1] };
+  }
+  return out;
 }
 
-export function report(host: string, runs: RunSummary[], built: BuildResult): number {
+export function report(host: string, runs: RunSummary[], built: BuildResult, profile: Profile): number {
   const range = (xs: number[]) => Math.min(...xs).toFixed(2) + "-" + Math.max(...xs).toFixed(2);
-  console.log(host + " runs=" + runs.length + " first_render_ms=" + range(runs.map((r) => r.firstRenderMs)) + " update_median_ms=" + range(runs.map((r) => r.medianMs)) + " update_max_ms=" + range(runs.map((r) => r.maxMs)));
+  const parts = ["first_render_ms=" + range(runs.map((r) => r.first_render.median))];
+  for (const metric of Object.keys(profile.metrics)) parts.push(metric + "_median_ms=" + range(runs.map((r) => r[metric].median)) + " " + metric + "_max_ms=" + range(runs.map((r) => r[metric].max)));
+  console.log(host + " app=" + profile.name + " runs=" + runs.length + " " + parts.join(" "));
   const gz = Bun.gzipSync(new Uint8Array(require("node:fs").readFileSync(built.js))).length;
   console.log(host + " bundle_bytes=" + built.bundleBytes + " gzip_bytes=" + gz + " pak_bytes=" + built.pakBytes + " (minified)");
-  const over = runs.filter((r) => r.firstRenderMs > BUDGET.firstRenderMs || r.medianMs > BUDGET.medianUpdateMs);
+  const over: string[] = [];
+  for (const [metric, budget] of Object.entries(profile.budgets)) for (const r of runs) if (r[metric].median > budget) over.push(metric + " " + r[metric].median + " > " + budget);
   if (over.length > 0) {
-    console.error(host + " BUDGET EXCEEDED: first render > " + BUDGET.firstRenderMs + " ms or median update > " + BUDGET.medianUpdateMs + " ms");
+    console.error(host + " BUDGET EXCEEDED: " + over.join(", "));
     return 1;
   }
   return 0;

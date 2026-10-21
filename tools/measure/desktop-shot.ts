@@ -8,13 +8,18 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { FB_W, FRAMEWORK_ROOT, createWasmUi } from "../../src/internal/pocket-build.ts";
-import { OUT, buildExample, wrapGuest } from "./common.ts";
+import { OUT, PROFILES, profileFromArgs, wrapGuest } from "./common.ts";
 import { desktopHost } from "./desktop-host.ts";
+
+if (profileFromArgs().name === "reader") {
+  const { readerShots } = await import("./desktop-shot-reader.ts");
+  process.exit(await readerShots());
+}
 
 const DENSITY = 2;
 const VIEWPORT = { w: 480, h: 272 };
 const host = desktopHost();
-const built = await buildExample();
+const built = await PROFILES["list-dialog"].build();
 
 // ---- 1. layout from the wasm core ---------------------------------------------------
 const core = await createWasmUi(await Bun.file(FRAMEWORK_ROOT + "hosts/web/pocketjs.wasm").arrayBuffer());
