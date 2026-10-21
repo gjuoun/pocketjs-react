@@ -26,6 +26,7 @@ export { registerStyles, resetStyles, resolveStyle } from "@pocket-internal/fram
 export { parseClassLiteral, unknownUtilities } from "@pocket-internal/framework/compiler/tailwind.ts";
 export {
   ENUMS,
+  NODE_TYPE,
   PROP,
   PROP_VALUE_KIND,
   SCREEN_H,

@@ -9,9 +9,13 @@
     "type": "git",
     "url": "git+https://github.com/gjuoun/pocketjs-react.git"
   },
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "build": "bun tools/build.ts"
   },
   "dependencies": {
     "@babel/parser": "7.29.3",

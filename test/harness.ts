@@ -93,3 +93,10 @@ export async function bootCore(opts: { pak?: ArrayBuffer; classes?: string[] } =
 }
 
 export type Core = Awaited<ReturnType<typeof bootCore>>;
+/** Boot a fresh core with a built app's pak and evaluate its bundle (which mounts the app). */
+export async function bootApp(built: { js: string; pak: string }): Promise<Core> {
+  const core = await bootCore({ pak: await Bun.file(built.pak).arrayBuffer() });
+  (0, eval)(await Bun.file(built.js).text());
+  core.step(0);
+  return core;
+}
