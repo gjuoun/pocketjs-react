@@ -24,6 +24,7 @@
     "@babel/parser": "7.29.3",
     "@pocketjs/framework": "0.15.0",
     "clsx": "2.1.1",
+    "fflate": "0.8.2",
     "react": "19.3.1",
     "react-reconciler": "0.34.0"
   },

@@ -1,0 +1,58 @@
+[
+  {
+    "file": "00-abstract.xhtml",
+    "title": "Abstract"
+  },
+  {
+    "file": "01-introduction.xhtml",
+    "title": "1. Introduction"
+  },
+  {
+    "file": "02-transactions.xhtml",
+    "title": "2. Transactions"
+  },
+  {
+    "file": "03-timestamp-server.xhtml",
+    "title": "3. Timestamp Server"
+  },
+  {
+    "file": "04-proof-of-work.xhtml",
+    "title": "4. Proof-of-Work"
+  },
+  {
+    "file": "05-network.xhtml",
+    "title": "5. Network"
+  },
+  {
+    "file": "06-incentive.xhtml",
+    "title": "6. Incentive"
+  },
+  {
+    "file": "07-reclaiming-disk-space.xhtml",
+    "title": "7. Reclaiming Disk Space"
+  },
+  {
+    "file": "08-simplified-payment-verification.xhtml",
+    "title": "8. Simplified Payment Verification"
+  },
+  {
+    "file": "09-combining-and-splitting-value.xhtml",
+    "title": "9. Combining and Splitting Value"
+  },
+  {
+    "file": "10-privacy.xhtml",
+    "title": "10. Privacy"
+  },
+  {
+    "file": "11-calculations.xhtml",
+    "title": "11. Calculations"
+  },
+  {
+    "file": "12-conclusion.xhtml",
+    "title": "12. Conclusion"
+  },
+  {
+    "file": "13-references.xhtml",
+    "title": "References"
+  }
+]

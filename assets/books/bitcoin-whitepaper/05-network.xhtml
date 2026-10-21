@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><title>5. Network</title><link rel="stylesheet" type="text/css" href="style.css"/></head>
+<body>
+<h2>5. Network</h2>
+<p>The steps to run the network are as follows:</p>
+<ol><li>New transactions are broadcast to all nodes.</li><li>Each node collects new transactions into a block.</li><li>Each node works on finding a difficult proof-of-work for its block.</li><li>When a node finds a proof-of-work, it broadcasts the block to all nodes.</li><li>Nodes accept the block only if all transactions in it are valid and not already spent.</li><li>Nodes express their acceptance of the block by working on creating the next block in the chain, using the hash of the accepted block as the previous hash.</li></ol>
+<p>Nodes always consider the longest chain to be the correct one and will keep working on extending it. If two nodes broadcast different versions of the next block simultaneously, some nodes may receive one or the other first. In that case, they work on the first one they received, but save the other branch in case it becomes longer. The tie will be broken when the next proof-of-work is found and one branch becomes longer; the nodes that were working on the other branch will then switch to the longer one.</p>
+<p>New transaction broadcasts do not necessarily need to reach all nodes. As long as they reach many nodes, they will get into a block before long. Block broadcasts are also tolerant of dropped messages. If a node does not receive a block, it will request it when it receives the next block and realizes it missed one.</p>
+<figure class="figure"><p>Figure (diagram not reproduced): blocks chained by their previous hash, each holding a nonce and its transactions.</p></figure>
+</body>
+</html>
