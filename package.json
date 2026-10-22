@@ -20,6 +20,7 @@
     "measure:desktop": "bun tools/measure/desktop.ts",
     "measure:desktop-shot": "bun tools/measure/desktop-shot.ts",
     "build:reader": "bun tools/build-reader.ts",
+    "build:app": "bun tools/build-app.ts",
     "serve:reader": "bun tools/web/serve.ts"
   },
   "dependencies": {
