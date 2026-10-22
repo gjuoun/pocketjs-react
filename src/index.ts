@@ -27,3 +27,10 @@ export { takeHostMessages } from "./input/pointer.ts";
 // Persistence: the host's fs SDK, re-exported so an app repo outside this one can save state.
 // The browser host page backs it with localStorage; a host that mounts no fs reports null.
 export { existsSync, file, fsHost, rmSync, write, PocketFile } from "@pocketjs/framework/fs";
+// Textures: an app that ships pak `ui:img.*` entries registers them at boot on
+// hosts that can upload textures, then draws them with <Image src={id}/>.
+// Re-exported from the pinned framework instance this package uses, so the app
+// and the renderer share one texture table (a second framework copy would
+// register into a map nobody reads).
+export { getOps, registerTexture } from "@pocketjs/framework";
+export { entries as pakEntries, get as pakGet } from "@pocketjs/framework/pak";

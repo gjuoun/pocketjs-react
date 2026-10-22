@@ -11,7 +11,7 @@ export {
   unknownUtilities,
 } from "@pocket-internal/framework/compiler/tailwind.ts";
 export { bakeAtlases } from "@pocket-internal/framework/compiler/bake-font.ts";
-export { KEY_STYLES, PAK_DTYPE, keyFont, pack } from "@pocket-internal/framework/compiler/pak.ts";
+export { KEY_STYLES, PAK_DTYPE, decodePng, encodeImageEntry, keyFont, pack, unpack, type DecodedImage, type PakBlob } from "@pocket-internal/framework/compiler/pak.ts";
 export { createWasmUi, FB_H, FB_W } from "@pocket-internal/hosts/web/wasm-ops.js";
 export { HeadlessChrome } from "@pocket-internal/tools/headless-chrome.ts";
 

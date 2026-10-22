@@ -15,7 +15,8 @@
     "./tools/measure/common": "./tools/measure/common.ts",
     "./tools/measure/web": "./tools/measure/web.ts",
     "./tools/measure/desktop": "./tools/measure/desktop.ts",
-    "./test/harness": "./test/harness.ts"
+    "./test/harness": "./test/harness.ts",
+    "./pak-cook": "./src/pak-cook.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
