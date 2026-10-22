@@ -22,6 +22,8 @@ export interface Profile {
   /** The browser page measure:web serves: the stock hosts/web index.html (default) or the reader's
    *  host page, which runs the app through app-instance.js with runtime glyphs. */
   webPage?: "stock" | "app-instance";
+  /** Screens worth keeping as images, by press index (-1 = before the first press). */
+  shots?: Record<number, string>;
 }
 
 const LIST_DIALOG_SCRIPT = "down circle down circle circle down down down down down circle down down up circle up".split(" ");
@@ -45,6 +47,7 @@ export const PROFILES: Record<string, Profile> = {
     script: "down circle cross cross".split(" "),
     metrics: { update: [0, 1], toggle: [2, 3] },
     budgets: { first_render: 120, update: 14, toggle: 10 },
+    shots: { [-1]: "frame-a", 0: "frame-b", 2: "paused", 3: "resumed" },
   },
   reader: {
     name: "reader",
@@ -52,6 +55,7 @@ export const PROFILES: Record<string, Profile> = {
     script: READER_SCRIPT,
     metrics: { open: [0], chapter_open: [5], page: [6, 7, 8, 9, 10], chapter: [11, 12], menu: [13] },
     budgets: { first_render: 100, open: 60, chapter_open: 30, page: 8, chapter: 30 },
+    shots: { [-1]: "library", 0: "contents", 5: "reading-page-1", 6: "reading-page-2" },
   },
   // The reader with the CJK set baked (the desktop host draws it) and the Chinese test book bundled.
   // On the browser page the same build runs with runtime glyphs: its first chapter rasterizes ~1,000
@@ -64,6 +68,7 @@ export const PROFILES: Record<string, Profile> = {
     budgets: { first_render: 100, chapter_open: 60, page: 8, chapter: 60 },
     hostBudgets: { web: { chapter_open: 600 } },
     webPage: "app-instance",
+    shots: { [-1]: "library", 1: "contents", 2: "reading-page-1", 3: "reading-page-2" },
   },
 };
 
