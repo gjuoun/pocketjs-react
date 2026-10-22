@@ -10,7 +10,12 @@
     "url": "git+https://github.com/gjuoun/pocketjs-react.git"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./tools/build": "./tools/build.ts",
+    "./tools/measure/common": "./tools/measure/common.ts",
+    "./tools/measure/web": "./tools/measure/web.ts",
+    "./tools/measure/desktop": "./tools/measure/desktop.ts",
+    "./test/harness": "./test/harness.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
