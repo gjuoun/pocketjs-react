@@ -72,6 +72,7 @@ try {
       ["the Files tab lists the picked book", library.some((r) => han(r.t) && r.y > 40)],
       ["CIRCLE opened its contents", contents.filter((r) => han(r.t)).length >= 3],
       ["CIRCLE opened chapter 1 with real glyphs", page1.filter((r) => han(r.t)).length > 5 && page1.some((r) => r.t.startsWith("page 1/")) && measured !== 23],
+      ["no character is missing on this host", !page1.some((r) => r.t.includes("cannot be shown")) && stats.full === 0],
     ];
     for (const [label, ok] of checks) console.log((ok ? "ok   " : "FAIL ") + label);
     failed = !checks.every(([, ok]) => ok);

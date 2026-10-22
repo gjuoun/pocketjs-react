@@ -1,5 +1,6 @@
 // pocketjs-react public surface.
 export { mount, type MountOptions } from "./renderer/mount.ts";
+export { useFrame } from "./renderer/use-frame.ts";
 export { Image, Text, View, type PocketCSSProperties, type PocketHostProps, type PocketImageProps } from "./elements.ts";
 export { cn } from "./style/cn.ts";
 export { useButton } from "./input/buttons.ts";
@@ -12,12 +13,13 @@ export { Menu, type MenuItem, type MenuProps } from "./components/Menu.tsx";
 export { BTN } from "@pocketjs/framework/input";
 export { openEpub, type EpubBook, type TocEntry } from "./books/epub.ts";
 export type { Block } from "./books/blocks.ts";
-export { bundledAsset, bundledAssetNames } from "./books/assets.ts";
+export { bakedGlyphs, bundledAsset, bundledAssetNames } from "./books/assets.ts";
 export { cjkSafe, hasHan } from "./style/cjk.ts";
 export { bundledBooks, fileBooks, openedBook, type BookEntry, type FileBooks } from "./books/source.ts";
 export { useHostBook, type HostBook } from "./books/host.ts";
 export { anchorOf, FONT_SIZES, paginate, type Anchor, type FontSize, type Line, type Pages } from "./reader/paginate.ts";
 export { PageView } from "./reader/PageView.tsx";
+export { missingCharacters, missingNotice } from "./reader/coverage.ts";
 export { createGlyphWarmer, hasRuntimeGlyphs, useGlyphWarmup, WARM_CHUNK } from "./reader/glyph-warmer.ts";
 export { loadState, saveState, stateIsPersistent, type ReaderState, type SavedPosition } from "./reader/state.ts";
 export { takeHostMessages } from "./input/pointer.ts";

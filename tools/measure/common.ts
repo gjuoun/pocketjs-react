@@ -38,6 +38,14 @@ export const PROFILES: Record<string, Profile> = {
     metrics: { update: LIST_DIALOG_SCRIPT.flatMap((b, i) => (b === "circle" ? [i] : [])) },
     budgets: { first_render: 100, update: 8 },
   },
+  // A 40x18 monospace plasma redrawn every frame; CROSS pauses, CROSS again restarts.
+  "ascii-anim": {
+    name: "ascii-anim",
+    build: () => build(join(ROOT, "examples/ascii-anim/main.tsx"), { outdir: OUT, minify: true }),
+    script: "down circle cross cross".split(" "),
+    metrics: { update: [0, 1], toggle: [2, 3] },
+    budgets: { first_render: 120, update: 14, toggle: 10 },
+  },
   reader: {
     name: "reader",
     build: () => buildReader({ outdir: OUT, minify: true }),
