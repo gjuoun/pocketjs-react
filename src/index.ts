@@ -17,6 +17,7 @@ export { bakedGlyphs, bundledAsset, bundledAssetNames } from "./books/assets.ts"
 export { cjkSafe, hasHan } from "./style/cjk.ts";
 export { bundledBooks, fileBooks, openedBook, type BookEntry, type FileBooks } from "./books/source.ts";
 export { useHostBook, type HostBook } from "./books/host.ts";
+export { NO_LINE_END, NO_LINE_START, wrapParagraph, type WrappedLine } from "./text/wrap.ts";
 export { anchorOf, FONT_SIZES, paginate, type Anchor, type FontSize, type Line, type Pages } from "./reader/paginate.ts";
 export { PageView } from "./reader/PageView.tsx";
 export { missingCharacters, missingNotice } from "./reader/coverage.ts";
