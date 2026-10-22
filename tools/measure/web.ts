@@ -12,7 +12,7 @@ const BTN: Record<string, number> = { start: 0x8, up: 0x10, right: 0x20, down: 0
 const profile = profileFromArgs();
 const built = await profile.build();
 // Screens worth keeping as images, by press index: after the press at that index.
-const SHOTS: Record<string, Record<number, string>> = { reader: { [-1]: "library", 0: "contents", 5: "reading-page-1", 6: "reading-page-2" }, "reader-cjk": { [-1]: "library", 1: "contents", 2: "reading-page-1", 3: "reading-page-2" } };
+const SHOTS: Record<string, Record<number, string>> = { reader: { [-1]: "library", 0: "contents", 5: "reading-page-1", 6: "reading-page-2" }, "reader-cjk": { [-1]: "library", 1: "contents", 2: "reading-page-1", 3: "reading-page-2" }, "ascii-anim": { [-1]: "frame-a", 0: "frame-b", 2: "paused", 3: "resumed" } };
 const shots = SHOTS[profile.name] ?? {};
 const guest = await wrapGuest(built.js, join(OUT, "web-guest.js"));
 const HOST = FRAMEWORK_ROOT + "hosts/web/";
@@ -48,11 +48,15 @@ try {
       if (await chrome.evaluate("!!(globalThis.__measure && globalThis.__measure.lines.length)")) break;
       await Bun.sleep(100);
     }
+    const started = performance.now();
     const shoot = async (label: string | undefined) => {
       if (!label || i !== 0) return;
       await Bun.sleep(300);
+      const ms = performance.now() - started;
       const rect = await chrome.evaluate("(() => { const r = document.querySelector('canvas').getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; })()");
-      await Bun.write(join(OUT, "shots", "web-" + profile.name + "-" + label + ".png"), await chrome.screenshot(rect));
+      const file = "web-" + profile.name + "-" + label + ".png";
+      await Bun.write(join(OUT, "shots", file), await chrome.screenshot(rect));
+      console.log("shot " + label + " at_ms=" + ms.toFixed(0) + " file=" + file);
     };
     await shoot(shots[-1]);
     for (const [k, name] of profile.script.entries()) {
