@@ -15,10 +15,10 @@ const BTN: Record<string, number> = { start: 0x8, up: 0x10, right: 0x20, down: 0
 const TYPES: Record<string, string> = { html: "text/html", js: "text/javascript", wasm: "application/wasm" };
 
 /** Run one profile on the browser host, RUNS times; returns the report's exit code. */
-export async function runWeb(profile: Profile): Promise<number> {
+export async function runWeb(profile: Profile, out: string = OUT): Promise<number> {
   const built = await profile.build();
   const shots = profile.shots ?? {};
-  const guest = await wrapGuest(built.js, join(OUT, "web-guest.js"));
+  const guest = await wrapGuest(built.js, join(out, "web-guest.js"));
   const HOST = FRAMEWORK_ROOT + "hosts/web/";
   const WEB = import.meta.dir + "/../web/";
   const appInstance = profile.webPage === "app-instance";
@@ -42,7 +42,7 @@ export async function runWeb(profile: Profile): Promise<number> {
   try {
     for (let i = 0; i < RUNS; i++) {
       // A fresh browser and profile per run: every first render is cold (no code cache).
-      const profileDir = join(OUT, "chrome-profile-" + i);
+      const profileDir = join(out, "chrome-profile-" + i);
       rmSync(profileDir, { recursive: true, force: true });
       const chrome = await HeadlessChrome.start({ port: 9371 + i, profile: profileDir, timeoutMs: 20000 });
       try {
@@ -58,7 +58,7 @@ export async function runWeb(profile: Profile): Promise<number> {
           const ms = performance.now() - started;
           const rect = await chrome.evaluate("(() => { const r = document.querySelector('canvas').getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; })()");
           const file = "web-" + profile.name + "-" + label + ".png";
-          await Bun.write(join(OUT, "shots", file), await chrome.screenshot(rect));
+          await Bun.write(join(out, "shots", file), await chrome.screenshot(rect));
           console.log("shot " + label + " at_ms=" + ms.toFixed(0) + " file=" + file);
         };
         await shoot(shots[-1]);

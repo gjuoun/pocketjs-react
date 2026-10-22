@@ -7,10 +7,10 @@ import { OUT, RUNS, profileFromArgs, report, summarize, wrapGuest, type Profile,
 import { DESKTOP_KEY, desktopHost } from "./desktop-host.ts";
 
 /** Run one profile on the desktop host, RUNS times; returns the report's exit code. */
-export async function runDesktop(profile: Profile): Promise<number> {
+export async function runDesktop(profile: Profile, out: string = OUT): Promise<number> {
   const host = desktopHost();
   const built = await profile.build();
-  const guest = await wrapGuest(built.js, join(OUT, "desktop-guest.js"));
+  const guest = await wrapGuest(built.js, join(out, "desktop-guest.js"));
   const presses = profile.script.flatMap((name, i) => ["--press", DESKTOP_KEY[name] + "@" + (30 + i * 10)]);
   const quitAfter = String(30 + profile.script.length * 10 + 40);
   const runs: RunSummary[] = [];
