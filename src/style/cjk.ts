@@ -1,4 +1,4 @@
-// Han text and font weights: the reader's CJK build bakes hanzi into the regular body slots only
+// Han text and font weights: the reader's CJK build bakes hanzi into the regular slots only (12 px captions and the S/M/L body sizes)
 // (bold slots would double the pak), so a Han string drawn bold would show placeholder boxes.
 const HAN = /\p{Script=Han}/u;
 

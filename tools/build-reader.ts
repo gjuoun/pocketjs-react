@@ -7,7 +7,9 @@ import { join, resolve } from "node:path";
 import { BODY_SLOTS, build, type BuildResult } from "./build.ts";
 
 const ROOT = resolve(import.meta.dir, "..");
-export const CJK = { set: join(ROOT, "assets/fonts/cjk-set.txt"), font: join(ROOT, "assets/fonts/NotoSansSC-reader-subset.otf"), slots: BODY_SLOTS };
+// Every regular (non-bold) text size the reader uses: 12 px captions plus the S/M/L body sizes.
+export const CJK_SLOTS = [0, ...BODY_SLOTS];
+export const CJK = { set: join(ROOT, "assets/fonts/cjk-set.txt"), font: join(ROOT, "assets/fonts/NotoSansSC-reader-subset.otf"), slots: CJK_SLOTS };
 
 export interface ReaderBuildOptions {
   outdir?: string;

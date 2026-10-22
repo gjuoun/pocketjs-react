@@ -28,11 +28,11 @@ function run(cmd: string[]): string {
 
 const sha256 = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
 
-export async function buildApp(opts: { outdir?: string } = {}): Promise<{ app: string }> {
+export async function buildApp(opts: { outdir?: string; cjk?: boolean } = {}): Promise<{ app: string }> {
   const host = desktopHost();
   const outdir = resolve(opts.outdir ?? join(ROOT, "dist"));
   const stage = join(outdir, "app-stage");
-  const built = await buildReader({ outdir: stage, minify: true });
+  const built = await buildReader({ outdir: stage, minify: true, cjk: opts.cjk });
 
   const app = join(outdir, "PocketReader.app");
   const macos = join(app, "Contents/MacOS");
@@ -79,7 +79,8 @@ export async function buildApp(opts: { outdir?: string } = {}): Promise<{ app: s
 
 if (import.meta.main) {
   try {
-    await buildApp({ outdir: process.argv.slice(2).find((a) => a.startsWith("--outdir="))?.slice(9) });
+    const args = process.argv.slice(2);
+    await buildApp({ outdir: args.find((a) => a.startsWith("--outdir="))?.slice(9), cjk: args.includes("--cjk") });
   } catch (error) {
     console.error(String(error instanceof Error ? error.message : error));
     process.exit(1);
