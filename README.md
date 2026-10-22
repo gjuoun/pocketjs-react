@@ -4,6 +4,10 @@ React on [PocketJS](https://github.com/pocket-nexus/pocketjs): a UI framework ba
 
 > Early exploration. Unofficial: not affiliated with or endorsed by Pocket Nexus.
 
+![The e-book reader app: an English book, then a Chinese book](./docs/demo.gif)
+
+[Full-quality video](./docs/demo.mp4)
+
 ## What exists
 
 - **Renderer** — real `react` (19.3.1) through a custom `react-reconciler` (0.34.0) renderer that writes PocketJS's native View/Text/Image tree. No DOM, no CSS engine, no WebView.
@@ -90,7 +94,7 @@ Reader bundle 302,067 bytes minified (110,981 gzip); pak 907,760 bytes (eight fo
 
 ### Chinese text
 
-[▶ Demo video](./docs/demo.mp4): an English and a simplified Chinese book in the macOS app.
+The demo above shows an English and a simplified Chinese book in the macOS app.
 
 - **Browser host page** — draws any character at run time with the browser's fonts. Nothing to bake.
 - **macOS desktop host** — `bun run build:reader -- --cjk` (or `build:app -- --cjk`) bakes 8,836 simplified + traditional hanzi plus CJK punctuation into the 12/14/16/18 px regular slots, from a committed Noto Sans SC subset (SIL OFL 1.1; [source and licence](./assets/fonts/NOTICE.md)). The reader pak grows from 0.91 MB to about 11.6 MB.
