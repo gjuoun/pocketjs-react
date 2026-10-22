@@ -14,12 +14,12 @@ function Card(props: { book: BookEntry; theme: Theme; onOpen: (book: BookEntry) 
   return (
     <View ref={ref} className={props.theme.card} focusable onPress={() => props.onOpen(props.book)}>
       <Text className={props.theme.title}>{props.book.title}</Text>
-      <Text className={props.theme.muted}>{props.book.author || (props.book.origin === "file" ? "From files" : "Bundled")}</Text>
+      <Text className={props.theme.muted}>{props.book.author || (props.book.origin === "file" ? "From files" : props.book.origin === "host" ? "From disk" : "Bundled")}</Text>
     </View>
   );
 }
 
-export function Library(props: { bundled: BookEntry[]; files: FileBooks; theme: Theme; dark: boolean; onOpen: (book: BookEntry) => void }) {
+export function Library(props: { bundled: BookEntry[]; files: FileBooks; theme: Theme; dark: boolean; error?: string; onOpen: (book: BookEntry) => void }) {
   const { theme } = props;
   const filesPanel = !props.files.available ? (
     <Text className={theme.muted}>This host has no file system. Bundled books only.</Text>
@@ -33,6 +33,7 @@ export function Library(props: { bundled: BookEntry[]; files: FileBooks; theme: 
   return (
     <View className={theme.screen}>
       <Text className={theme.title}>Library</Text>
+      {props.error ? <Text className={theme.muted}>{props.error}</Text> : null}
       <Tabs
         dark={props.dark}
         tabs={[
