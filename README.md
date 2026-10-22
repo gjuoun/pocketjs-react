@@ -4,6 +4,12 @@ React on [PocketJS](https://github.com/pocket-nexus/pocketjs): a UI framework ba
 
 > Early exploration. Unofficial: not affiliated with or endorsed by Pocket Nexus.
 
+![The e-book reader app: an English book, then a Chinese book](./docs/demo.gif)
+
+[Full-quality video](./docs/demo.mp4)
+
+The demo above shows an English and a simplified Chinese book in the macOS app.
+
 ## What exists
 
 - **Renderer** — real `react` (19.3.1) through a custom `react-reconciler` (0.34.0) renderer that writes PocketJS's native View/Text/Image tree. No DOM, no CSS engine, no WebView.
