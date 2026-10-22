@@ -3,7 +3,7 @@
 // CIRCLE opens a book).
 import { useLayoutEffect, useRef } from "react";
 import { focusNode } from "@pocketjs/framework/input";
-import { Grid, Tabs, Text, View, type BookEntry, type FileBooks } from "pocketjs-react";
+import { cjkSafe, Grid, Tabs, Text, View, type BookEntry, type FileBooks } from "pocketjs-react";
 import type { Theme } from "./theme.ts";
 
 function Card(props: { book: BookEntry; theme: Theme; onOpen: (book: BookEntry) => void; autoFocus?: boolean }) {
@@ -13,7 +13,7 @@ function Card(props: { book: BookEntry; theme: Theme; onOpen: (book: BookEntry) 
   }, []);
   return (
     <View ref={ref} className={props.theme.card} focusable onPress={() => props.onOpen(props.book)}>
-      <Text className={props.theme.title}>{props.book.title}</Text>
+      <Text className={cjkSafe(props.theme.title, props.book.title)}>{props.book.title}</Text>
       <Text className={props.theme.muted}>{props.book.author || (props.book.origin === "file" ? "From files" : props.book.origin === "host" ? "From disk" : "Bundled")}</Text>
     </View>
   );

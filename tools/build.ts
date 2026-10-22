@@ -1,5 +1,6 @@
 // tools/build.ts <entry.tsx> [--outdir=dist] [--name=<name>] [--minify]
 //                [--asset <name>=<file>]... [--glyphs <file>]...
+//                [--cjk-set <file> --cjk-font <font.otf> [--cjk-slots 1,2,3]]
 //
 // Pass 1 (tools/collect.ts) scans literals from the entry's import graph and from
 // pocketjs-react's own src/, then uses PocketJS's compiler to produce:
@@ -13,6 +14,9 @@
 // host feeds the pak to the core but does not expose it to guest JS, so the bundle is the one
 // channel every host shares. Glyph files (--glyphs) add their codepoints, plus Latin-1 and
 // General Punctuation, to every baked atlas, for text that only arrives at runtime (books).
+// A CJK set (--cjk-set) is baked into the listed regular slots only, with --cjk-font as the
+// fallback face for what the default faces lack. A books build embeds the codepoints its body
+// slots hold (bakedGlyphs()), so a reader can count what this host cannot draw.
 // The build fails when any bundle input comes from PocketJS's Pocket3D-licensed paths.
 import { basename, dirname, join, resolve } from "node:path";
 import { collect } from "./collect.ts";
@@ -69,7 +73,17 @@ export interface BuildOptions {
   assets?: Record<string, string>;
   /** Text files whose codepoints (plus BOOK_RANGES) are baked into every atlas slot. */
   glyphs?: string[];
+  /** A CJK character set baked into `slots` (regular slots) with `font` as the fallback face. */
+  cjk?: { set: string; font: string; slots: number[] };
 }
+
+/** Extra characters a CJK slot leaves out: an atlas cell is as wide as its widest glyph, and these
+ *  (per mille, per ten thousand) are half again as wide as a hanzi, which would grow a 9,000-glyph
+ *  atlas by 30-60 %. They draw as placeholder boxes there and count as missing. */
+export const CJK_SLOT_SKIP = "\u2030\u2031";
+
+/** Body font slots of a books build: the regular text-sm / text-base / text-lg slots. */
+export const BODY_SLOTS = [1, 2, 3];
 
 export async function build(entryArg: string, opts: BuildOptions = {}): Promise<BuildResult> {
   const entry = resolve(entryArg);
@@ -98,7 +112,34 @@ export async function build(entryArg: string, opts: BuildOptions = {}): Promise<
     extraChars = [...extra].join("");
     console.log("  glyphs: " + extra.size + " extra codepoints from " + opts.glyphs.length + " file(s) + Latin-1/punctuation");
   }
-  const atlases = await bakeAtlases({ codepoints: scanned.codepoints, slots: fontSlots, extraChars, rasterDensity: 1 });
+  const cjkSlots = opts.cjk ? fontSlots.filter((s) => opts.cjk!.slots.includes(s)) : [];
+  const atlases = await bakeAtlases({ codepoints: scanned.codepoints, slots: fontSlots.filter((s) => !cjkSlots.includes(s)), extraChars, rasterDensity: 1 });
+  let cjkChars = "";
+  if (opts.cjk) {
+    const lines = (await Bun.file(resolve(opts.cjk.set)).text()).split("\n");
+    const hanzi = [...lines[0]];
+    const marks = [...lines.slice(1).join("")].filter((ch) => ch.codePointAt(0)! > 126);
+    cjkChars = [...extraChars].filter((ch) => !CJK_SLOT_SKIP.includes(ch)).join("") + hanzi.join("") + marks.join("");
+    const t = performance.now();
+    const codepoints = new Set([...scanned.codepoints].filter((cp) => !CJK_SLOT_SKIP.includes(String.fromCodePoint(cp))));
+    const cjk = await bakeAtlases({ codepoints, slots: cjkSlots, extraChars: cjkChars, rasterDensity: 1, fallbackTtfs: [resolve(opts.cjk.font)] });
+    atlases.push(...cjk);
+    atlases.sort((a, b) => a.slot - b.slot);
+    const bytes = cjk.reduce((n, a) => n + a.bytes.length, 0);
+    console.log("  cjk: " + hanzi.length + " hanzi + " + marks.length + " marks baked into slots " + cjkSlots.join(",") + " from " + basename(opts.cjk.font) + " (" + (cjk[0]?.glyphCount ?? 0) + " glyphs/slot, " + bytes + " bytes, " + (performance.now() - t).toFixed(0) + " ms)");
+  }
+  // Codepoints above ASCII every body slot holds, for bakedGlyphs() (books builds only).
+  let bakedChars: string | null = null;
+  if (opts.glyphs?.length || opts.cjk) {
+    const set = new Set<string>();
+    for (const cp of scanned.codepoints) if (cp > 126) set.add(String.fromCodePoint(cp));
+    for (const ch of extraChars) set.add(ch);
+    if (cjkSlots.length > 0) {
+      for (const ch of CJK_SLOT_SKIP) set.delete(ch);
+      for (const ch of cjkChars) set.add(ch);
+    }
+    bakedChars = [...set].join("");
+  }
   const pak = pack([
     { key: KEY_STYLES, dtype: PAK_DTYPE.u8, data: styles.bin },
     ...atlases.map((a) => ({ key: keyFont(a.slot), dtype: PAK_DTYPE.u8, data: a.bytes })),
@@ -125,6 +166,7 @@ export async function build(entryArg: string, opts: BuildOptions = {}): Promise<
   const installAssets = [
     "import { installBundledAssets } from " + JSON.stringify(join(ROOT, "src/books/assets.ts")) + ";",
     "installBundledAssets(" + JSON.stringify(assets) + ");",
+    ...(bakedChars !== null ? ["import { installBakedGlyphs } from " + JSON.stringify(join(ROOT, "src/books/assets.ts")) + ";", "installBakedGlyphs(" + JSON.stringify(bakedChars) + ");"] : []),
   ].join("\n");
   const virtualEntry = 'import "pocketjs-react:install-styles";\nimport "pocketjs-react:install-assets";\nimport ' + JSON.stringify(entry) + ";\n";
   const result = await Bun.build({
@@ -169,7 +211,7 @@ export async function build(entryArg: string, opts: BuildOptions = {}): Promise<
 
 if (import.meta.main) {
   const args = process.argv.slice(2);
-  const entry = args.find((a, i) => !a.startsWith("--") && args[i - 1] !== "--asset" && args[i - 1] !== "--glyphs");
+  const entry = args.find((a, i) => !a.startsWith("--") && !["--asset", "--glyphs", "--cjk-set", "--cjk-font", "--cjk-slots"].includes(args[i - 1]));
   if (!entry) {
     console.error("usage: bun tools/build.ts <entry.tsx> [--outdir=dist] [--name=<name>] [--minify]");
     process.exit(2);
@@ -177,8 +219,11 @@ if (import.meta.main) {
   const get = (flag: string) => args.find((a) => a.startsWith(flag + "="))?.slice(flag.length + 1);
   const all = (flag: string) => args.flatMap((a, i) => (a === flag ? [args[i + 1]] : a.startsWith(flag + "=") ? [a.slice(flag.length + 1)] : []));
   const assets = Object.fromEntries(all("--asset").map((spec) => [spec.slice(0, spec.indexOf("=")), spec.slice(spec.indexOf("=") + 1)]));
+  const cjkSet = all("--cjk-set")[0];
+  const cjkFont = all("--cjk-font")[0];
+  const cjk = cjkSet && cjkFont ? { set: cjkSet, font: cjkFont, slots: (all("--cjk-slots")[0] ?? BODY_SLOTS.join(",")).split(",").map(Number) } : undefined;
   try {
-    await build(entry, { outdir: get("--outdir"), name: get("--name"), minify: args.includes("--minify"), assets, glyphs: all("--glyphs") });
+    await build(entry, { outdir: get("--outdir"), name: get("--name"), minify: args.includes("--minify"), assets, glyphs: all("--glyphs"), cjk });
   } catch (error) {
     console.error(String(error instanceof Error ? error.message : error));
     process.exit(1);

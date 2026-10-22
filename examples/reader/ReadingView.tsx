@@ -2,7 +2,7 @@
 // L/R jump to the previous/next chapter, CROSS goes back to the contents. Mouse: click the left
 // or right half of the page to turn it.
 import { useMemo } from "react";
-import { BTN, FONT_SIZES, PageView, Text, useButton, useGlyphWarmup, View, hasRuntimeGlyphs, paginate, type EpubBook, type FontSize } from "pocketjs-react";
+import { BTN, cjkSafe, FONT_SIZES, PageView, Text, useButton, useGlyphWarmup, View, hasRuntimeGlyphs, paginate, type EpubBook, type FontSize } from "pocketjs-react";
 import type { Theme } from "./theme.ts";
 
 export const PAGE = { width: 456, height: 198 };
@@ -78,7 +78,7 @@ export function ReadingView(props: {
 
   return (
     <View className={props.theme.screen}>
-      <Text className={props.theme.title}>{title}</Text>
+      <Text className={cjkSafe(props.theme.title, title)}>{title}</Text>
       <View className="flex-row h-[198px]">
         <View className="absolute inset-0 flex-row">
           <View className="w-[228px] h-[198px]" focusable onPress={prev} />

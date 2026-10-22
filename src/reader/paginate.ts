@@ -4,6 +4,7 @@
 // paginates in about 0.5 ms on the desktop host and 0.7-2 ms on the wasm core.
 import { getOps } from "@pocketjs/framework/host";
 import type { Block } from "../books/blocks.ts";
+import { hasHan } from "../style/cjk.ts";
 
 export type FontSize = "S" | "M" | "L";
 
@@ -20,6 +21,8 @@ export interface Line {
   /** Block index and the character offset of the line's start inside it. */
   block: number;
   offset: number;
+  /** A heading with Han characters: drawn in the regular slot (bold slots carry no CJK). */
+  regular?: boolean;
 }
 
 export interface Anchor {
@@ -87,7 +90,8 @@ export function paginate(blocks: Block[], opts: { size: FontSize; width: number;
   const lines: Line[] = [];
   blocks.forEach((block, index) => {
     if (lines.length > 0) lines.push({ text: "", kind: "blank", block: index, offset: 0 });
-    const slot = block.kind === "heading" ? size.headingSlot : size.slot;
+    const regular = block.kind === "heading" && hasHan(block.text);
+    const slot = block.kind === "heading" && !regular ? size.headingSlot : size.slot;
     if (block.kind === "pre") {
       let offset = 0;
       for (const raw of block.text.split("\n")) {
@@ -96,7 +100,7 @@ export function paginate(blocks: Block[], opts: { size: FontSize; width: number;
       }
       return;
     }
-    for (const part of wrap(block.text, slot, opts.width, ops.wrapText!)) lines.push({ text: part.text, kind: block.kind, block: index, offset: part.offset });
+    for (const part of wrap(block.text, slot, opts.width, ops.wrapText!)) lines.push({ text: part.text, kind: block.kind, block: index, offset: part.offset, ...(regular ? { regular } : {}) });
   });
   const pages: Line[][] = [];
   for (let i = 0; i < lines.length; i += linesPerPage) {
