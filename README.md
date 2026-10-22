@@ -12,7 +12,9 @@ React on [PocketJS](https://github.com/pocket-nexus/pocketjs): a UI framework ba
 - **D-pad input** — `FocusScope` (traps focus, restores it on close) and `useButton` (face and shoulder buttons, innermost handler wins), built on PocketJS's own focus manager. Confirm = CIRCLE, back = CROSS.
 - **Components** — `List` (d-pad-operable rows, optionally a scrolling window), `Dialog` (portaled overlay that traps focus and closes on back), `Grid` (row/column d-pad movement), `Tabs` (shoulder buttons switch, focus remembered per tab) and `Menu`.
 - **Mouse as a second layer** — a click focuses and presses what it points at, through the same focus system (an open dialog keeps clicks behind it inert).
+- **Per-frame hook** — `useFrame(cb)` runs once per host frame with a 0-based counter (the React counterpart of the framework's frame pump), for games and animations.
 - **E-book reader example** — `examples/reader`: an EPUB reader with the Bitcoin whitepaper bundled, which also reads Chinese EPUBs on both hosts (see below).
+- **ASCII animation example** — `examples/ascii-anim`: a 40×18 monospace plasma (`text-xs font-mono`) redrawn every frame; CROSS pauses and restarts. Measured by `bun run measure:web --app=ascii-anim`.
 - **macOS app** — `bun run build:app` packages the reader and the desktop host as a double-clickable, ad-hoc-signed `PocketReader.app` that opens an EPUB from disk (see below).
 - **Build** — `tools/build.ts` turns TSX and Tailwind class strings into one guest bundle and a `.pak` (styles + baked font atlases), using PocketJS's own compiler.
 - **Two hosts** — the browser WASM host and the macOS desktop host. Both run the same example with measured numbers (below).
