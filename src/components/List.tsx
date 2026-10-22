@@ -21,7 +21,7 @@ export interface ListProps<T> {
   itemClassName?: string | ((item: T, index: number) => string | false | null | undefined);
   /** Draw at most this many items and scroll the window with the focus. */
   visibleCount?: number;
-  /** Item focused when the list mounts (windowed lists only). */
+  /** Item focused when the list mounts. */
   initialIndex?: number;
 }
 
@@ -33,7 +33,7 @@ export function List<T>(props: ListProps<T>) {
   const [start, setStart] = useState(() => (windowed ? Math.max(0, Math.min(focus - Math.floor(count / 2), items.length - count)) : 0));
   const container = useRef<NodeMirror>(null);
   const nodes = useRef(new Map<number, NodeMirror>());
-  const wantFocus = useRef<number | null>(windowed && props.initialIndex !== undefined ? focus : null);
+  const wantFocus = useRef<number | null>(props.initialIndex !== undefined ? focus : null);
   const state = useRef({ focus, start });
   state.current = { focus, start };
 

@@ -2,7 +2,7 @@
 // L/R jump to the previous/next chapter, CROSS goes back to the contents. Mouse: click the left
 // or right half of the page to turn it.
 import { useMemo } from "react";
-import { BTN, PageView, Text, useButton, View, paginate, type EpubBook, type FontSize } from "pocketjs-react";
+import { BTN, cjkSafe, FONT_SIZES, PageView, Text, useButton, useGlyphWarmup, View, hasRuntimeGlyphs, paginate, type EpubBook, type FontSize } from "pocketjs-react";
 import type { Theme } from "./theme.ts";
 
 export const PAGE = { width: 456, height: 198 };
@@ -35,6 +35,13 @@ export function ReadingView(props: {
     return blocks[0]?.kind === "heading" && blocks[0].text === name ? blocks.slice(1) : blocks;
   };
   const layout = useMemo(() => paginate(blocksOf(position.chapter), { size, width: PAGE.width, height: PAGE.height }), [book, position.chapter, size]);
+  // On a host that draws missing glyphs at run time, warm the next chapter's characters while this one is read.
+  const warm = useMemo(() => {
+    if (!hasRuntimeGlyphs()) return { current: "", next: "" };
+    const text = (chapter: number) => (book.toc.find((e) => e.index === chapter)?.title ?? "") + blocksOf(chapter).map((b) => b.text).join("");
+    return { current: text(position.chapter), next: position.chapter + 1 < chapters ? text(position.chapter + 1) : "" };
+  }, [book, position.chapter]);
+  useGlyphWarmup(warm.current, warm.next, FONT_SIZES[size].slot);
   const per = layout.linesPerPage;
   const total = Math.max(1, Math.ceil(layout.lines.length / per));
   const line = layout.lineOf(position);
@@ -43,6 +50,9 @@ export function ReadingView(props: {
     return { chapter, block: l?.block ?? 0, offset: l?.offset ?? 0 };
   };
   const page = Math.floor(line / per) + 1;
+  const shown = layout.lines.slice(line, line + per);
+  // Dev aid: the computed lines of the page on screen, for host-page tests to compare with what the core drew.
+  (globalThis as { __readerPage?: string[] }).__readerPage = shown.map((l) => l.text);
   const title = book.toc.find((e) => e.index === position.chapter)?.title ?? "Section " + (position.chapter + 1);
 
   const start = (chapter: number): Position => ({ chapter, block: 0, offset: 0 });
@@ -68,13 +78,13 @@ export function ReadingView(props: {
 
   return (
     <View className={props.theme.screen}>
-      <Text className={props.theme.title}>{title}</Text>
+      <Text className={cjkSafe(props.theme.title, title)}>{title}</Text>
       <View className="flex-row h-[198px]">
         <View className="absolute inset-0 flex-row">
           <View className="w-[228px] h-[198px]" focusable onPress={prev} />
           <View className="w-[228px] h-[198px]" focusable onPress={next} />
         </View>
-        <PageView lines={layout.lines.slice(line, line + per)} size={size} width={PAGE.width} dark={props.dark} />
+        <PageView lines={shown} size={size} width={PAGE.width} dark={props.dark} />
       </View>
       <View className="flex-row justify-between">
         <Text className={props.theme.muted}>LEFT/RIGHT page  ·  L/R chapter  ·  START menu</Text>

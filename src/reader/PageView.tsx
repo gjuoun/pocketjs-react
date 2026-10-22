@@ -12,7 +12,7 @@ export function PageView(props: { lines: Line[]; size: FontSize; width: number; 
         <Text
           key={i}
           className={cn(
-            line.kind === "heading" ? size.heading : size.body,
+            line.kind === "heading" && !line.regular ? size.heading : size.body,
             props.dark ? "text-slate-100" : "text-slate-900",
             line.kind === "figure" && (props.dark ? "text-sky-300" : "text-sky-800"),
             line.kind === "pre" && (props.dark ? "text-amber-200" : "text-amber-900"),

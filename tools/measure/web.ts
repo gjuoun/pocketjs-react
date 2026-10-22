@@ -1,6 +1,8 @@
 // bun run measure:web — the example on the browser WASM host (the npm package's hosts/web,
 // headless Chrome). Serves hosts/web plus the wrapped guest, plays the d-pad script through
 // the host's virtual buttons, prints the measurement lines and a summary over RUNS runs.
+// A profile with webPage "app-instance" runs on tools/web/reader.html instead: app-instance.js
+// with runtime glyphs, its own 60 Hz loop, buttons through window.__host.press.
 import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { FRAMEWORK_ROOT, HeadlessChrome } from "../../src/internal/pocket-build.ts";
@@ -10,10 +12,13 @@ const BTN: Record<string, number> = { start: 0x8, up: 0x10, right: 0x20, down: 0
 const profile = profileFromArgs();
 const built = await profile.build();
 // Screens worth keeping as images, by press index: after the press at that index.
-const SHOTS: Record<string, Record<number, string>> = { reader: { [-1]: "library", 0: "contents", 5: "reading-page-1", 6: "reading-page-2" } };
+const SHOTS: Record<string, Record<number, string>> = { reader: { [-1]: "library", 0: "contents", 5: "reading-page-1", 6: "reading-page-2" }, "reader-cjk": { [-1]: "library", 1: "contents", 2: "reading-page-1", 3: "reading-page-2" } };
 const shots = SHOTS[profile.name] ?? {};
 const guest = await wrapGuest(built.js, join(OUT, "web-guest.js"));
 const HOST = FRAMEWORK_ROOT + "hosts/web/";
+const WEB = import.meta.dir + "/../web/";
+const appInstance = profile.webPage === "app-instance";
+const pressJs = (bit: number, down: boolean) => appInstance ? "window.__host.press(" + bit + ", " + down + ")" : "import('/engine.js').then(m => m.pressVirtual(" + bit + ", " + down + "))";
 const TYPES: Record<string, string> = { html: "text/html", js: "text/javascript", wasm: "application/wasm" };
 const server = Bun.serve({
   hostname: "127.0.0.1",
@@ -24,6 +29,7 @@ const server = Bun.serve({
     if (path === "/demos") return Response.json([{ name: "app", hasPak: true, mounts: true }]);
     if (path === "/dist/app.js") return new Response(Bun.file(guest), { headers: { "content-type": "text/javascript" } });
     if (path === "/dist/app.pak") return new Response(Bun.file(built.pak));
+    if (appInstance && (path === "/" || path === "/fs-shim.js")) return new Response(Bun.file(WEB + (path === "/" ? "reader.html" : "fs-shim.js")), { headers: { "content-type": path === "/" ? "text/html" : "text/javascript" } });
     const file = path === "/" ? "index.html" : path.slice(1);
     if (!existsSync(HOST + file)) return new Response("not found", { status: 404 });
     return new Response(Bun.file(HOST + file), { headers: { "content-type": TYPES[file.split(".").pop() ?? ""] ?? "application/octet-stream" } });
@@ -50,9 +56,9 @@ try {
     };
     await shoot(shots[-1]);
     for (const [k, name] of profile.script.entries()) {
-      await chrome.evaluate("import('/engine.js').then(m => m.pressVirtual(" + BTN[name] + ", true))");
+      await chrome.evaluate(pressJs(BTN[name], true));
       await Bun.sleep(120);
-      await chrome.evaluate("import('/engine.js').then(m => m.pressVirtual(" + BTN[name] + ", false))");
+      await chrome.evaluate(pressJs(BTN[name], false));
       await Bun.sleep(120);
       await shoot(shots[k]);
     }

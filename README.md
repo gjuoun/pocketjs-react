@@ -12,7 +12,7 @@ React on [PocketJS](https://github.com/pocket-nexus/pocketjs): a UI framework ba
 - **D-pad input** — `FocusScope` (traps focus, restores it on close) and `useButton` (face and shoulder buttons, innermost handler wins), built on PocketJS's own focus manager. Confirm = CIRCLE, back = CROSS.
 - **Components** — `List` (d-pad-operable rows, optionally a scrolling window), `Dialog` (portaled overlay that traps focus and closes on back), `Grid` (row/column d-pad movement), `Tabs` (shoulder buttons switch, focus remembered per tab) and `Menu`.
 - **Mouse as a second layer** — a click focuses and presses what it points at, through the same focus system (an open dialog keeps clicks behind it inert).
-- **E-book reader example** — `examples/reader`: an EPUB reader with the Bitcoin whitepaper bundled (see below).
+- **E-book reader example** — `examples/reader`: an EPUB reader with the Bitcoin whitepaper bundled, which also reads Chinese EPUBs on both hosts (see below).
 - **macOS app** — `bun run build:app` packages the reader and the desktop host as a double-clickable, ad-hoc-signed `PocketReader.app` that opens an EPUB from disk (see below).
 - **Build** — `tools/build.ts` turns TSX and Tailwind class strings into one guest bundle and a `.pak` (styles + baked font atlases), using PocketJS's own compiler.
 - **Two hosts** — the browser WASM host and the macOS desktop host. Both run the same example with measured numbers (below).
@@ -76,7 +76,7 @@ POCKETJS_ROOT=../pocketjs bun run measure:desktop -- --app reader
   - Files (browser host page): EPUBs picked with the page's file input appear under `books/`.
   - The desktop host mounts no file system for apps. It shows bundled books, plus the one book the macOS app's launcher hands it at launch (see below).
 - **Saved state** — font size, theme and the reading position per book are saved where the host offers a writable file system (the browser host page, backed by localStorage), and the app reopens on the saved page. On the desktop host they last for the session.
-- **Characters** — book text arrives at runtime, so the build bakes ASCII, Latin-1, General Punctuation and every character of the bundled book (`--glyphs`). Other characters draw as a placeholder box.
+- **Characters** — book text arrives at runtime, so the build bakes ASCII, Latin-1, General Punctuation and every character of the bundled book (`--glyphs`). Chinese, Japanese and Korean text is covered per host (next section).
 - **Bundled book** — *Bitcoin: A Peer-to-Peer Electronic Cash System* (Satoshi Nakamoto, 2008), an EPUB 3 edition built in this repo from the PDF distributed by bitcoin.org under the MIT licence. Figures are described by captions. Source, hashes and licence: [assets/books/NOTICE.md](./assets/books/NOTICE.md).
 
 Measured with the minified reader, 3 runs per host, on the same machine as below:
@@ -87,6 +87,17 @@ Measured with the minified reader, 3 runs per host, on the same machine as below
 | macOS desktop host (QuickJS) | `POCKETJS_ROOT=../pocketjs bun run measure:desktop -- --app reader` | 30.6–31.4 ms | 4.2–4.4 / ≤10.0 ms | 9.8–10.3 ms | 12.9–17.6 ms |
 
 Reader bundle 302,067 bytes minified (110,981 gzip); pak 907,760 bytes (eight font slots with Latin-1 and punctuation).
+
+### Chinese text
+
+[▶ Demo video](./docs/demo.mp4): an English and a simplified Chinese book in the macOS app.
+
+- **Browser host page** — draws any character at run time with the browser's fonts. Nothing to bake.
+- **macOS desktop host** — `bun run build:reader -- --cjk` (or `build:app -- --cjk`) bakes 8,836 simplified + traditional hanzi plus CJK punctuation into the 12/14/16/18 px regular slots, from a committed Noto Sans SC subset (SIL OFL 1.1; [source and licence](./assets/fonts/NOTICE.md)). The reader pak grows from 0.91 MB to about 11.6 MB.
+- **Limits** — a character outside the baked set draws as a placeholder box. Han text is regular weight only (`cjkSafe` drops `font-bold`). No vertical text or ruby.
+- **Text rules** — no space between CJK characters, no line starts with closing punctuation.
+- **Test book** — chapters 1–3 of Project Gutenberg #23950 (public domain in the US): [test/fixtures/books](./test/fixtures/books/NOTICE.md).
+- **Measure** — `bun run measure:web -- --app reader-cjk`, and `POCKETJS_ROOT=../pocketjs bun run measure:desktop -- --app reader-cjk`.
 
 ## macOS app (desktop host)
 
@@ -210,3 +221,5 @@ PocketJS and MicroTS are MIT. The PocketJS package also contains Pocket3D files 
 - `tools/build.ts` fails if any bundle input comes from those paths (tested).
 - The macOS desktop host links Pocket3D. The license exempts PocketJS's own hosts and software that uses Pocket3D only through them to draw PocketJS user interfaces.
 - This repo distributes no host binaries.
+
+`assets/fonts/NotoSansSC-reader-subset.otf` is a subset of Noto Sans SC under the SIL Open Font License 1.1 ([assets/fonts/LICENSE-NotoSansSC.txt](./assets/fonts/LICENSE-NotoSansSC.txt)). The Chinese test book under `test/fixtures/books/` is public domain in the US.

@@ -4,6 +4,7 @@
 // paginates in about 0.5 ms on the desktop host and 0.7-2 ms on the wasm core.
 import { getOps } from "@pocketjs/framework/host";
 import type { Block } from "../books/blocks.ts";
+import { hasHan } from "../style/cjk.ts";
 
 export type FontSize = "S" | "M" | "L";
 
@@ -20,6 +21,8 @@ export interface Line {
   /** Block index and the character offset of the line's start inside it. */
   block: number;
   offset: number;
+  /** A heading with Han characters: drawn in the regular slot (bold slots carry no CJK). */
+  regular?: boolean;
 }
 
 export interface Anchor {
@@ -40,13 +43,40 @@ export interface Pages {
 
 type WrapText = (text: string, slot: number, maxWidth: number) => ArrayLike<number>;
 
+/** CJK line rules (kinsoku): these never start a line ... */
+export const NO_LINE_START = "，。、；：？！」』）》〉】…﹐﹑﹒﹔﹕﹖﹗﹚﹜﹞．〕〗";
+/** ... and these never end one. */
+export const NO_LINE_END = "「『（《〈【〔〖";
+
+/** Moves a break back so the next line does not start with closing punctuation and this line does
+ *  not end with an opening bracket (the characters move down a line). Keeps at least one character. */
+function adjustBreak(text: string, from: number, at: number): number {
+  let end = at;
+  for (let guard = 0; guard < 8 && end - 1 > from; guard++) {
+    let next = end;
+    while (text[next] === " ") next++; // a break at a space: look at what the next line shows first
+    if (!NO_LINE_START.includes(text[next] ?? "\n") && !NO_LINE_END.includes(text[end - 1])) break;
+    end--;
+  }
+  return end;
+}
+
 function wrap(text: string, slot: number, width: number, wrapText: WrapText): { text: string; offset: number }[] {
-  const breaks = Array.from(wrapText(text, slot, width));
   const out: { text: string; offset: number }[] = [];
   let from = 0;
-  for (const at of breaks) {
-    out.push({ text: text.slice(from, at).trimEnd(), offset: from });
-    from = at;
+  let base = 0; // breaks are relative to text.slice(base)
+  let breaks = Array.from(wrapText(text, slot, width));
+  for (let k = 0; k < breaks.length; k++) {
+    const at = base + breaks[k];
+    const end = adjustBreak(text, from, at);
+    out.push({ text: text.slice(from, end).trimEnd(), offset: from });
+    from = end;
+    if (end !== at) {
+      // The next line grew: wrap the rest again from here, so every line still fits.
+      base = end;
+      breaks = Array.from(wrapText(text.slice(end), slot, width));
+      k = -1;
+    }
   }
   out.push({ text: text.slice(from), offset: from });
   return out;
@@ -60,7 +90,8 @@ export function paginate(blocks: Block[], opts: { size: FontSize; width: number;
   const lines: Line[] = [];
   blocks.forEach((block, index) => {
     if (lines.length > 0) lines.push({ text: "", kind: "blank", block: index, offset: 0 });
-    const slot = block.kind === "heading" ? size.headingSlot : size.slot;
+    const regular = block.kind === "heading" && hasHan(block.text);
+    const slot = block.kind === "heading" && !regular ? size.headingSlot : size.slot;
     if (block.kind === "pre") {
       let offset = 0;
       for (const raw of block.text.split("\n")) {
@@ -69,7 +100,7 @@ export function paginate(blocks: Block[], opts: { size: FontSize; width: number;
       }
       return;
     }
-    for (const part of wrap(block.text, slot, opts.width, ops.wrapText!)) lines.push({ text: part.text, kind: block.kind, block: index, offset: part.offset });
+    for (const part of wrap(block.text, slot, opts.width, ops.wrapText!)) lines.push({ text: part.text, kind: block.kind, block: index, offset: part.offset, ...(regular ? { regular } : {}) });
   });
   const pages: Line[][] = [];
   for (let i = 0; i < lines.length; i += linesPerPage) {

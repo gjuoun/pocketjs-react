@@ -16,6 +16,16 @@ export function decodeEntities(s: string): string {
   });
 }
 
+// The CSS segment-break rule for Chinese and Japanese: a line break in the source between two CJK
+// characters is dropped, not turned into a space (EPUBs often keep a source's hard line wraps).
+// Only ASCII whitespace collapses, as in HTML: an ideographic space (U+3000) is content.
+const CJK = "\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\u3000-\\u303f\\uff00-\\uffef\\ufe10-\\ufe1f\\ufe30-\\ufe6f\\u2500-\\u257f";
+const SEGMENT_BREAK = new RegExp("([" + CJK + "])[ \\t\\f]*[\\r\\n][ \\t\\r\\n\\f]*(?=[" + CJK + "])", "gu");
+
+export function collapseWhitespace(s: string): string {
+  return s.replace(SEGMENT_BREAK, "$1").replace(/[ \t\n\r\f]+/g, " ").replace(/^ | $/g, "");
+}
+
 const BLOCK = /^(p|div|li|h[1-6]|pre|figure|figcaption|blockquote|dt|dd|tr|section|article|header|footer|nav|ol|ul|table|body)$/;
 
 export function xhtmlToBlocks(xhtml: string): Block[] {
@@ -26,7 +36,7 @@ export function xhtmlToBlocks(xhtml: string): Block[] {
   let preDepth = 0;
   let figureDepth = 0;
   const flush = () => {
-    const text = preDepth > 0 || kind === "pre" ? decodeEntities(buf).replace(/^\n+|\s+$/g, "") : decodeEntities(buf).replace(/\s+/g, " ").trim();
+    const text = preDepth > 0 || kind === "pre" ? decodeEntities(buf).replace(/^\n+|\s+$/g, "") : collapseWhitespace(decodeEntities(buf));
     if (text) blocks.push({ kind: figureDepth > 0 ? "figure" : kind, text });
     buf = "";
   };

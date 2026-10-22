@@ -1,5 +1,6 @@
-// The browser host page for a built app: the npm package's hosts/web (engine + wasm core) plus
-// tools/web/reader.html (file picker, fs, mouse) and the app bundle at /dist/app.{js,pak}.
+// The browser host page for a built app: the npm package's hosts/web (app-instance.js, the wasm
+// core and runtime glyphs) plus tools/web/reader.html (loop, keys, file picker, fs, mouse) and
+// the app bundle at /dist/app.{js,pak}.
 //   bun tools/web/serve.ts --js <bundle.js> --pak <bundle.pak> [--port 8140]
 import { existsSync } from "node:fs";
 import { FRAMEWORK_ROOT } from "../../src/internal/pocket-build.ts";

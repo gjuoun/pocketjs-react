@@ -47,3 +47,39 @@ test("every prose block matches the PDF's extracted text", () => {
   console.log("prose chars checked=" + checked + " coverage of the PDF text=" + coverage.toFixed(3));
   expect(coverage).toBeGreaterThan(0.85);
 });
+
+// The Chinese fixture: chapters 1-3 of the Three Kingdoms (Project Gutenberg #23950), whose
+// prose matches the Gutenberg text once whitespace (its hard line wraps) is removed.
+const ZH = "test/fixtures/books/";
+
+test("the sanguo fixture has 3 spine items, Chinese nav titles and the Gutenberg prose", () => {
+  const zh = unzipSync(new Uint8Array(require("node:fs").readFileSync(ZH + "sanguo.epub")));
+  const read = (name: string) => strFromU8(zh[name]);
+  const opf = read("OEBPS/content.opf");
+  expect([...opf.matchAll(/<itemref idref="([^"]+)"/g)].length).toBe(3);
+  expect(opf).toContain("<dc:language>zh-Hant</dc:language>");
+  expect(opf).toContain("<dc:title>三國志演義</dc:title>");
+  const titles = [...read("OEBPS/nav.xhtml").matchAll(/<a href="[^"]+">([^<]+)<\/a>/g)].map((m) => m[1]);
+  expect(titles.length).toBe(3);
+  expect(titles[0].startsWith("第一回：")).toBe(true);
+  expect(titles.every((t, i) => t.startsWith("第" + "一二三"[i] + "回："))).toBe(true);
+  const squash = (s: string) => s.replace(/\s+/g, "");
+  const source = squash(require("node:fs").readFileSync(ZH + "sanguo/source.txt", "utf8"));
+  const chapters = JSON.parse(require("node:fs").readFileSync(ZH + "sanguo/chapters.json", "utf8")) as { file: string }[];
+  let paragraphs = 0;
+  let chars = 0;
+  const missing: string[] = [];
+  for (const c of chapters) {
+    for (const m of read("OEBPS/" + c.file).matchAll(/<(p|h2)\b[^>]*>([\s\S]*?)<\/\1>/g)) {
+      const block = squash(m[2]);
+      if (!block) continue;
+      paragraphs++;
+      chars += block.length;
+      if (!source.includes(block)) missing.push(c.file + ": " + m[2].slice(0, 40));
+    }
+  }
+  expect(missing).toEqual([]);
+  expect(paragraphs).toBeGreaterThan(60);
+  expect(chars / source.length).toBeGreaterThan(0.99); // every paragraph of chapters 1-3 is there
+});
+

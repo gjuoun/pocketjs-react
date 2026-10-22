@@ -10,33 +10,107 @@
   <label>Add books (EPUB): <input id="pick" type="file" multiple accept=".epub"></label>
   <span id="status"></span>
 </div>
-<canvas id="screen"></canvas>
+<canvas id="screen" width="480" height="272"></canvas>
 <div>Keys: arrows = d-pad, Enter/Z = CIRCLE (confirm), X = CROSS (back), Q/E = L/R, Space = START. Mouse clicks press what they point at.</div>
 <script type="module">
-  // The page owns what the stock browser host does not offer: a file picker and a writable fs
-  // (globalThis.fs, installed before the app loads) and mouse clicks (globalThis.__pocketPointer).
-  import { mount, load } from "/engine.js";
+  // The app runs through the npm package's own hosts/web/app-instance.js: the wasm core plus
+  // text.glyphs.runtime, which draws any codepoint the baked atlases lack (Chinese, Japanese,
+  // Korean...) with the browser's fonts. The page owns the rest: a 60 Hz loop, the keyboard,
+  // a file picker with a writable fs (globalThis.fs, installed before the bundle evaluates) and
+  // mouse clicks (globalThis.__pocketPointer).
+  //   ?glyphs=0   runtime glyphs off (the atlases as the build baked them)
+  //   ?manual=1   no loop: a driver steps frames with window.__host.step(buttons)
+  import { create } from "/app-instance.js";
   import { createBrowserFs } from "/fs-shim.js";
+
+  const BTN = { SELECT: 0x1, START: 0x8, UP: 0x10, RIGHT: 0x20, DOWN: 0x40, LEFT: 0x80, LTRIGGER: 0x100, RTRIGGER: 0x200, TRIANGLE: 0x1000, CIRCLE: 0x2000, CROSS: 0x4000, SQUARE: 0x8000 };
+  const KEYMAP = { ArrowUp: BTN.UP, ArrowRight: BTN.RIGHT, ArrowDown: BTN.DOWN, ArrowLeft: BTN.LEFT, KeyX: BTN.CROSS, Enter: BTN.CIRCLE, KeyZ: BTN.CIRCLE, KeyA: BTN.SQUARE, KeyS: BTN.TRIANGLE, ShiftLeft: BTN.SELECT, ShiftRight: BTN.SELECT, Space: BTN.START, KeyL: BTN.LTRIGGER, KeyR: BTN.RTRIGGER, KeyQ: BTN.LTRIGGER, KeyE: BTN.RTRIGGER };
+  const params = new URLSearchParams(location.search);
+  const runtimeGlyphs = params.get("glyphs") !== "0";
+  const manual = params.get("manual") === "1";
   const fs = createBrowserFs();
-  globalThis.fs = fs.ns;
   const canvas = document.getElementById("screen");
-  await mount(canvas, { onLog: (line) => (window.__log ??= []).push(line) });
+  const ctx = canvas.getContext("2d");
+  const image = ctx.createImageData(canvas.width, canvas.height);
+  let inst = null;
+  let keys = 0; // keyboard
+  let virtual = 0; // window.__host.press
+
+  const draw = () => {
+    if (!inst) return;
+    image.data.set(inst.render());
+    ctx.putImageData(image, 0, 0);
+  };
+  /** One frame: the guest's frame(buttons) (runtime glyphs flushed inside), the core tick. Returns its ms. */
+  const step = (buttons = keys | virtual) => {
+    if (!inst) return 0;
+    const t = performance.now();
+    try {
+      inst.step(buttons);
+    } catch (e) {
+      (window.__log ??= []).push("FRAME ERROR: " + (e && e.stack ? e.stack : e));
+      inst = null;
+    }
+    return performance.now() - t;
+  };
   const start = async () => {
+    const previous = inst;
+    inst = null;
+    previous?.dispose();
     globalThis.fs = fs.ns;
-    await load("app");
+    globalThis.__pocketPointer = [];
+    globalThis.__pocketRuntimeGlyphs = runtimeGlyphs; // the reader warms glyphs only where they are drawn at run time
+    const t = performance.now();
+    inst = await create({ wasmUrl: "/pocketjs.wasm", pakUrl: "/dist/app.pak", bundleUrl: "/dist/app.js", packageId: "app", runtimeGlyphs, text: false });
+    window.__host.createMs = performance.now() - t;
     document.getElementById("status").textContent = fs.pickedNames().length ? "books/: " + fs.pickedNames().join(", ") : "";
   };
+
+  window.__host = {
+    BTN,
+    createMs: 0,
+    starts: 0,
+    get instance() { return inst; },
+    press(bit, down) { virtual = down ? virtual | bit : virtual & ~bit; },
+    step,
+    draw,
+    /** Text runs the core draws, as "x,y,w,h<TAB>text" lines. */
+    texts() { if (!inst) return ""; globalThis.ui.captureTexts(0, 0); inst.render(); return String(globalThis.ui.capturedTexts(0) ?? ""); },
+    glyphStats() { return inst ? inst.glyphStats() : null; },
+    pixels() { return inst ? inst.render() : null; },
+  };
+
+  window.addEventListener("keydown", (e) => { const bit = KEYMAP[e.code]; if (bit === undefined) return; e.preventDefault(); keys |= bit; });
+  window.addEventListener("keyup", (e) => { const bit = KEYMAP[e.code]; if (bit === undefined) return; e.preventDefault(); keys &= ~bit; });
+  window.addEventListener("blur", () => { keys = 0; });
   document.getElementById("pick").addEventListener("change", async (event) => {
     await fs.addFiles(event.target.files);
     await start(); // reload the app so its library lists the new files
+    window.__host.starts++;
     window.__picked = true;
   });
   const point = (event, down) => {
     const r = canvas.getBoundingClientRect();
-    ((globalThis.__pocketPointer ??= [])).push({ x: ((event.clientX - r.left) / r.width) * canvas.width, y: ((event.clientY - r.top) / r.height) * canvas.height, down });
+    (globalThis.__pocketPointer ??= []).push({ x: ((event.clientX - r.left) / r.width) * canvas.width, y: ((event.clientY - r.top) / r.height) * canvas.height, down });
   };
   canvas.addEventListener("mousedown", (e) => point(e, true));
   canvas.addEventListener("mouseup", (e) => point(e, false));
-  window.__ready = true;
+
+  if (!manual) {
+    // Fixed 60 Hz steps on requestAnimationFrame, at most 4 per refresh after a stall.
+    let last = performance.now();
+    let acc = 0;
+    const loop = (now) => {
+      requestAnimationFrame(loop);
+      acc += Math.min(250, now - last);
+      last = now;
+      let steps = 0;
+      while (acc >= 1000 / 60 && steps < 4) { step(); acc -= 1000 / 60; steps++; }
+      if (steps > 0) draw();
+    };
+    requestAnimationFrame(loop);
+  }
   await start();
+  window.__host.starts++;
+  window.__ready = true;
 </script>
