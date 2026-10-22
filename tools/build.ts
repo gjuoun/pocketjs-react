@@ -15,8 +15,7 @@
 // channel every host shares. Glyph files (--glyphs) add their codepoints, plus Latin-1 and
 // General Punctuation, to every baked atlas, for text that only arrives at runtime (books).
 // A CJK set (--cjk-set) is baked into the listed regular slots only, with --cjk-font as the
-// fallback face for what the default faces lack. A books build embeds the codepoints its body
-// slots hold (bakedGlyphs()), so a reader can count what this host cannot draw.
+// fallback face for what the default faces lack.
 // The build fails when any bundle input comes from PocketJS's Pocket3D-licensed paths.
 import { basename, dirname, join, resolve } from "node:path";
 import { collect } from "./collect.ts";
@@ -82,15 +81,6 @@ export interface BuildOptions {
  *  atlas by 30-60 %. They draw as placeholder boxes there and count as missing. */
 export const CJK_SLOT_SKIP = "\u2030\u2031";
 
-/** Codepoints a FONT ATLAS blob maps: u16 glyph count at byte 6, then 8-byte cmap entries
- *  (u32 codepoint first) from byte 16 (contracts/spec/spec.ts). */
-export function atlasCodepoints(bytes: Uint8Array): Set<number> {
-  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  const out = new Set<number>();
-  for (let i = 0, n = view.getUint16(6, true); i < n; i++) out.add(view.getUint32(16 + i * 8, true));
-  return out;
-}
-
 /** Body font slots of a books build: the regular text-sm / text-base / text-lg slots. */
 export const BODY_SLOTS = [1, 2, 3];
 
@@ -137,14 +127,6 @@ export async function build(entryArg: string, opts: BuildOptions = {}): Promise<
     const bytes = cjk.reduce((n, a) => n + a.bytes.length, 0);
     console.log("  cjk: " + hanzi.length + " hanzi + " + marks.length + " marks baked into slots " + cjkSlots.join(",") + " from " + basename(opts.cjk.font) + " (" + (cjk[0]?.glyphCount ?? 0) + " glyphs/slot, " + bytes + " bytes, " + (performance.now() - t).toFixed(0) + " ms)");
   }
-  // Codepoints above ASCII every body slot's atlas maps (read back from the atlases' cmaps, so a
-  // character the fonts lack is not counted), for bakedGlyphs(). Books builds only.
-  let bakedChars: string | null = null;
-  if (opts.glyphs?.length || opts.cjk) {
-    const maps = atlases.filter((a) => BODY_SLOTS.includes(a.slot)).map((a) => atlasCodepoints(a.bytes));
-    const common = maps.length ? [...maps[0]].filter((cp) => cp > 126 && maps.every((m) => m.has(cp))) : [];
-    bakedChars = common.map((cp) => String.fromCodePoint(cp)).join("");
-  }
   const pak = pack([
     { key: KEY_STYLES, dtype: PAK_DTYPE.u8, data: styles.bin },
     ...atlases.map((a) => ({ key: keyFont(a.slot), dtype: PAK_DTYPE.u8, data: a.bytes })),
@@ -171,7 +153,6 @@ export async function build(entryArg: string, opts: BuildOptions = {}): Promise<
   const installAssets = [
     "import { installBundledAssets } from " + JSON.stringify(join(ROOT, "src/books/assets.ts")) + ";",
     "installBundledAssets(" + JSON.stringify(assets) + ");",
-    ...(bakedChars !== null ? ["import { installBakedGlyphs } from " + JSON.stringify(join(ROOT, "src/books/assets.ts")) + ";", "installBakedGlyphs(" + JSON.stringify(bakedChars) + ");"] : []),
   ].join("\n");
   const virtualEntry = 'import "pocketjs-react:install-styles";\nimport "pocketjs-react:install-assets";\nimport ' + JSON.stringify(entry) + ";\n";
   const result = await Bun.build({

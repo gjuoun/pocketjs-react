@@ -90,31 +90,14 @@ Reader bundle 302,067 bytes minified (110,981 gzip); pak 907,760 bytes (eight fo
 
 ### Chinese text
 
-Each host draws CJK text its own way, picked by measurement (no PocketJS change):
+[▶ Demo video](./docs/demo.mp4): an English and a simplified Chinese book in the macOS app.
 
-| Host | How | Coverage | Cost |
-|---|---|---|---|
-| Browser host page | The page runs the app through the npm package's `hosts/web/app-instance.js` with `text.glyphs.runtime`: a character no atlas has is drawn with the browser's fonts the first time it is measured. | Any script the browser has a font for. | No pak growth. A cold first chapter of ~1,000 new characters takes one 250–500 ms frame; the next chapter's characters are warmed while reading (≤50 per frame), so a chapter switch is ~30 ms. |
-| macOS desktop host | `bun run build:reader -- --cjk` bakes a fixed set into the body slots (S/M/L, regular weight) from a committed Noto Sans SC subset. | 8,836 hanzi (GB2312 levels 1+2 ∪ Big5 level 1: simplified and traditional) plus 215 CJK punctuation, full-width and compatibility forms. | Reader pak 0.91 MB → 9.95 MB; host start-up to ready measured the same as without it (probe). |
-
-- **Coverage of a real novel** — *三國志演義* (traditional, 4,107 distinct hanzi): the baked set covers **99.53 %** of its hanzi occurrences (3,857 of 4,107 distinct). A simplified-only set covers 71.4 % (GB2312 1+2) or 68.8 % (GB2312 level 1), which is why the set is the union.
-- **Missing characters** — where glyphs are baked, a character outside the set draws as the core's placeholder box, and the reading view's footer says `N characters cannot be shown on this host`. Chapter 1 of the novel has 10 such characters (rare names) on the desktop build. The browser page never shows the footer.
-- **Text rules** — a line break in the source between two CJK characters is dropped instead of becoming a space (EPUBs often keep a source's hard wraps). No line starts with closing punctuation (`，。、；：？！」』）》〉】…`) and none ends with an opening bracket: the character moves down a line, and the rest is wrapped again, so lines still fit.
-- **Weights** — Han text draws in regular weight: bold slots carry no CJK (it would double the pak), so `cjkSafe(className, text)` drops `font-bold` from Han titles and headings. Per mille signs (‰ ‱) are left out of the CJK slots, because an atlas cell is as wide as its widest glyph.
-- **Not supported** — vertical text, ruby, regional glyph variants (one SC rendition), CJK weights other than regular, GBK/Big5-encoded files.
-- **Fonts and test book** — Noto Sans SC (SIL OFL 1.1), subset reproducibly from a pinned upstream commit: [assets/fonts/NOTICE.md](./assets/fonts/NOTICE.md). The Chinese test book is chapters 1–3 of Project Gutenberg #23950, public domain in the US: [test/fixtures/books/NOTICE.md](./test/fixtures/books/NOTICE.md).
-
-```sh
-bun run build:reader -- --cjk                    # desktop build with the CJK set baked
-bun tools/web/shots.ts --book test/fixtures/books/sanguo.epub   # Chinese book picked on the browser page
-bun run measure:web -- --app reader-cjk          # both hosts, with the Chinese book bundled
-POCKETJS_ROOT=../pocketjs bun run measure:desktop -- --app reader-cjk
-```
-
-| Host (`--app reader-cjk`, 3 runs) | First render | Opening chapter 1 | Page turn (median) | Chapter switch |
-|---|---|---|---|---|
-| Browser host page (runtime glyphs) | 38.4–39.1 ms | 254–269 ms (cold glyphs) | 0.7–0.8 ms | 3.5–9.4 ms |
-| macOS desktop host (baked set) | 46.3–46.8 ms | 30.6–33.1 ms | 2.0–2.6 ms | 30.2–38.0 ms |
+- **Browser host page** — draws any character at run time with the browser's fonts. Nothing to bake.
+- **macOS desktop host** — `bun run build:reader -- --cjk` (or `build:app -- --cjk`) bakes 8,836 simplified + traditional hanzi plus CJK punctuation into the 12/14/16/18 px regular slots, from a committed Noto Sans SC subset (SIL OFL 1.1; [source and licence](./assets/fonts/NOTICE.md)). The reader pak grows from 0.91 MB to about 11.6 MB.
+- **Limits** — a character outside the baked set draws as a placeholder box. Han text is regular weight only (`cjkSafe` drops `font-bold`). No vertical text or ruby.
+- **Text rules** — no space between CJK characters, no line starts with closing punctuation.
+- **Test book** — chapters 1–3 of Project Gutenberg #23950 (public domain in the US): [test/fixtures/books](./test/fixtures/books/NOTICE.md).
+- **Measure** — `bun run measure:web -- --app reader-cjk`, and `POCKETJS_ROOT=../pocketjs bun run measure:desktop -- --app reader-cjk`.
 
 ## macOS app (desktop host)
 

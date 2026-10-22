@@ -8,18 +8,6 @@ export function installBundledAssets(assets: Record<string, string>): void {
   cache.clear();
 }
 
-let baked: Set<number> | null = null;
-
-/** Codepoints above ASCII the build baked into the body font slots (tools/build.ts --glyphs/--cjk). */
-export function installBakedGlyphs(chars: string): void {
-  baked = new Set(Array.from(chars, (ch) => ch.codePointAt(0)!));
-}
-
-/** The baked set, or null when the build did not record one. ASCII is always baked. */
-export function bakedGlyphs(): ReadonlySet<number> | null {
-  return baked;
-}
-
 export function bundledAssetNames(): string[] {
   return Object.keys(table).sort();
 }

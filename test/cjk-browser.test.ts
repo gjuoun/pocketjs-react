@@ -68,7 +68,6 @@ test("a picked Chinese EPUB reads with real glyphs, and the drawn lines are the 
   // Real advances: the placeholder box measures 23 px at slot 1.
   expect(await evaluate("globalThis.ui.measureText('中', 1)")).toBe(15);
   // Runtime glyphs draw every character: no missing-character footer.
-  expect(page.some((r) => r.t.includes("cannot be shown"))).toBe(false);
   // The body runs (between the title row and the footer) are the reader's computed lines.
   const computed: string[] = await evaluate("globalThis.__readerPage");
   const body = page.slice(1, -2);

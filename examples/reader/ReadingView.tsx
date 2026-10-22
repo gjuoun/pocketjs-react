@@ -2,7 +2,7 @@
 // L/R jump to the previous/next chapter, CROSS goes back to the contents. Mouse: click the left
 // or right half of the page to turn it.
 import { useMemo } from "react";
-import { BTN, cjkSafe, FONT_SIZES, missingCharacters, missingNotice, PageView, Text, useButton, useGlyphWarmup, View, hasRuntimeGlyphs, paginate, type EpubBook, type FontSize } from "pocketjs-react";
+import { BTN, cjkSafe, FONT_SIZES, PageView, Text, useButton, useGlyphWarmup, View, hasRuntimeGlyphs, paginate, type EpubBook, type FontSize } from "pocketjs-react";
 import type { Theme } from "./theme.ts";
 
 export const PAGE = { width: 456, height: 198 };
@@ -42,8 +42,6 @@ export function ReadingView(props: {
     return { current: text(position.chapter), next: position.chapter + 1 < chapters ? text(position.chapter + 1) : "" };
   }, [book, position.chapter]);
   useGlyphWarmup(warm.current, warm.next, FONT_SIZES[size].slot);
-  // Characters of this chapter the host cannot draw (they show as boxes): said in the footer.
-  const missing = useMemo(() => missingCharacters(blocksOf(position.chapter).map((b) => b.text).join("\n")).length, [book, position.chapter]);
   const per = layout.linesPerPage;
   const total = Math.max(1, Math.ceil(layout.lines.length / per));
   const line = layout.lineOf(position);
@@ -89,7 +87,7 @@ export function ReadingView(props: {
         <PageView lines={shown} size={size} width={PAGE.width} dark={props.dark} />
       </View>
       <View className="flex-row justify-between">
-        <Text className={props.theme.muted}>{missing > 0 ? missingNotice(missing) : "LEFT/RIGHT page  ·  L/R chapter  ·  START menu"}</Text>
+        <Text className={props.theme.muted}>LEFT/RIGHT page  ·  L/R chapter  ·  START menu</Text>
         <Text className={props.theme.muted}>{"page " + page + "/" + total}</Text>
       </View>
     </View>
