@@ -26,4 +26,4 @@ export { loadState, saveState, stateIsPersistent, type ReaderState, type SavedPo
 export { takeHostMessages } from "./input/pointer.ts";
 // Persistence: the host's fs SDK, re-exported so an app repo outside this one can save state.
 // The browser host page backs it with localStorage; a host that mounts no fs reports null.
-export { existsSync, file, fsHost, write, PocketFile } from "@pocketjs/framework/fs";
+export { existsSync, file, fsHost, rmSync, write, PocketFile } from "@pocketjs/framework/fs";
