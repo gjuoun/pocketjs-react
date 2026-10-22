@@ -1,6 +1,7 @@
 // Where books come from: EPUBs bundled into the app by the build (--asset), and EPUBs under
 // books/ of a mounted fs (the browser host page's file picker). A host without an fs (the
-// desktop host today) has bundled books only.
+// desktop host today) has bundled books only. The macOS app's launcher can also deliver one book
+// at launch through the host (books/host.ts), listed with origin "host".
 import { existsSync, file, fsHost, readdirSync } from "@pocketjs/framework/fs";
 import { bundledAsset, bundledAssetNames } from "./assets.ts";
 import { openEpub, type EpubBook } from "./epub.ts";
@@ -9,7 +10,7 @@ export interface BookEntry {
   id: string;
   title: string;
   author: string;
-  origin: "bundled" | "file";
+  origin: "bundled" | "file" | "host";
   open(): EpubBook;
 }
 
@@ -25,6 +26,11 @@ function entry(id: string, origin: BookEntry["origin"], bytes: () => Uint8Array,
     // A broken EPUB still lists under its file name; opening it reports the error.
   }
   return { id, title, author, origin, open };
+}
+
+/** A book that is already open (the host-delivered one), listed under its own title. */
+export function openedBook(id: string, origin: BookEntry["origin"], book: EpubBook): BookEntry {
+  return { id, title: book.title, author: book.author, origin, open: () => book };
 }
 
 export function bundledBooks(): BookEntry[] {
