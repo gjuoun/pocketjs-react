@@ -2,6 +2,7 @@
 // Every observation is text the core drew.
 import { expect, test } from "bun:test";
 import { BTN } from "@pocketjs/framework/input";
+import { build } from "../tools/build.ts";
 import { buildReader } from "../tools/build-reader.ts";
 import { bootApp } from "./harness.ts";
 
@@ -53,6 +54,26 @@ test("library -> contents -> reading -> page and chapter turns -> back to the li
     expect(drawn()).toContain("5. Network");
     core.press(BTN.CROSS); // library
     expect(drawn()).toContain("Library");
+  } finally {
+    core.dispose();
+  }
+});
+
+test("a contents list shorter than its window opens with its first entry focused; CIRCLE reads it", async () => {
+  const built = await build("examples/reader/main.tsx", { outdir: "/tmp/pocketjs-react-test/reader-sanguo", name: "reader-sanguo", assets: { "sanguo.epub": "test/fixtures/books/sanguo.epub" } });
+  const core = await bootApp(built);
+  try {
+    const drawn = () => core.texts().map((r) => r.text);
+    expect(drawn()).toContain("三國志演義");
+    core.press(BTN.CIRCLE); // the only book
+    const first = core.texts().find((r) => r.text.startsWith("第一回："))!;
+    expect(first).toBeDefined();
+    expect(core.texts().filter((r) => r.text.startsWith("第")).length).toBe(3);
+    expect(core.pixel(first.x - 4, first.y + 2)).toBe("#bfdbfe"); // LIGHT theme focus:bg-blue-200
+    core.press(BTN.CIRCLE);
+    const page = drawn();
+    expect(page[0]).toBe(first.text);
+    expect(page.some((t) => t.startsWith("page 1/"))).toBe(true);
   } finally {
     core.dispose();
   }

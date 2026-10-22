@@ -40,13 +40,40 @@ export interface Pages {
 
 type WrapText = (text: string, slot: number, maxWidth: number) => ArrayLike<number>;
 
+/** CJK line rules (kinsoku): these never start a line ... */
+export const NO_LINE_START = "，。、；：？！」』）》〉】…﹐﹑﹒﹔﹕﹖﹗﹚﹜﹞．〕〗";
+/** ... and these never end one. */
+export const NO_LINE_END = "「『（《〈【〔〖";
+
+/** Moves a break back so the next line does not start with closing punctuation and this line does
+ *  not end with an opening bracket (the characters move down a line). Keeps at least one character. */
+function adjustBreak(text: string, from: number, at: number): number {
+  let end = at;
+  for (let guard = 0; guard < 8 && end - 1 > from; guard++) {
+    let next = end;
+    while (text[next] === " ") next++; // a break at a space: look at what the next line shows first
+    if (!NO_LINE_START.includes(text[next] ?? "\n") && !NO_LINE_END.includes(text[end - 1])) break;
+    end--;
+  }
+  return end;
+}
+
 function wrap(text: string, slot: number, width: number, wrapText: WrapText): { text: string; offset: number }[] {
-  const breaks = Array.from(wrapText(text, slot, width));
   const out: { text: string; offset: number }[] = [];
   let from = 0;
-  for (const at of breaks) {
-    out.push({ text: text.slice(from, at).trimEnd(), offset: from });
-    from = at;
+  let base = 0; // breaks are relative to text.slice(base)
+  let breaks = Array.from(wrapText(text, slot, width));
+  for (let k = 0; k < breaks.length; k++) {
+    const at = base + breaks[k];
+    const end = adjustBreak(text, from, at);
+    out.push({ text: text.slice(from, end).trimEnd(), offset: from });
+    from = end;
+    if (end !== at) {
+      // The next line grew: wrap the rest again from here, so every line still fits.
+      base = end;
+      breaks = Array.from(wrapText(text.slice(end), slot, width));
+      k = -1;
+    }
   }
   out.push({ text: text.slice(from), offset: from });
   return out;
