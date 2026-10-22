@@ -18,7 +18,7 @@ let failed = false;
 try {
   await chrome.viewport(1100, 760);
   await chrome.navigate(server.url);
-  for (let i = 0; i < 100 && !(await chrome.evaluate("!!globalThis.frame && !!window.__ready")); i++) await Bun.sleep(100);
+  for (let i = 0; i < 100 && !(await chrome.evaluate("!!window.__ready")); i++) await Bun.sleep(100);
   await Bun.sleep(400);
   const rect = await chrome.evaluate("(() => { const r = document.querySelector('#screen').getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; })()");
   const drawn = async (): Promise<{ x: number; y: number; t: string }[]> => {
@@ -35,9 +35,9 @@ try {
     return runs;
   };
   const press = async (bit: number) => {
-    await chrome.evaluate("import('/engine.js').then(m => m.pressVirtual(" + bit + ", true))");
+    await chrome.evaluate("window.__host.press(" + bit + ", true)");
     await Bun.sleep(120);
-    await chrome.evaluate("import('/engine.js').then(m => m.pressVirtual(" + bit + ", false))");
+    await chrome.evaluate("window.__host.press(" + bit + ", false)");
     await Bun.sleep(150);
   };
   const click = async (x: number, y: number) => {

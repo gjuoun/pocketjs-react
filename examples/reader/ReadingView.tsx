@@ -43,6 +43,9 @@ export function ReadingView(props: {
     return { chapter, block: l?.block ?? 0, offset: l?.offset ?? 0 };
   };
   const page = Math.floor(line / per) + 1;
+  const shown = layout.lines.slice(line, line + per);
+  // Dev aid: the computed lines of the page on screen, for host-page tests to compare with what the core drew.
+  (globalThis as { __readerPage?: string[] }).__readerPage = shown.map((l) => l.text);
   const title = book.toc.find((e) => e.index === position.chapter)?.title ?? "Section " + (position.chapter + 1);
 
   const start = (chapter: number): Position => ({ chapter, block: 0, offset: 0 });
@@ -74,7 +77,7 @@ export function ReadingView(props: {
           <View className="w-[228px] h-[198px]" focusable onPress={prev} />
           <View className="w-[228px] h-[198px]" focusable onPress={next} />
         </View>
-        <PageView lines={layout.lines.slice(line, line + per)} size={size} width={PAGE.width} dark={props.dark} />
+        <PageView lines={shown} size={size} width={PAGE.width} dark={props.dark} />
       </View>
       <View className="flex-row justify-between">
         <Text className={props.theme.muted}>LEFT/RIGHT page  ·  L/R chapter  ·  START menu</Text>
