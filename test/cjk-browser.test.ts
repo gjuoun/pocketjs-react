@@ -87,3 +87,17 @@ test("a picked Chinese EPUB reads with real glyphs, and the drawn lines are the 
   await press(BTN.LEFT);
   expect((await runs()).slice(1, -2).map((r) => r.t)).toEqual(body.map((r) => r.t));
 }, 60000);
+
+test("after 60 frames on chapter 1 the next chapter opens in under 60 ms, warmed in frames under 40 ms", async () => {
+  await openSanguo();
+  const warm: number[] = [];
+  for (let i = 0; i < 60; i++) warm.push(await step(0));
+  const before = (await evaluate("window.__host.glyphStats()")).glyphs;
+  const nextMs = await press(BTN.RTRIGGER);
+  const after = (await evaluate("window.__host.glyphStats()")).glyphs;
+  const page = await runs();
+  console.log("warm-up frames max=" + Math.max(...warm).toFixed(1) + " ms, slow frames=" + warm.filter((m) => m > 5).length + "; next chapter frame=" + nextMs.toFixed(1) + " ms; glyphs " + before + " -> " + after);
+  expect(page[0].t.startsWith("第二回：")).toBe(true);
+  expect(Math.max(...warm)).toBeLessThan(40);
+  expect(nextMs).toBeLessThan(60);
+}, 60000);

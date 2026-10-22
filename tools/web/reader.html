@@ -59,6 +59,7 @@
     previous?.dispose();
     globalThis.fs = fs.ns;
     globalThis.__pocketPointer = [];
+    globalThis.__pocketRuntimeGlyphs = runtimeGlyphs; // the reader warms glyphs only where they are drawn at run time
     const t = performance.now();
     inst = await create({ wasmUrl: "/pocketjs.wasm", pakUrl: "/dist/app.pak", bundleUrl: "/dist/app.js", packageId: "app", runtimeGlyphs, text: false });
     window.__host.createMs = performance.now() - t;

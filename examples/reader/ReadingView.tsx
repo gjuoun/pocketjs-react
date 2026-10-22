@@ -2,7 +2,7 @@
 // L/R jump to the previous/next chapter, CROSS goes back to the contents. Mouse: click the left
 // or right half of the page to turn it.
 import { useMemo } from "react";
-import { BTN, PageView, Text, useButton, View, paginate, type EpubBook, type FontSize } from "pocketjs-react";
+import { BTN, FONT_SIZES, PageView, Text, useButton, useGlyphWarmup, View, hasRuntimeGlyphs, paginate, type EpubBook, type FontSize } from "pocketjs-react";
 import type { Theme } from "./theme.ts";
 
 export const PAGE = { width: 456, height: 198 };
@@ -35,6 +35,13 @@ export function ReadingView(props: {
     return blocks[0]?.kind === "heading" && blocks[0].text === name ? blocks.slice(1) : blocks;
   };
   const layout = useMemo(() => paginate(blocksOf(position.chapter), { size, width: PAGE.width, height: PAGE.height }), [book, position.chapter, size]);
+  // On a host that draws missing glyphs at run time, warm the next chapter's characters while this one is read.
+  const warm = useMemo(() => {
+    if (!hasRuntimeGlyphs()) return { current: "", next: "" };
+    const text = (chapter: number) => (book.toc.find((e) => e.index === chapter)?.title ?? "") + blocksOf(chapter).map((b) => b.text).join("");
+    return { current: text(position.chapter), next: position.chapter + 1 < chapters ? text(position.chapter + 1) : "" };
+  }, [book, position.chapter]);
+  useGlyphWarmup(warm.current, warm.next, FONT_SIZES[size].slot);
   const per = layout.linesPerPage;
   const total = Math.max(1, Math.ceil(layout.lines.length / per));
   const line = layout.lineOf(position);

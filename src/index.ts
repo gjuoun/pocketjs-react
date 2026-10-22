@@ -17,5 +17,6 @@ export { bundledBooks, fileBooks, openedBook, type BookEntry, type FileBooks } f
 export { useHostBook, type HostBook } from "./books/host.ts";
 export { anchorOf, FONT_SIZES, paginate, type Anchor, type FontSize, type Line, type Pages } from "./reader/paginate.ts";
 export { PageView } from "./reader/PageView.tsx";
+export { createGlyphWarmer, hasRuntimeGlyphs, useGlyphWarmup, WARM_CHUNK } from "./reader/glyph-warmer.ts";
 export { loadState, saveState, stateIsPersistent, type ReaderState, type SavedPosition } from "./reader/state.ts";
 export { takeHostMessages } from "./input/pointer.ts";
