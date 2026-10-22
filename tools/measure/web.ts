@@ -4,10 +4,14 @@
 import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { FRAMEWORK_ROOT, HeadlessChrome } from "../../src/internal/pocket-build.ts";
-import { OUT, RUNS, SCRIPT, buildExample, report, summarize, wrapGuest, type RunSummary } from "./common.ts";
+import { OUT, RUNS, profileFromArgs, report, summarize, wrapGuest, type RunSummary } from "./common.ts";
 
-const BTN: Record<string, number> = { up: 0x10, down: 0x40, circle: 0x2000, cross: 0x4000 };
-const built = await buildExample();
+const BTN: Record<string, number> = { start: 0x8, up: 0x10, right: 0x20, down: 0x40, left: 0x80, ltrigger: 0x100, rtrigger: 0x200, circle: 0x2000, cross: 0x4000 };
+const profile = profileFromArgs();
+const built = await profile.build();
+// Screens worth keeping as images, by press index: after the press at that index.
+const SHOTS: Record<string, Record<number, string>> = { reader: { [-1]: "library", 0: "contents", 5: "reading-page-1", 6: "reading-page-2" } };
+const shots = SHOTS[profile.name] ?? {};
 const guest = await wrapGuest(built.js, join(OUT, "web-guest.js"));
 const HOST = FRAMEWORK_ROOT + "hosts/web/";
 const TYPES: Record<string, string> = { html: "text/html", js: "text/javascript", wasm: "application/wasm" };
@@ -29,26 +33,34 @@ const runs: RunSummary[] = [];
 try {
   for (let i = 0; i < RUNS; i++) {
     // A fresh browser and profile per run: every first render is cold (no code cache).
-    const profile = join(OUT, "chrome-profile-" + i);
-    rmSync(profile, { recursive: true, force: true });
-    const chrome = await HeadlessChrome.start({ port: 9371 + i, profile, timeoutMs: 20000 });
+    const profileDir = join(OUT, "chrome-profile-" + i);
+    rmSync(profileDir, { recursive: true, force: true });
+    const chrome = await HeadlessChrome.start({ port: 9371 + i, profile: profileDir, timeoutMs: 20000 });
     try {
     await chrome.navigate("http://127.0.0.1:" + server.port + "/?demo=app");
     for (let t = 0; t < 100; t++) {
       if (await chrome.evaluate("!!(globalThis.__measure && globalThis.__measure.lines.length)")) break;
       await Bun.sleep(100);
     }
-    for (const name of SCRIPT) {
+    const shoot = async (label: string | undefined) => {
+      if (!label || i !== 0) return;
+      await Bun.sleep(300);
+      const rect = await chrome.evaluate("(() => { const r = document.querySelector('canvas').getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; })()");
+      await Bun.write(join(OUT, "shots", "web-" + profile.name + "-" + label + ".png"), await chrome.screenshot(rect));
+    };
+    await shoot(shots[-1]);
+    for (const [k, name] of profile.script.entries()) {
       await chrome.evaluate("import('/engine.js').then(m => m.pressVirtual(" + BTN[name] + ", true))");
       await Bun.sleep(120);
       await chrome.evaluate("import('/engine.js').then(m => m.pressVirtual(" + BTN[name] + ", false))");
       await Bun.sleep(120);
+      await shoot(shots[k]);
     }
     await Bun.sleep(500);
     const lines: string[] = await chrome.evaluate("globalThis.__measure.lines");
     console.log("== web run " + (i + 1));
-    for (const line of lines) if (!line.includes(" press ") || line.includes("circle")) console.log(line);
-    runs.push(summarize(lines));
+    for (const line of lines) console.log(line);
+    runs.push(summarize(lines, profile));
     } finally {
       chrome.stop();
     }
@@ -56,4 +68,4 @@ try {
 } finally {
   server.stop(true);
 }
-process.exit(report("web", runs, built));
+process.exit(report("web", runs, built, profile));

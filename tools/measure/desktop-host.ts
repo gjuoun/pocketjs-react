@@ -20,4 +20,4 @@ export function desktopHost(): DesktopHost {
 }
 
 /** Desktop key names for --press NAME@TICK (X = CIRCLE, Z = CROSS on this host). */
-export const DESKTOP_KEY: Record<string, string> = { up: "up", down: "down", left: "left", right: "right", circle: "x", cross: "z" };
+export const DESKTOP_KEY: Record<string, string> = { up: "up", down: "down", left: "left", right: "right", circle: "x", cross: "z", start: "space", ltrigger: "q", rtrigger: "w" };

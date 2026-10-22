@@ -1,4 +1,5 @@
 // tools/build.ts <entry.tsx> [--outdir=dist] [--name=<name>] [--minify]
+//                [--asset <name>=<file>]... [--glyphs <file>]...
 //
 // Pass 1 (tools/collect.ts) scans literals from the entry's import graph and from
 // pocketjs-react's own src/, then uses PocketJS's compiler to produce:
@@ -8,6 +9,10 @@
 //   - the pak (styles.bin + atlases).
 // Pass 2 bundles the app with Bun.build into one IIFE. A virtual module installs the
 // compiled table before the app entry runs.
+// Assets (--asset) are embedded in the bundle and read with bundledAsset(name): the desktop
+// host feeds the pak to the core but does not expose it to guest JS, so the bundle is the one
+// channel every host shares. Glyph files (--glyphs) add their codepoints, plus Latin-1 and
+// General Punctuation, to every baked atlas, for text that only arrives at runtime (books).
 // The build fails when any bundle input comes from PocketJS's Pocket3D-licensed paths.
 import { basename, dirname, join, resolve } from "node:path";
 import { collect } from "./collect.ts";
@@ -53,7 +58,20 @@ export function slotCrossProduct(literals: string[], used: number[]): number[] {
   return [...slots].sort((a, b) => a - b);
 }
 
-export async function build(entryArg: string, opts: { outdir?: string; name?: string; minify?: boolean } = {}): Promise<BuildResult> {
+/** Codepoints every book-reading build bakes beyond ASCII: Latin-1 Supplement and General Punctuation. */
+export const BOOK_RANGES: [number, number][] = [[0xa0, 0xff], [0x2010, 0x2027], [0x2030, 0x203a], [0x20ac, 0x20ac], [0x2122, 0x2122]];
+
+export interface BuildOptions {
+  outdir?: string;
+  name?: string;
+  minify?: boolean;
+  /** name -> file, embedded in the bundle (read with bundledAsset). */
+  assets?: Record<string, string>;
+  /** Text files whose codepoints (plus BOOK_RANGES) are baked into every atlas slot. */
+  glyphs?: string[];
+}
+
+export async function build(entryArg: string, opts: BuildOptions = {}): Promise<BuildResult> {
   const entry = resolve(entryArg);
   const outdir = resolve(opts.outdir ?? join(ROOT, "dist"));
   const name = opts.name ?? basename(dirname(entry));
@@ -72,7 +90,15 @@ export async function build(entryArg: string, opts: { outdir?: string; name?: st
   for (const lit of scanned.literals) {
     for (const tok of lit.split(/\s+/)) if (tok && !tokens.has(tok) && unknownUtilities(tok).length === 0) tokens.add(tok);
   }
-  const atlases = await bakeAtlases({ codepoints: scanned.codepoints, slots: fontSlots, extraChars: "", rasterDensity: 1 });
+  let extraChars = "";
+  if (opts.glyphs?.length) {
+    const extra = new Set<string>();
+    for (const [from, to] of BOOK_RANGES) for (let c = from; c <= to; c++) extra.add(String.fromCodePoint(c));
+    for (const file of opts.glyphs) for (const ch of await Bun.file(resolve(file)).text()) if (ch.codePointAt(0)! > 126) extra.add(ch);
+    extraChars = [...extra].join("");
+    console.log("  glyphs: " + extra.size + " extra codepoints from " + opts.glyphs.length + " file(s) + Latin-1/punctuation");
+  }
+  const atlases = await bakeAtlases({ codepoints: scanned.codepoints, slots: fontSlots, extraChars, rasterDensity: 1 });
   const pak = pack([
     { key: KEY_STYLES, dtype: PAK_DTYPE.u8, data: styles.bin },
     ...atlases.map((a) => ({ key: keyFont(a.slot), dtype: PAK_DTYPE.u8, data: a.bytes })),
@@ -93,7 +119,14 @@ export async function build(entryArg: string, opts: { outdir?: string; name?: st
     'import { STYLE_IDS, STYLE_BIN, STYLE_TOKENS } from "pocketjs-react:styles";',
     "installBuildStyles(STYLE_IDS, STYLE_BIN, STYLE_TOKENS);",
   ].join("\n");
-  const virtualEntry = 'import "pocketjs-react:install-styles";\nimport ' + JSON.stringify(entry) + ";\n";
+  const assets: Record<string, string> = {};
+  for (const [assetName, file] of Object.entries(opts.assets ?? {})) assets[assetName] = Buffer.from(await Bun.file(resolve(file)).arrayBuffer()).toString("base64");
+  if (Object.keys(assets).length) console.log("  assets: " + Object.entries(assets).map(([k, v]) => k + " (" + Math.floor((v.length * 3) / 4) + " B)").join(", "));
+  const installAssets = [
+    "import { installBundledAssets } from " + JSON.stringify(join(ROOT, "src/books/assets.ts")) + ";",
+    "installBundledAssets(" + JSON.stringify(assets) + ");",
+  ].join("\n");
+  const virtualEntry = 'import "pocketjs-react:install-styles";\nimport "pocketjs-react:install-assets";\nimport ' + JSON.stringify(entry) + ";\n";
   const result = await Bun.build({
     entrypoints: ["pocketjs-react:entry"],
     outdir,
@@ -112,6 +145,7 @@ export async function build(entryArg: string, opts: { outdir?: string; name?: st
         b.onLoad({ filter: /.*/, namespace: "pocketjs-react" }, (a) => {
           if (a.path === "pocketjs-react:entry") return { contents: virtualEntry, loader: "ts", resolveDir: ROOT };
           if (a.path === "pocketjs-react:install-styles") return { contents: install, loader: "ts", resolveDir: ROOT };
+          if (a.path === "pocketjs-react:install-assets") return { contents: installAssets, loader: "ts", resolveDir: ROOT };
           return { contents: stylesModule, loader: "ts", resolveDir: ROOT };
         });
       },
@@ -135,14 +169,16 @@ export async function build(entryArg: string, opts: { outdir?: string; name?: st
 
 if (import.meta.main) {
   const args = process.argv.slice(2);
-  const entry = args.find((a) => !a.startsWith("--"));
+  const entry = args.find((a, i) => !a.startsWith("--") && args[i - 1] !== "--asset" && args[i - 1] !== "--glyphs");
   if (!entry) {
     console.error("usage: bun tools/build.ts <entry.tsx> [--outdir=dist] [--name=<name>] [--minify]");
     process.exit(2);
   }
   const get = (flag: string) => args.find((a) => a.startsWith(flag + "="))?.slice(flag.length + 1);
+  const all = (flag: string) => args.flatMap((a, i) => (a === flag ? [args[i + 1]] : a.startsWith(flag + "=") ? [a.slice(flag.length + 1)] : []));
+  const assets = Object.fromEntries(all("--asset").map((spec) => [spec.slice(0, spec.indexOf("=")), spec.slice(spec.indexOf("=") + 1)]));
   try {
-    await build(entry, { outdir: get("--outdir"), name: get("--name"), minify: args.includes("--minify") });
+    await build(entry, { outdir: get("--outdir"), name: get("--name"), minify: args.includes("--minify"), assets, glyphs: all("--glyphs") });
   } catch (error) {
     console.error(String(error instanceof Error ? error.message : error));
     process.exit(1);

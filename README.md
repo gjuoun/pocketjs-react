@@ -10,11 +10,14 @@ React on [PocketJS](https://github.com/pocket-nexus/pocketjs): a UI framework ba
 - **Tailwind + clsx + cn** — `className` takes any string React code builds: literals, ternaries, `clsx(...)`, `cn(...)` (clsx + tailwind-merge). Each class combination becomes a native style record, so `focus:`, `active:` and transitions stay native.
 - **Inline styles** — the standard React `style` prop with camelCase CSS names, mapped to the core's properties.
 - **D-pad input** — `FocusScope` (traps focus, restores it on close) and `useButton` (face and shoulder buttons, innermost handler wins), built on PocketJS's own focus manager. Confirm = CIRCLE, back = CROSS.
-- **Components** — `List` (d-pad-operable rows) and `Dialog` (portaled overlay that traps focus and closes on back).
+- **Components** — `List` (d-pad-operable rows, optionally a scrolling window), `Dialog` (portaled overlay that traps focus and closes on back), `Grid` (row/column d-pad movement), `Tabs` (shoulder buttons switch, focus remembered per tab) and `Menu`.
+- **Mouse as a second layer** — a click focuses and presses what it points at, through the same focus system (an open dialog keeps clicks behind it inert).
+- **E-book reader example** — `examples/reader`: an EPUB reader with the Bitcoin whitepaper bundled (see below).
+- **macOS app** — `bun run build:app` packages the reader and the desktop host as a double-clickable, ad-hoc-signed `PocketReader.app` that opens an EPUB from disk (see below).
 - **Build** — `tools/build.ts` turns TSX and Tailwind class strings into one guest bundle and a `.pak` (styles + baked font atlases), using PocketJS's own compiler.
 - **Two hosts** — the browser WASM host and the macOS desktop host. Both run the same example with measured numbers (below).
 
-Not here yet: handhelds and phones, pointer and touch input, tabs, menus, toggles, geometric spatial navigation, and full Tailwind (see the inventory).
+Not here yet: handhelds and phones, touch input, toggles, geometric spatial navigation (the core has no node-rect query), and full Tailwind (see the inventory).
 
 ## Quick start
 
@@ -54,6 +57,73 @@ mount(<App />);
 ```
 
 `View`, `Text` and `Image` are the host elements. React's DOM typings already claim lowercase `view`/`text`/`image` for SVG, so they are exported as components. At runtime each one is the host type string, with no wrapper.
+
+## E-book reader
+
+```sh
+bun run build:reader      # dist/reader.js + dist/reader.pak, with the whitepaper EPUB bundled
+bun run serve:reader      # browser host page: http://127.0.0.1:8140/ (file picker, saved state, mouse)
+bun tools/web/shots.ts    # screenshots of library, contents and two reading pages in headless Chrome
+POCKETJS_ROOT=../pocketjs bun run measure:desktop -- --app reader
+```
+
+- **Screens** — library (Bundled / Files tabs), contents, reading view, and a START menu with settings (font size S/M/L, light/dark).
+- **Controls** — the d-pad moves focus, CIRCLE confirms, CROSS goes back. In the reading view LEFT/RIGHT turn pages, UP/DOWN scroll three lines and L/R switch chapters. A mouse click presses what it points at; clicking the left or right half of a page turns it.
+- **Keys** — desktop: arrows, X = CIRCLE, Z = CROSS, Q/W = L/R, Space = START. Browser host page: arrows, Enter/Z = CIRCLE, X = CROSS, Q/E = L/R, Space = START.
+- **Formats** — EPUB (2 and 3, reflowable). Chapters are read lazily: opening a book inflates only its package files. Images in books are shown as their caption or alt text. PDF, TXT and Markdown are not supported yet.
+- **Where books come from**:
+  - Bundled: `tools/build.ts --asset name=file.epub` embeds a book in the app.
+  - Files (browser host page): EPUBs picked with the page's file input appear under `books/`.
+  - The desktop host mounts no file system for apps. It shows bundled books, plus the one book the macOS app's launcher hands it at launch (see below).
+- **Saved state** — font size, theme and the reading position per book are saved where the host offers a writable file system (the browser host page, backed by localStorage), and the app reopens on the saved page. On the desktop host they last for the session.
+- **Characters** — book text arrives at runtime, so the build bakes ASCII, Latin-1, General Punctuation and every character of the bundled book (`--glyphs`). Other characters draw as a placeholder box.
+- **Bundled book** — *Bitcoin: A Peer-to-Peer Electronic Cash System* (Satoshi Nakamoto, 2008), an EPUB 3 edition built in this repo from the PDF distributed by bitcoin.org under the MIT licence. Figures are described by captions. Source, hashes and licence: [assets/books/NOTICE.md](./assets/books/NOTICE.md).
+
+Measured with the minified reader, 3 runs per host, on the same machine as below:
+
+| Host | Command | First render | Page turn (median / max) | Chapter switch | Opening a chapter |
+|---|---|---|---|---|---|
+| Browser WASM host | `bun run measure:web -- --app reader` | 20.8–21.4 ms | 0.7–1.1 / ≤2.7 ms | 1.7–2.3 ms | 2.1–5.8 ms |
+| macOS desktop host (QuickJS) | `POCKETJS_ROOT=../pocketjs bun run measure:desktop -- --app reader` | 30.6–31.4 ms | 4.2–4.4 / ≤10.0 ms | 9.8–10.3 ms | 12.9–17.6 ms |
+
+Reader bundle 302,067 bytes minified (110,981 gzip); pak 907,760 bytes (eight font slots with Latin-1 and punctuation).
+
+## macOS app (desktop host)
+
+```sh
+POCKETJS_ROOT=../pocketjs bun run build:app   # dist/PocketReader.app
+open dist/PocketReader.app                    # or double-click it in Finder
+```
+
+`PocketReader.app` runs the reader on PocketJS's own desktop host: a Metal window with a QuickJS guest, and no WebView. The bundle is about 12.7 MB.
+
+- **Bundle contents**:
+  - `Contents/MacOS/PocketReader` — a shell launcher, the bundle's executable.
+  - `Contents/MacOS/pocket-desktop-host` — the host built in `POCKETJS_ROOT`, copied unchanged (the build checks the hash).
+  - `Contents/Resources/` — `reader.js`, `reader.pak` and `AppIcon.icns`.
+- **Opening a book** — at launch the app asks for an EPUB with the system file chooser. The host reads `--file` as text, so the launcher sends the EPUB as base64 text. The reader decodes it and opens the book at its contents. Cancel the chooser to get the library with the bundled book. One book per launch: to read another, quit and open the app again.
+- **Signature** — ad-hoc (`codesign -s -`), which is enough on the Mac that built it. There is no Developer ID signature and no notarization, so on another Mac Gatekeeper refuses it until it is opened with right-click → Open.
+
+How large a book survives that delivery was measured with one window per run. Each EPUB was the bundled book plus an incompressible stored file, the way image-heavy books are large. The pad is never inflated, so these numbers measure transport and decoding, not parsing:
+
+| EPUB | Arrived intact | Decode (base64 → bytes) | Open (package files) | Peak memory (host process) |
+|---|---|---|---|---|
+| 1 MB | yes | 131–137 ms | 2.0 ms | 99 MB |
+| 5 MB | yes | 670 ms | 2.1 ms | 126 MB |
+| 20 MB | yes | 2.7 s | 2.3 ms | 226 MB |
+
+Decoding costs about 134 ms per MB in QuickJS. It happens once, in the first frames, so a 20 MB book shows its contents after about 2.7 s. Through the built app, launched the same way a double-click does, a 17 KB EPUB opened in 4.2 ms and the 20 MB one in 2.7 s.
+
+Known gaps on the desktop host, from its source and the runs above:
+
+| Area | State |
+|---|---|
+| Menu bar | 🟡 the default menu of the host's windowing library only. No app-specific menus. |
+| File chooser | 🟢 at launch, from the launcher (`osascript`). Not available once the window is open. |
+| Drag and drop | 🔴 the host has no dropped-file handler. Dropping onto the window does nothing. Dock-icon drop and "Open With" would need a native launcher, not a shell script. |
+| Dark mode | 🟡 the reader's own light/dark setting. The host does not forward the system appearance. |
+| Window size | 🟢 fixed 480×272 viewport at 2× density, which is the size the reader paginates for. macOS may show the window slightly smaller than requested (432×275 points for 480×272). A plain AppKit window shows the same scaling, so this is not the host. |
+| IME | 🟢 the host handles composition (preedit/commit) events. The reader has no text input. |
 
 ## The className rule
 
