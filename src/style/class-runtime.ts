@@ -54,6 +54,23 @@ export const classRuntimeStats = {
   droppedLiterals: 0,
 };
 
+/** What happens to class tokens the build scan never collected. "throw" keeps the strict
+ *  web-host contract (and the native host's report-and-drop); "drop" keeps the supported
+ *  subset, counts the rest, and never crashes - the shadcn-compat failure mode until the
+ *  token mapper (C2) shrinks the drop set to zero. */
+export type ClassMissPolicy = "throw" | "drop";
+let missPolicy: ClassMissPolicy = "throw";
+
+export function setClassMissPolicy(mode: ClassMissPolicy): void {
+  missPolicy = mode;
+}
+
+// Miss bookkeeping for the outermost resolve call only (the kept-subset recursion resets
+// nothing), so applyClassName can count a literal exactly once per unique literal. Token
+// counts accumulate straight into classRuntimeStats.
+let resolveDepth = 0;
+let missLiteral = false;
+
 function body(table: Uint8Array): Uint8Array {
   return table.subarray(HEADER_SIZE);
 }
@@ -100,42 +117,74 @@ function assemble(): Uint8Array {
 
 /** Style id for a class string, compiling and appending it when needed; null = not a class string. */
 export function resolveClass(cls: string): number | null {
-  const hit = resolveStyle(cls);
-  if (hit !== undefined) return hit;
-  const norm = cls.trim().replace(/\s+/g, " ");
-  const cached = cache.get(norm);
-  if (cached !== undefined) return cached;
-  if (!enabled) return null;
-  const parts = norm.split(" ");
-  const unseen = parts.filter((tok) => !known.has(tok));
-  if (unseen.length > 0) {
-    const message = "pocketjs-react: class token " + unseen.map((t) => JSON.stringify(t)).join(", ") +
-      " does not appear in the source; write Tailwind utilities as complete tokens (a name built at runtime cannot be found by the build scan)";
-    if (getHost().strict) throw new Error(message);
-    if (!reported.has(norm)) {
-      reported.add(norm);
-      console.error(message);
-    }
+  if (resolveDepth === 0) {
+    missLiteral = false;
   }
-  const kept = parts.filter((tok) => known.has(tok)).join(" ");
-  if (kept !== norm) {
-    const id = kept === "" ? null : resolveClass(kept);
+  resolveDepth++;
+  try {
+    const hit = resolveStyle(cls);
+    if (hit !== undefined) return hit;
+    const norm = cls.trim().replace(/\s+/g, " ");
+    const cached = cache.get(norm);
+    if (cached !== undefined) return cached;
+    if (!enabled) return null;
+    const parts = norm.split(" ");
+    const unseen = parts.filter((tok) => !known.has(tok));
+    if (unseen.length > 0) {
+      if (missPolicy === "drop") {
+        classRuntimeStats.droppedTokens += unseen.length;
+        classRuntimeStats.droppedLiterals++;
+        missLiteral = true;
+        if (!reported.has(norm)) {
+          reported.add(norm);
+          console.error(
+            "pocketjs-react: dropping class token(s) " + unseen.map((t) => JSON.stringify(t)).join(", ") +
+              " - not in the build table (compat classMiss=drop; see compatStats)",
+          );
+        }
+      } else {
+        const message = "pocketjs-react: class token " + unseen.map((t) => JSON.stringify(t)).join(", ") +
+          " does not appear in the source; write Tailwind utilities as complete tokens (a name built at runtime cannot be found by the build scan)";
+        if (getHost().strict) throw new Error(message);
+        if (!reported.has(norm)) {
+          reported.add(norm);
+          console.error(message);
+        }
+      }
+    }
+    const kept = parts.filter((tok) => known.has(tok)).join(" ");
+    if (kept !== norm) {
+      const id = kept === "" ? null : resolveClass(kept);
+      cache.set(norm, id);
+      return id;
+    }
+    classRuntimeStats.compiled++;
+    let record: StyleRecord | null = null;
+    try {
+      record = parseClassLiteral(norm);
+    } catch (error) {
+      if (missPolicy === "throw") throw error;
+      // The compiler rejects some all-known literals outright (rounded-full without a
+      // build-time size): under the drop policy that is a counted miss, not a crash.
+      classRuntimeStats.droppedLiterals++;
+      missLiteral = true;
+      cache.set(norm, null);
+      return null;
+    }
+    let id: number | null = null;
+    if (record) {
+      const key = JSON.stringify(record);
+      id = canonical.get(key) ?? null;
+      if (id === null) {
+        id = append(record);
+        canonical.set(key, id);
+      }
+    }
     cache.set(norm, id);
     return id;
+  } finally {
+    resolveDepth--;
   }
-  classRuntimeStats.compiled++;
-  const record = parseClassLiteral(norm);
-  let id: number | null = null;
-  if (record) {
-    const key = JSON.stringify(record);
-    id = canonical.get(key) ?? null;
-    if (id === null) {
-      id = append(record);
-      canonical.set(key, id);
-    }
-  }
-  cache.set(norm, id);
-  return id;
 }
 
 /** Apply a node's className (called by the host config on create and update). */
@@ -152,6 +201,12 @@ export function applyClassName(node: NodeMirror, cls: unknown): void {
   if (id !== null) appliedId.set(node, id);
   else appliedId.delete(node);
   if (id === null) {
+    if (missPolicy === "drop") {
+      // Counted unstyled (the unseen-token path already flagged the literal); never hand an
+      // unknown literal to the framework's setClass, which throws on strict hosts.
+      if (!missLiteral) classRuntimeStats.droppedLiterals++;
+      return;
+    }
     // Not compilable: let the framework report it (throws on strict hosts, counts a miss on native ones).
     setProp(node, "class", next);
     return;

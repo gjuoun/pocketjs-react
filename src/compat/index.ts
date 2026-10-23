@@ -2,6 +2,7 @@
 // props a counted policy. mount() calls installCompat(); until then the host config runs
 // with an identity hook and behaves exactly as before. Everything silently accepted shows
 // up in compatStats().
+import { setClassMissPolicy, type ClassMissPolicy } from "../style/class-runtime.ts";
 import { setHostCompat } from "../renderer/host-config.ts";
 import { INTERACTIVE_TAGS, hostTypeOf, unknownTagMessage } from "./tags.ts";
 import { compatProps, setUnknownPropsPolicy, type UnknownPropsPolicy } from "./props.ts";
@@ -10,10 +11,13 @@ import { countUnknownTag } from "./stats.ts";
 export interface CompatOptions {
   /** Props the compat layer does not recognize: "throw" (default) or "drop" (counted). */
   unknownProps?: UnknownPropsPolicy;
+  /** Class tokens outside the build table: "throw" (default) or "drop" (counted, subset kept). */
+  classMiss?: ClassMissPolicy;
 }
 
 export function installCompat(opts: CompatOptions = {}): void {
   setUnknownPropsPolicy(opts.unknownProps ?? "throw");
+  setClassMissPolicy(opts.classMiss ?? "throw");
   setHostCompat({
     type(tag) {
       const host = hostTypeOf(tag);
