@@ -1,10 +1,9 @@
 // C3 acceptance: real shadcn registry source -> codemod -> build -> render on the web host.
-// The committed ui/ tree is codemod output (never hand-edited); these tests prove it is current,
-// idempotent, honest about what it dropped, and that the demo needs neither the C2 runtime token
-// map nor the classMiss drop policy - i.e. the rewrite really landed in the source.
+// The codemod itself (drift/idempotency/diagnostics) is covered by test/codemod-shadcn.test.ts;
+// this file proves the generated tree actually mounts and draws, and that it needs neither the
+// C2 runtime token map nor the classMiss drop policy.
 import { afterEach, expect, test } from "bun:test";
 import { build } from "../tools/build.ts";
-import { codemod } from "../tools/codemod/shadcn.ts";
 import { bootApp, bootCore, type Core, type TextRun } from "./harness.ts";
 import { compatStats, mount, resetCompatStats } from "../src/index.ts";
 import { compileClasses } from "../src/internal/pocket-build.ts";
@@ -13,8 +12,6 @@ import { installBuildStyles } from "../src/style/build-styles.ts";
 import { Demo } from "./fixtures/shadcn-vendor/app.tsx";
 
 const VENDOR = "test/fixtures/shadcn-vendor";
-const UPSTREAM = VENDOR + "/upstream";
-const UI = VENDOR + "/ui";
 const OUT = "/tmp/pocketjs-react-test/compat-c3";
 
 let core: Core | undefined;
@@ -25,8 +22,9 @@ afterEach(() => {
   installBuildStyles({}, new Uint8Array(0), []);
 });
 
+const buildDemo = () => build(VENDOR + "/main.tsx", { outdir: OUT, name: "shadcn-vendor" });
 const bootBuilt = async () => {
-  core = await bootApp(await build(VENDOR + "/main.tsx", { outdir: OUT, name: "shadcn-vendor" }));
+  core = await bootApp(await buildDemo());
   core.step(0);
   return core;
 };
@@ -43,50 +41,6 @@ const surface = (c: Core, r: TextRun): string => {
   return [...hist.entries()].sort((a, b) => b[1] - a[1])[0][0];
 };
 
-// ---------------------------------------------------------------- codemod
-test("C3: the committed ui/ tree is exactly the codemod output", async () => {
-  const report = await codemod(UPSTREAM);
-  expect(report.files.map((f) => f.name)).toEqual(["badge.tsx", "button.tsx", "card.tsx", "dialog.tsx", "input.tsx"]);
-  for (const file of report.files) {
-    const committed = await Bun.file(UI + "/" + file.name).text();
-    expect({ file: file.name, drift: committed === file.after }).toEqual({ file: file.name, drift: true });
-  }
-});
-
-test("C3: the codemod is idempotent - a second run changes nothing", async () => {
-  const once = await codemod(UPSTREAM);
-  // Feed the output back through the same transform: no rule may fire again.
-  const dir = OUT + "/idempotent";
-  for (const file of once.files) await Bun.write(dir + "/" + file.name, file.after);
-  const twice = await codemod(dir);
-  expect(twice.totals.changed).toBe(0);
-  expect(twice.totals.mapped).toBe(0);
-  expect(twice.totals.compilerDropped).toEqual({});
-  expect(twice.totals.asChildFlattened).toBe(0);
-  for (const file of twice.files) expect({ file: file.name, same: file.after === file.before }).toEqual({ file: file.name, same: true });
-});
-
-test("C3: the report names what it dropped, substituted and flattened", async () => {
-  const { totals, files } = await codemod(UPSTREAM);
-  // Nothing the compiler rejects may survive into the app tree.
-  for (const file of files) expect({ file: file.name, residual: file.residual }).toEqual({ file: file.name, residual: [] });
-  // The compiler-only gaps C2 cannot see are dropped by name, not silently.
-  expect(totals.compilerDropped.grid).toBeGreaterThanOrEqual(2);
-  expect(totals.compilerDropped.fixed).toBeGreaterThanOrEqual(1);
-  expect(totals.compilerDropped["shadow-sm"]).toBeGreaterThanOrEqual(1);
-  // "Equivalent subset" substitutions, plus the C2 mapping and the Slot/asChild flattening.
-  expect(totals.substituted["rounded-full"]).toBe(1);
-  expect(totals.substituted.grid).toBeGreaterThanOrEqual(1);
-  expect(totals.substituted["sr-only"]).toBe(1);
-  expect(totals.mapped).toBeGreaterThan(40);
-  expect(totals.asChildFlattened).toBe(2);
-  // The first false-positive this codemod had: cva's defaultVariants are values, not classes.
-  const button = files.find((f) => f.name === "button.tsx")!;
-  expect(button.after).toContain('variant: "default"');
-  expect(button.after).toContain('size: "default"');
-});
-
-// ---------------------------------------------------------------- render
 test("C3: the built demo renders every vendored component on the web host", async () => {
   const c = await bootBuilt();
   expect(c.texts().map((r) => r.text)).toEqual(["Save", "Delete", "Beta", "Vendored card", "codemod output", "Card body", "Open"]);
@@ -104,7 +58,7 @@ test("C3: the vendored surfaces are the mapped PocketJS colors", async () => {
 });
 
 test("C3: the mapped node tree keeps DOM provenance (div/button/input)", async () => {
-  const built = await build(VENDOR + "/main.tsx", { outdir: OUT, name: "shadcn-vendor" });
+  const built = await buildDemo();
   core = await bootCore({ classes: built.tokens });
   installBuildStyles({}, compileClasses([]).bin, built.tokens);
   mount(<Demo />, { compat: { classMiss: "drop" } });
@@ -123,7 +77,7 @@ test("C3: the mapped node tree keeps DOM provenance (div/button/input)", async (
 // The C3 proof: the source, not the runtime, speaks PocketJS. Strict class resolution throws on
 // any token the build scan never saw, and the token map is off - the codemod output must pass.
 test("C3: the codemod output mounts under the strict policies (classMiss=throw, tokenMap=false)", async () => {
-  const built = await build(VENDOR + "/main.tsx", { outdir: OUT, name: "shadcn-vendor" });
+  const built = await buildDemo();
   core = await bootCore({ classes: built.tokens });
   installBuildStyles({}, compileClasses([]).bin, built.tokens);
   mount(<Demo />, { compat: { classMiss: "throw", tokenMap: false } });

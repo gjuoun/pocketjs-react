@@ -1,0 +1,481 @@
+// C3 codemod: turn verbatim shadcn registry source into source PocketJS compiles.
+//
+//   bun tools/codemod/shadcn.ts <srcDir> <outDir> [--report] [--json] [--check]
+//
+// The transform is compiler-aware, which is the one thing the C2 runtime token map cannot be:
+// it calls PocketJS's own unknownUtilities() at generation time, so a token the core does not
+// draw is dropped here, in the source, instead of crashing the strict web host at runtime.
+//
+// Rules, applied in this order (the order is what makes a second run a no-op):
+//   R0  rounded-full -> rounded-[Npx], N derived from the literal's own size (before C2, whose
+//       NEEDS_SIZE rule drops the token outright)
+//   R1  the C2 map (src/compat/tokens.ts) - same table as the build and the runtime
+//   R2  equivalent-subset substitutions: grid -> flex flex-col, flex-col-reverse -> flex-col,
+//       sr-only -> hidden, @container/* -> dropped
+//   R3  unknownUtilities() filter - everything the compiler rejects, dropped and counted by name
+//   R4  Slot/asChild flattening: `asChild ? Slot.Root : "tag"` becomes `"tag"`, the Slot import
+//       and asChild plumbing go away (C1 F1 policy; a real Slot belongs to C5)
+//   R5  a literal that maps to nothing stays as "" (cn("", className) is harmless)
+//
+// Only string spans are rewritten - the rest of the file stays byte-identical, which keeps the
+// diff reviewable and makes idempotency checkable. Regexes are not used on class strings; every
+// token goes through the same split the compiler uses.
+import { parse } from "@babel/parser";
+import { readdirSync } from "node:fs";
+import { resolve } from "node:path";
+import { rewriteToken } from "../../src/compat/tokens.ts";
+import { unknownUtilities } from "../../src/internal/pocket-build.ts";
+import { parseClassLiteral } from "../../src/internal/pocket.ts";
+
+/** Tokens that get an equivalent PocketJS subset. A value of "" drops the token. */
+const SUBSTITUTE: Record<string, string> = {
+  grid: "flex flex-col",
+  "flex-col-reverse": "flex flex-col",
+  "sr-only": "hidden",
+};
+/** Prefix families with no PocketJS equivalent at all (container queries). */
+const DROP_PREFIX = ["@container/"];
+
+const FONT_PX: Record<string, number> = { "2xs": 10, xs: 12, sm: 14, base: 16, lg: 18, xl: 20, "2xl": 24, "4xl": 36, "5xl": 54 };
+
+/** Rounded-full as the matching arbitrary radius: a pill is min(w, h) / 2 (the core's own rule). */
+function roundedFullRadius(tokens: string[]): string {
+  const h = tokens.map((t) => /^h-(\d+(?:\.\d+)?)$/.exec(t)).find(Boolean);
+  if (h) return "rounded-[" + Number(h[1]) * 2 + "px]";
+  const py = tokens.map((t) => /^py-(\d+(?:\.\d+)?)$/.exec(t)).find(Boolean);
+  const size = tokens.map((t) => /^text-(2xs|xs|sm|base|lg|xl|2xl|4xl|5xl)$/.exec(t)).find(Boolean);
+  const height = (py ? Number(py[1]) * 8 : 0) + (size ? FONT_PX[size[1]] * 1.25 : 16);
+  return "rounded-[" + Math.round(height / 2) + "px]";
+}
+
+export interface TokenCounts {
+  [token: string]: number;
+}
+
+export interface CodemodFile {
+  name: string;
+  before: string;
+  after: string;
+  /** Class literals found in a class position (cva base/variants, cn/clsx/twMerge args, className). */
+  literals: number;
+  changed: number;
+  /** Tokens moved to PocketJS vocabulary by the C2 map. */
+  mapped: number;
+  /** C2 map drops, by source token (whitespace-nowrap, dark:ring-*, ring-*, ...). */
+  mapDropped: TokenCounts;
+  /** Tokens the compiler rejects, by token (fixed, shadow-sm, col-start-2, ...). */
+  compilerDropped: TokenCounts;
+  /** R0/R2 rules that fired, by source token (rounded-full, grid, sr-only, @container/...). */
+  substituted: TokenCounts;
+  asChildFlattened: number;
+  /** Literals that became empty after the rewrite. */
+  emptied: number;
+  /** Template literals with expressions: not statically rewritable. */
+  skipped: number;
+  /** Non-empty results parseClassLiteral still rejects. Must stay empty. */
+  residual: string[];
+}
+
+export interface CodemodReport {
+  files: CodemodFile[];
+  totals: {
+    literals: number;
+    changed: number;
+    mapped: number;
+    mapDropped: TokenCounts;
+    compilerDropped: TokenCounts;
+    substituted: TokenCounts;
+    asChildFlattened: number;
+    emptied: number;
+    skipped: number;
+  };
+}
+
+interface Edit {
+  start: number;
+  end: number;
+  text: string;
+}
+
+const CLASS_CALLEES = new Set(["cn", "clsx", "cva", "twMerge"]);
+
+type Node = Record<string, any>;
+
+function calleeName(node: Node | undefined): string {
+  if (!node) return "";
+  if (node.type === "Identifier") return node.name;
+  if (node.type === "MemberExpression" && node.property?.type === "Identifier") return node.property.name;
+  return "";
+}
+
+function keyName(property: Node): string {
+  return property?.key?.name ?? property?.key?.value ?? "";
+}
+
+function add(counts: TokenCounts, token: string, n = 1): void {
+  counts[token] = (counts[token] ?? 0) + n;
+}
+
+/** One token string (which may expand to several) -> its PocketJS form, plus what happened. */
+function rewriteOne(
+  tok: string,
+  literalTokens: string[],
+  file: Pick<CodemodFile, "mapDropped" | "compilerDropped" | "substituted" | "mapped">,
+): string[] {
+  if (tok === "rounded-full") {
+    add(file.substituted, tok);
+    return [roundedFullRadius(literalTokens)];
+  }
+  const mapped = rewriteToken(tok);
+  if (mapped === "") {
+    add(file.mapDropped, tok);
+    return [];
+  }
+  const out = mapped.split(/\s+/).filter(Boolean);
+  if (mapped !== tok) file.mapped++;
+  const kept: string[] = [];
+  for (const next of out) {
+    if (next in SUBSTITUTE) {
+      add(file.substituted, next);
+      kept.push(...SUBSTITUTE[next].split(" ").filter(Boolean));
+      continue;
+    }
+    if (DROP_PREFIX.some((prefix) => next.startsWith(prefix))) {
+      add(file.substituted, next);
+      continue;
+    }
+    if (unknownUtilities(next).length > 0) {
+      add(file.compilerDropped, next);
+      continue;
+    }
+    kept.push(next);
+  }
+  return kept;
+}
+
+function rewriteClassLiteral(text: string, file: Pick<CodemodFile, "mapDropped" | "compilerDropped" | "substituted" | "mapped">): string {
+  const source = text.trim().split(/\s+/).filter(Boolean);
+  const out: string[] = [];
+  for (const tok of source) out.push(...rewriteOne(tok, source, file));
+  return out.join(" ");
+}
+
+/** Collect the AST subtrees that hold class strings (structural, not "anywhere under cva"). */
+function classContexts(program: Node): Set<object> {
+  const contexts = new Set<object>();
+  const mark = (node: Node | undefined) => {
+    if (node && typeof node === "object") contexts.add(node);
+  };
+  const walk = (node: Node) => {
+    if (!node || typeof node !== "object") return;
+    if (node.type === "CallExpression" && CLASS_CALLEES.has(calleeName(node.callee))) {
+      const args: Node[] = node.arguments ?? [];
+      if (calleeName(node.callee) === "cva") {
+        mark(args[0]);
+        const options = args[1];
+        const variants = options?.properties?.find((p: Node) => keyName(p) === "variants");
+        for (const group of variants?.value?.properties ?? []) {
+          for (const option of group.value?.properties ?? []) mark(option.value);
+        }
+      } else {
+        for (const arg of args) mark(arg);
+      }
+    }
+    if (node.type === "JSXAttribute" && node.name?.name === "className") mark(node.value);
+    for (const key in node) {
+      if (["loc", "start", "end", "extra", "comments"].includes(key)) continue;
+      const value = node[key];
+      if (Array.isArray(value)) value.forEach(walk);
+      else if (value && typeof value === "object") walk(value);
+    }
+  };
+  walk(program);
+  return contexts;
+}
+
+function transformSource(source: string, name: string): CodemodFile {
+  const file: CodemodFile = {
+    name,
+    before: source,
+    after: source,
+    literals: 0,
+    changed: 0,
+    mapped: 0,
+    mapDropped: {},
+    compilerDropped: {},
+    substituted: {},
+    asChildFlattened: 0,
+    emptied: 0,
+    skipped: 0,
+    residual: [],
+  };
+  const ast = parse(source, { sourceType: "module", plugins: ["jsx", "typescript"] }) as unknown as Node;
+  const parents = new WeakMap<object, Node>();
+  const walk = (node: Node, parent: Node | undefined) => {
+    if (!node || typeof node !== "object") return;
+    parents.set(node, parent as Node);
+    for (const key in node) {
+      if (["loc", "start", "end", "extra", "comments"].includes(key)) continue;
+      const value = node[key];
+      if (Array.isArray(value)) value.forEach((child) => walk(child, node));
+      else if (value && typeof value === "object") walk(value, node);
+    }
+  };
+  walk(ast, undefined);
+
+  const contexts = classContexts(ast);
+  const inClass = (node: Node): boolean => {
+    if (contexts.has(node)) return true;
+    for (let p = parents.get(node), hops = 0; p && hops < 16; p = parents.get(p), hops++) {
+      if (contexts.has(p)) return true;
+    }
+    return false;
+  };
+
+  const edits: Edit[] = [];
+  const visit = (node: Node) => {
+    if (!node || typeof node !== "object") return;
+    if (node.type === "TemplateLiteral" && inClass(node)) {
+      if ((node.expressions ?? []).length > 0) file.skipped++;
+      else {
+        file.literals++;
+        const text = rewriteClassLiteral(node.quasis[0].value.cooked ?? node.quasis[0].value.raw, file);
+        if (text !== node.quasis[0].value.cooked) {
+          file.changed++;
+          if (text === "") file.emptied++;
+          edits.push({ start: node.start, end: node.end, text: "\`" + text + "\`" });
+        }
+        checkResidual(text, file);
+      }
+    } else if (node.type === "StringLiteral" && typeof node.value === "string" && inClass(node)) {
+      file.literals++;
+      const text = rewriteClassLiteral(node.value, file);
+      if (text !== node.value) {
+        file.changed++;
+        if (text === "") file.emptied++;
+        edits.push({ start: node.start, end: node.end, text: JSON.stringify(text) });
+      }
+      checkResidual(text, file);
+    }
+    for (const key in node) {
+      if (["loc", "start", "end", "extra", "comments"].includes(key)) continue;
+      const value = node[key];
+      if (Array.isArray(value)) value.forEach(visit);
+      else if (value && typeof value === "object") visit(value);
+    }
+  };
+  visit(ast);
+
+  // R4: `const Comp = asChild ? Slot.Root : "button"` -> `const Comp = "button"`
+  const visitAsChild = (node: Node) => {
+    if (!node || typeof node !== "object") return;
+    if (
+      node.type === "ConditionalExpression" &&
+      node.test?.type === "Identifier" &&
+      node.test.name === "asChild" &&
+      node.consequent?.type === "MemberExpression" &&
+      calleeName(node.consequent) === "Root" &&
+      node.alternate?.type === "StringLiteral"
+    ) {
+      file.asChildFlattened++;
+      edits.push({ start: node.start, end: node.end, text: JSON.stringify(node.alternate.value) });
+    }
+    for (const key in node) {
+      if (["loc", "start", "end", "extra", "comments"].includes(key)) continue;
+      const value = node[key];
+      if (Array.isArray(value)) value.forEach(visitAsChild);
+      else if (value && typeof value === "object") visitAsChild(value);
+    }
+  };
+  visitAsChild(ast);
+
+  const imports = (ast.program?.body ?? []).filter(
+    (stmt: Node) => stmt.type === "ImportDeclaration" && stmt.source?.value === "radix-ui",
+  );
+  for (const decl of imports) {
+    const specifiers: Node[] = decl.specifiers ?? [];
+    const slot = specifiers.find((s) => s.imported?.name === "Slot");
+    if (!slot) continue;
+    if (specifiers.length > 1) {
+      // Remove just the Slot specifier and the comma after it.
+      const siblings = specifiers.slice().sort((a, b) => a.start - b.start);
+      const index = siblings.indexOf(slot);
+      const next = siblings[index + 1];
+      const end = next ? next.start : slot.end;
+      edits.push({ start: slot.start, end, text: "" });
+    } else {
+      const end = source.indexOf("\n", decl.end);
+      edits.push({ start: decl.start, end: end >= 0 ? end + 1 : decl.end, text: "" });
+    }
+  }
+  for (const node of allNodes(ast)) {
+    if (node.type === "ObjectProperty" || node.type === "ObjectPattern") {
+      // destructured `asChild = false` in the component signature
+      const properties: Node[] = node.properties ?? [];
+      for (const property of properties) {
+        if (keyName(property) === "asChild" && property.type === "ObjectProperty") {
+          const next = properties[properties.indexOf(property) + 1];
+          const end = next ? next.start : property.end;
+          edits.push({ start: property.start, end, text: "" });
+        }
+      }
+    }
+    if (node.type === "TSPropertySignature" && keyName(node) === "asChild") {
+      // Drop the whole `& { asChild?: boolean }` member when it is the literal's only member,
+      // so the prop type reads `VariantProps<...>` instead of `VariantProps<...> & {}`.
+      const literal = parents.get(node);
+      const intersection = literal ? parents.get(literal) : undefined;
+      const index = intersection?.types?.indexOf(literal) ?? -1;
+      if (literal?.type === "TSTypeLiteral" && intersection && (literal.members ?? []).length === 1 && index > 0) {
+        edits.push({ start: intersection.types[index - 1].end, end: literal.end, text: "" });
+      } else {
+        edits.push({ start: node.start, end: node.end, text: "" });
+      }
+    }
+  }
+
+  let after = source;
+  for (const edit of edits.sort((a, b) => b.start - a.start)) {
+    after = after.slice(0, edit.start) + edit.text + after.slice(edit.end);
+  }
+  file.after = after;
+  return file;
+}
+
+function checkResidual(text: string, file: CodemodFile): void {
+  if (text === "") return;
+  let ok = false;
+  try {
+    ok = parseClassLiteral(text) !== null;
+  } catch {
+    ok = false;
+  }
+  if (!ok) file.residual.push(text);
+}
+
+function allNodes(root: Node): Node[] {
+  const out: Node[] = [];
+  const walk = (node: Node) => {
+    if (!node || typeof node !== "object") return;
+    out.push(node);
+    for (const key in node) {
+      if (["loc", "start", "end", "extra", "comments"].includes(key)) continue;
+      const value = node[key];
+      if (Array.isArray(value)) value.forEach(walk);
+      else if (value && typeof value === "object") walk(value);
+    }
+  };
+  walk(root);
+  return out;
+}
+
+/** Run the codemod over a directory. Pure: nothing is written (the CLI does that). */
+export async function codemod(srcDir: string): Promise<CodemodReport> {
+  const dir = resolve(srcDir);
+  const names = readdirSync(dir).filter((name) => /.(tsx?|jsx?)$/.test(name) && !name.endsWith(".d.ts")).sort();
+  const files: CodemodFile[] = [];
+  for (const name of names) files.push(transformSource(await Bun.file(resolve(dir, name)).text(), name));
+  const totals: CodemodReport["totals"] = {
+    literals: 0,
+    changed: 0,
+    mapped: 0,
+    mapDropped: {},
+    compilerDropped: {},
+    substituted: {},
+    asChildFlattened: 0,
+    emptied: 0,
+    skipped: 0,
+  };
+  for (const file of files) {
+    totals.literals += file.literals;
+    totals.changed += file.changed;
+    totals.mapped += file.mapped;
+    totals.asChildFlattened += file.asChildFlattened;
+    totals.emptied += file.emptied;
+    totals.skipped += file.skipped;
+    for (const [token, n] of Object.entries(file.mapDropped)) add(totals.mapDropped, token, n);
+    for (const [token, n] of Object.entries(file.compilerDropped)) add(totals.compilerDropped, token, n);
+    for (const [token, n] of Object.entries(file.substituted)) add(totals.substituted, token, n);
+  }
+  return { files, totals };
+}
+
+function printCounts(label: string, counts: TokenCounts): void {
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  if (entries.length === 0) return;
+  console.log("  " + label + ": " + entries.map(([token, n]) => token + " x" + n).join(", "));
+}
+
+export async function main(argv: string[]): Promise<number> {
+  const positional = argv.filter((a) => !a.startsWith("--"));
+  const [srcDir, outDir] = positional;
+  if (!srcDir) {
+    console.error("usage: bun tools/codemod/shadcn.ts <srcDir> [outDir] [--report] [--json] [--check]");
+    return 2;
+  }
+  const report = await codemod(srcDir);
+  const json = argv.includes("--json");
+  const check = argv.includes("--check");
+
+  if (check) {
+    if (!outDir) {
+      console.error("--check needs an outDir");
+      return 2;
+    }
+    let drift = 0;
+    for (const file of report.files) {
+      const target = resolve(outDir, file.name);
+      const exists = await Bun.file(target).exists();
+      const current = exists ? await Bun.file(target).text() : "";
+      const same = exists && current === file.after;
+      if (!same) drift++;
+      console.log((same ? "ok    " : "DRIFT ") + file.name);
+    }
+    const expected = new Set(report.files.map((f) => f.name));
+    for (const name of readdirSync(resolve(outDir))) {
+      if (!expected.has(name)) {
+        drift++;
+        console.log("DRIFT " + name + " (no upstream source)");
+      }
+    }
+    console.log("check: " + (drift === 0 ? "clean" : drift + " file(s) drift"));
+    return drift === 0 ? 0 : 1;
+  }
+
+  if (outDir) {
+    for (const file of report.files) await Bun.write(resolve(outDir, file.name), file.after);
+  }
+
+  if (json) {
+    const slim = {
+      totals: report.totals,
+      files: report.files.map(({ name, literals, changed, mapped, mapDropped, compilerDropped, substituted, asChildFlattened, emptied, skipped, residual }) => ({
+        name, literals, changed, mapped, mapDropped, compilerDropped, substituted, asChildFlattened, emptied, skipped, residual,
+      })),
+    };
+    console.log(JSON.stringify(slim, null, 2));
+    return report.files.some((f) => f.residual.length > 0) ? 1 : 0;
+  }
+
+  for (const file of report.files) {
+    console.log(
+      file.name + ": " + file.literals + " literals, " + file.changed + " changed, " + file.mapped + " mapped, " +
+        Object.values(file.mapDropped).reduce((a, b) => a + b, 0) + " map-dropped, " +
+        Object.values(file.compilerDropped).reduce((a, b) => a + b, 0) + " compiler-dropped, " +
+        Object.values(file.substituted).reduce((a, b) => a + b, 0) + " substituted, " +
+        file.asChildFlattened + " asChild, " + file.emptied + " emptied, " + file.skipped + " skipped, " +
+        file.residual.length + " residual",
+    );
+    printCounts("substituted", file.substituted);
+    printCounts("compiler-dropped", file.compilerDropped);
+    if (file.residual.length) console.log("  RESIDUAL: " + JSON.stringify(file.residual));
+  }
+  console.log(
+    "totals: " + report.totals.literals + " literals, " + report.totals.changed + " changed, " +
+      report.totals.mapped + " mapped, " + report.totals.asChildFlattened + " asChild, " +
+      report.files.reduce((n, f) => n + f.residual.length, 0) + " residual",
+  );
+  return report.files.some((f) => f.residual.length > 0) ? 1 : 0;
+}
+
+if (import.meta.main) process.exit(await main(process.argv.slice(2)));
