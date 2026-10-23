@@ -3,13 +3,13 @@
 // this file proves the generated tree actually mounts and draws, and that it needs neither the
 // C2 runtime token map nor the classMiss drop policy.
 import { afterEach, expect, test } from "bun:test";
-import { build } from "../tools/build.ts";
-import { bootApp, bootCore, type Core, type TextRun } from "./harness.ts";
 import { compatStats, mount, resetCompatStats } from "../src/index.ts";
-import { compileClasses } from "../src/internal/pocket-build.ts";
 import { rootMirror } from "../src/internal/pocket.ts";
+import { compileClasses } from "../src/internal/pocket-build.ts";
 import { installBuildStyles } from "../src/style/build-styles.ts";
+import { build } from "../tools/build.ts";
 import { Demo } from "./fixtures/shadcn-vendor/app.tsx";
+import { bootApp, bootCore, type Core, type TextRun } from "./harness.ts";
 
 const VENDOR = "test/fixtures/shadcn-vendor";
 const OUT = "/tmp/pocketjs-react-test/compat-c3";
@@ -22,13 +22,15 @@ afterEach(() => {
   installBuildStyles({}, new Uint8Array(0), []);
 });
 
-const buildDemo = () => build(VENDOR + "/main.tsx", { outdir: OUT, name: "shadcn-vendor" });
+const buildDemo = () =>
+  build(VENDOR + "/main.tsx", { outdir: OUT, name: "shadcn-vendor" });
 const bootBuilt = async () => {
   core = await bootApp(await buildDemo());
   core.step(0);
   return core;
 };
-const runOf = (c: Core, text: string): TextRun => c.texts().find((r) => r.text === text)!;
+const runOf = (c: Core, text: string): TextRun =>
+  c.texts().find((r) => r.text === text)!;
 /** Dominant color of a text run's rect: the surface the label sits on. */
 const surface = (c: Core, r: TextRun): string => {
   const hist = new Map<string, number>();
@@ -43,7 +45,15 @@ const surface = (c: Core, r: TextRun): string => {
 
 test("C3: the built demo renders every vendored component on the web host", async () => {
   const c = await bootBuilt();
-  expect(c.texts().map((r) => r.text)).toEqual(["Save", "Delete", "Beta", "Vendored card", "codemod output", "Card body", "Open"]);
+  expect(c.texts().map((r) => r.text)).toEqual([
+    "Save",
+    "Delete",
+    "Beta",
+    "Vendored card",
+    "codemod output",
+    "Card body",
+    "Open",
+  ]);
 });
 
 test("C3: the vendored surfaces are the mapped PocketJS colors", async () => {
@@ -66,7 +76,7 @@ test("C3: the mapped node tree keeps DOM provenance (div/button/input)", async (
   const tags = new Set<string>();
   const walk = (node: { debugName?: string; children?: unknown[] }) => {
     if (node.debugName) tags.add(node.debugName);
-    for (const child of (node.children ?? []) as typeof node[]) walk(child);
+    for (const child of (node.children ?? []) as (typeof node)[]) walk(child);
   };
   walk(rootMirror as never);
   expect(tags.has("div")).toBe(true);

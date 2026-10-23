@@ -11,22 +11,23 @@
 // The runtime only compiles class strings made of tokens the build scan found; a name
 // assembled at runtime (`p-${n}`) is rejected (thrown on strict hosts such as the browser,
 // reported and dropped on native ones), never compiled behind the author's back.
-import {
-  PROP,
-  PROP_VALUE_KIND,
-  STYLE_ID_NONE,
-  VALUE_KIND,
-  decodeStyleTable,
-  encodeStyleTable,
-  parseClassLiteral,
-  resolveStyle,
-  setProp,
-  type NodeMirror,
-  type PropName,
-  type StyleRecord,
-} from "../internal/pocket.ts";
+
 import { getHost, getOps } from "@pocketjs/framework/host";
 import { rewrite } from "../compat/tokens.ts";
+import {
+  decodeStyleTable,
+  encodeStyleTable,
+  type NodeMirror,
+  PROP,
+  PROP_VALUE_KIND,
+  type PropName,
+  parseClassLiteral,
+  resolveStyle,
+  STYLE_ID_NONE,
+  type StyleRecord,
+  setProp,
+  VALUE_KIND,
+} from "../internal/pocket.ts";
 
 const HEADER_SIZE = 12;
 
@@ -98,7 +99,10 @@ function body(table: Uint8Array): Uint8Array {
 }
 
 /** Start from the build's styles.bin (the table the host already loaded from the pak). */
-export function initClassRuntime(bin: Uint8Array, tokens: readonly string[] = []): void {
+export function initClassRuntime(
+  bin: Uint8Array,
+  tokens: readonly string[] = [],
+): void {
   known = new Set(tokens);
   pending.length = 0;
   cache.clear();
@@ -129,7 +133,9 @@ function append(record: StyleRecord): number {
 }
 
 function assemble(): Uint8Array {
-  const out = new Uint8Array(HEADER_SIZE + recordBytes.length + animBytes.length);
+  const out = new Uint8Array(
+    HEADER_SIZE + recordBytes.length + animBytes.length,
+  );
   out.set(header);
   new DataView(out.buffer).setUint16(6, recordCount, true);
   out.set(recordBytes, HEADER_SIZE);
@@ -160,12 +166,15 @@ export function resolveClass(cls: string): number | null {
         if (!reported.has(norm)) {
           reported.add(norm);
           console.error(
-            "pocketjs-react: dropping class token(s) " + unseen.map((t) => JSON.stringify(t)).join(", ") +
+            "pocketjs-react: dropping class token(s) " +
+              unseen.map((t) => JSON.stringify(t)).join(", ") +
               " - not in the build table (compat classMiss=drop; see compatStats)",
           );
         }
       } else {
-        const message = "pocketjs-react: class token " + unseen.map((t) => JSON.stringify(t)).join(", ") +
+        const message =
+          "pocketjs-react: class token " +
+          unseen.map((t) => JSON.stringify(t)).join(", ") +
           " does not appear in the source; write Tailwind utilities as complete tokens (a name built at runtime cannot be found by the build scan)";
         if (getHost().strict) throw new Error(message);
         if (!reported.has(norm)) {
@@ -261,7 +270,10 @@ const PROP_NAMES: Record<number, PropName> = Object.fromEntries(
 const f32 = new DataView(new ArrayBuffer(4));
 
 /** The base-variant value the node's current class record sets for `prop`, in setProp form. */
-export function classBaseValue(node: NodeMirror, prop: PropName): number | undefined {
+export function classBaseValue(
+  node: NodeMirror,
+  prop: PropName,
+): number | undefined {
   const id = appliedId.get(node);
   if (id === undefined) return undefined;
   const entry = records[id]?.base?.find((p) => PROP_NAMES[p.prop] === prop);

@@ -9,10 +9,37 @@ import { wrapParagraph } from "../text/wrap.ts";
 export type FontSize = "S" | "M" | "L";
 
 /** Per size: Tailwind classes, the atlas slots they resolve to, and the line pitch in px. */
-export const FONT_SIZES: Record<FontSize, { body: string; heading: string; slot: number; headingSlot: number; pitch: number }> = {
-  S: { body: "text-sm", heading: "text-sm font-bold", slot: 1, headingSlot: 8, pitch: 18 },
-  M: { body: "text-base", heading: "text-base font-bold", slot: 2, headingSlot: 9, pitch: 21 },
-  L: { body: "text-lg", heading: "text-lg font-bold", slot: 3, headingSlot: 10, pitch: 24 },
+export const FONT_SIZES: Record<
+  FontSize,
+  {
+    body: string;
+    heading: string;
+    slot: number;
+    headingSlot: number;
+    pitch: number;
+  }
+> = {
+  S: {
+    body: "text-sm",
+    heading: "text-sm font-bold",
+    slot: 1,
+    headingSlot: 8,
+    pitch: 18,
+  },
+  M: {
+    body: "text-base",
+    heading: "text-base font-bold",
+    slot: 2,
+    headingSlot: 9,
+    pitch: 21,
+  },
+  L: {
+    body: "text-lg",
+    heading: "text-lg font-bold",
+    slot: 3,
+    headingSlot: 10,
+    pitch: 24,
+  },
 };
 
 export interface Line {
@@ -41,24 +68,41 @@ export interface Pages {
   lineOf(anchor: Anchor): number;
 }
 
-
-export function paginate(blocks: Block[], opts: { size: FontSize; width: number; height: number }): Pages {
+export function paginate(
+  blocks: Block[],
+  opts: { size: FontSize; width: number; height: number },
+): Pages {
   const size = FONT_SIZES[opts.size];
   const linesPerPage = Math.max(1, Math.floor(opts.height / size.pitch));
   const lines: Line[] = [];
   blocks.forEach((block, index) => {
-    if (lines.length > 0) lines.push({ text: "", kind: "blank", block: index, offset: 0 });
+    if (lines.length > 0)
+      lines.push({ text: "", kind: "blank", block: index, offset: 0 });
     const regular = block.kind === "heading" && hasHan(block.text);
-    const slot = block.kind === "heading" && !regular ? size.headingSlot : size.slot;
+    const slot =
+      block.kind === "heading" && !regular ? size.headingSlot : size.slot;
     if (block.kind === "pre") {
       let offset = 0;
       for (const raw of block.text.split("\n")) {
-        for (const part of wrapParagraph(raw, slot, opts.width)) lines.push({ text: part.text, kind: "pre", block: index, offset: offset + part.offset });
+        for (const part of wrapParagraph(raw, slot, opts.width))
+          lines.push({
+            text: part.text,
+            kind: "pre",
+            block: index,
+            offset: offset + part.offset,
+          });
         offset += raw.length + 1;
       }
       return;
     }
-    for (const part of wrapParagraph(block.text, slot, opts.width)) lines.push({ text: part.text, kind: block.kind, block: index, offset: part.offset, ...(regular ? { regular } : {}) });
+    for (const part of wrapParagraph(block.text, slot, opts.width))
+      lines.push({
+        text: part.text,
+        kind: block.kind,
+        block: index,
+        offset: part.offset,
+        ...(regular ? { regular } : {}),
+      });
   });
   const pages: Line[][] = [];
   for (let i = 0; i < lines.length; i += linesPerPage) {
@@ -78,7 +122,11 @@ export function paginate(blocks: Block[], opts: { size: FontSize; width: number;
       for (let i = 0; i < lines.length; i++) {
         const l = lines[i];
         if (l.kind === "blank") continue;
-        if (l.block < anchor.block || (l.block === anchor.block && l.offset <= anchor.offset)) found = i;
+        if (
+          l.block < anchor.block ||
+          (l.block === anchor.block && l.offset <= anchor.offset)
+        )
+          found = i;
         else break;
       }
       return found;
@@ -88,7 +136,11 @@ export function paginate(blocks: Block[], opts: { size: FontSize; width: number;
       for (let i = 0; i < firstOf.length; i++) {
         const f = firstOf[i];
         if (!f) continue;
-        if (f.block < anchor.block || (f.block === anchor.block && f.offset <= anchor.offset)) found = i;
+        if (
+          f.block < anchor.block ||
+          (f.block === anchor.block && f.offset <= anchor.offset)
+        )
+          found = i;
         else break;
       }
       return found;
@@ -99,5 +151,7 @@ export function paginate(blocks: Block[], opts: { size: FontSize; width: number;
 /** The position a page starts at. */
 export function anchorOf(page: Line[]): Anchor {
   const first = page.find((l) => l.kind !== "blank") ?? page[0];
-  return first ? { block: first.block, offset: first.offset } : { block: 0, offset: 0 };
+  return first
+    ? { block: first.block, offset: first.offset }
+    : { block: 0, offset: 0 };
 }

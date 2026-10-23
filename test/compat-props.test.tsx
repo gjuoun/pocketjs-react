@@ -2,40 +2,47 @@
 // onClick aliases to onPress, unknown props throw by default and drop+count under
 // mount({ compat: { unknownProps: "drop" } }), and interactive tags come out focusable.
 import { afterEach, expect, test } from "bun:test";
-import { bootCore, type Core } from "./harness.ts";
 import { compatStats, mount, resetCompatStats } from "../src/index.ts";
 import { rootMirror } from "../src/internal/pocket.ts";
+import { bootCore, type Core } from "./harness.ts";
 
 let core: Core | undefined;
 afterEach(() => {
   core?.dispose();
   resetCompatStats();
 });
-const boot = async (): Promise<Core> => (core = await bootCore({ classes: ["text-base text-white"] }));
+const boot = async (): Promise<Core> =>
+  (core = await bootCore({ classes: ["text-base text-white"] }));
 const first = () => rootMirror.children[0].children[0];
 
 test("data-*/aria-*/DOM attrs drop and count; the element still mounts", async () => {
   const c = await boot();
-  mount(
-    <div data-slot="button" aria-label="x" tabIndex={0} role="button" />,
-  );
+  mount(<div data-slot="button" aria-label="x" tabIndex={0} role="button" />);
   c.step(0);
   expect(first().domTag).toBe("view");
-  expect(compatStats().droppedAttrs).toEqual({ "data-slot": 1, "aria-label": 1, tabIndex: 1, role: 1 });
+  expect(compatStats().droppedAttrs).toEqual({
+    "data-slot": 1,
+    "aria-label": 1,
+    tabIndex: 1,
+    role: 1,
+  });
 });
 
 test("an unrecognized prop throws, naming the prop, the tag and the switch", async () => {
   await boot();
-  expect(() => mount(<div {...({ foo: "bar" } as any)} />)).toThrow("unknown property 'foo' on <div>");
-  expect(() => mount(<div {...({ foo: "bar" } as any)} />)).toThrow('unknownProps: "drop"');
+  expect(() => mount(<div {...({ foo: "bar" } as any)} />)).toThrow(
+    "unknown property 'foo' on <div>",
+  );
+  expect(() => mount(<div {...({ foo: "bar" } as any)} />)).toThrow(
+    'unknownProps: "drop"',
+  );
 });
 
 test('under unknownProps: "drop" it renders and the count lands in the report', async () => {
   const c = await boot();
-  mount(
-    <div {...({ foo: "bar" } as any)} data-x={1} />,
-    { compat: { unknownProps: "drop" } },
-  );
+  mount(<div {...({ foo: "bar" } as any)} data-x={1} />, {
+    compat: { unknownProps: "drop" },
+  });
   c.step(0);
   expect(first().domTag).toBe("view");
   expect(compatStats().unknownAttrs).toEqual({ foo: 1 });

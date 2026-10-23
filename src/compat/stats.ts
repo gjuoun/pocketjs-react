@@ -2,7 +2,10 @@
 // "silently swallow" observable. Attr counts are taken once per mount (creation) - a
 // re-render of the same element is not a new acceptance. classMiss numbers live in the
 // class runtime and are read through here so there is one report.
-import { classRuntimeStats, resetClassMissStats } from "../style/class-runtime.ts";
+import {
+  classRuntimeStats,
+  resetClassMissStats,
+} from "../style/class-runtime.ts";
 
 export interface CompatStats {
   /** DOM props dropped by policy, name -> count (data-*, aria-*, the DOM attribute/event surface). */
@@ -42,8 +45,14 @@ export function compatStats(): CompatStats {
     droppedAttrs: { ...droppedAttrs },
     unknownAttrs: { ...unknownAttrs },
     unknownTags,
-    classMiss: { tokens: classRuntimeStats.droppedTokens, literals: classRuntimeStats.droppedLiterals },
-    tokenMap: { mapped: classRuntimeStats.mappedTokens, dropped: classRuntimeStats.mapDroppedTokens },
+    classMiss: {
+      tokens: classRuntimeStats.droppedTokens,
+      literals: classRuntimeStats.droppedLiterals,
+    },
+    tokenMap: {
+      mapped: classRuntimeStats.mappedTokens,
+      dropped: classRuntimeStats.mapDroppedTokens,
+    },
   };
 }
 

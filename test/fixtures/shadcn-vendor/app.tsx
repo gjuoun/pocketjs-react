@@ -7,8 +7,20 @@
 // would render white-on-white until the text layer inherits color.
 import { Badge } from "./ui/badge.tsx";
 import { Button } from "./ui/button.tsx";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card.tsx";
-import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "./ui/dialog.tsx";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card.tsx";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog.tsx";
 import { Input } from "./ui/input.tsx";
 
 export function Demo() {
@@ -30,7 +42,9 @@ export function Demo() {
         </CardContent>
       </Card>
       <Dialog>
-        <DialogTrigger className="bg-slate-900 px-2 py-1 rounded-md">Open</DialogTrigger>
+        <DialogTrigger className="bg-slate-900 px-2 py-1 rounded-md">
+          Open
+        </DialogTrigger>
         <DialogContent>
           <DialogTitle>Dialog title</DialogTitle>
           <DialogDescription>Dialog body</DialogDescription>

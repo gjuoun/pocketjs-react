@@ -3,17 +3,19 @@
 // inputs fail the build.
 import { afterEach, expect, test } from "bun:test";
 import { BTN } from "@pocketjs/framework/input";
-import { build } from "../tools/build.ts";
-import { bootApp, type Core } from "./harness.ts";
 import { NODE_TYPE, PROP } from "../src/internal/pocket.ts";
 import { fontSlotFor } from "../src/internal/pocket-build.ts";
+import { build } from "../tools/build.ts";
+import { bootApp, type Core } from "./harness.ts";
 
 const OUT = "/tmp/pocketjs-react-test/build";
 let core: Core | undefined;
 afterEach(() => core?.dispose());
 
 test("a compiled focus: variant redraws the row the d-pad focuses", async () => {
-  core = await bootApp(await build("test/fixtures/styled/main.tsx", { outdir: OUT }));
+  core = await bootApp(
+    await build("test/fixtures/styled/main.tsx", { outdir: OUT }),
+  );
   const row = core.texts().find((r) => r.text === "One")!;
   const before = core.pixel(row.x - 4, row.y + 2);
   core.press(BTN.DOWN);
@@ -42,7 +44,14 @@ test("the font-slot cross product draws a size + weight pair no literal spells o
 });
 
 test("a Pocket3D-licensed input fails the build", async () => {
-  const run = Bun.spawnSync(["bun", "tools/build.ts", "test/fixtures/p3d-import/main.tsx", "--outdir=" + OUT]);
+  const run = Bun.spawnSync([
+    "bun",
+    "tools/build.ts",
+    "test/fixtures/p3d-import/main.tsx",
+    "--outdir=" + OUT,
+  ]);
   expect(run.exitCode).toBe(1);
-  expect(run.stderr.toString()).toContain("node_modules/@pocketjs/framework/devices/LICENSE");
+  expect(run.stderr.toString()).toContain(
+    "node_modules/@pocketjs/framework/devices/LICENSE",
+  );
 });

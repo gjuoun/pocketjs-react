@@ -4,7 +4,11 @@
 // the core would draw at that slot and width.
 import { getOps } from "@pocketjs/framework/host";
 
-type WrapText = (text: string, slot: number, maxWidth: number) => ArrayLike<number>;
+type WrapText = (
+  text: string,
+  slot: number,
+  maxWidth: number,
+) => ArrayLike<number>;
 
 export interface WrappedLine {
   text: string;
@@ -13,7 +17,8 @@ export interface WrappedLine {
 }
 
 /** CJK line rules: these never start a line ... */
-export const NO_LINE_START = "，。、；：？！」』）》〉】…﹐﹑﹒﹔﹕﹖﹗﹚﹜﹞．〕〗";
+export const NO_LINE_START =
+  "，。、；：？！」』）》〉】…﹐﹑﹒﹔﹕﹖﹗﹚﹜﹞．〕〗";
 /** ... and these never end one. */
 export const NO_LINE_END = "「『（《〈【〔〖";
 
@@ -24,16 +29,27 @@ function adjustBreak(text: string, from: number, at: number): number {
   for (let guard = 0; guard < 8 && end - 1 > from; guard++) {
     let next = end;
     while (text[next] === " ") next++; // a break at a space: look at what the next line shows first
-    if (!NO_LINE_START.includes(text[next] ?? "\n") && !NO_LINE_END.includes(text[end - 1])) break;
+    if (
+      !NO_LINE_START.includes(text[next] ?? "\n") &&
+      !NO_LINE_END.includes(text[end - 1])
+    )
+      break;
     end--;
   }
   return end;
 }
 
 /** Wrap one paragraph with the host wrapper; each line fits `width` at font `slot`. */
-export function wrapParagraph(text: string, slot: number, width: number): WrappedLine[] {
+export function wrapParagraph(
+  text: string,
+  slot: number,
+  width: number,
+): WrappedLine[] {
   const ops = getOps() as { wrapText?: WrapText };
-  if (!ops.wrapText) throw new Error("pocketjs-react: this host has no wrapText op; wrapping needs it");
+  if (!ops.wrapText)
+    throw new Error(
+      "pocketjs-react: this host has no wrapText op; wrapping needs it",
+    );
   const wrapText = ops.wrapText;
   const out: WrappedLine[] = [];
   let from = 0;

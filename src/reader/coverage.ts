@@ -6,7 +6,10 @@ import { bakedGlyphs } from "../books/assets.ts";
 import { hasRuntimeGlyphs } from "./glyph-warmer.ts";
 
 /** Distinct characters of `text` the baked atlases lack (ASCII, whitespace and controls never count). */
-export function missingCharacters(text: string, baked: ReadonlySet<number> | null = bakedGlyphs()): string[] {
+export function missingCharacters(
+  text: string,
+  baked: ReadonlySet<number> | null = bakedGlyphs(),
+): string[] {
   if (!baked || hasRuntimeGlyphs()) return [];
   const out = new Set<string>();
   for (const ch of text) {
@@ -20,5 +23,9 @@ export function missingCharacters(text: string, baked: ReadonlySet<number> | nul
 /** Footer text for `count` missing characters, or "" when there are none. */
 export function missingNotice(count: number): string {
   if (count === 0) return "";
-  return count + (count === 1 ? " character cannot" : " characters cannot") + " be shown on this host";
+  return (
+    count +
+    (count === 1 ? " character cannot" : " characters cannot") +
+    " be shown on this host"
+  );
 }

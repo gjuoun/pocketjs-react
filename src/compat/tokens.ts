@@ -56,7 +56,7 @@ export const TOKEN_MAP: Readonly<Record<string, string>> = {
   "ml-auto": "",
   "cursor-default": "",
   "fill-current": "",
-  "underline": "",
+  underline: "",
   "underline-offset-4": "",
 };
 

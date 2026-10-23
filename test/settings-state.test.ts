@@ -3,8 +3,8 @@
 // one it starts at the library.
 import { beforeAll, expect, test } from "bun:test";
 import { BTN } from "@pocketjs/framework/input";
-import { buildReader } from "../tools/build-reader.ts";
 import type { BuildResult } from "../tools/build.ts";
+import { buildReader } from "../tools/build-reader.ts";
 import { createBrowserFs } from "../tools/web/fs-shim.js";
 import { bootApp, type Core } from "./harness.ts";
 
@@ -15,12 +15,24 @@ beforeAll(async () => {
 
 class MemoryStorage {
   map = new Map<string, string>();
-  get length() { return this.map.size; }
-  key(i: number) { return [...this.map.keys()][i] ?? null; }
-  getItem(k: string) { return this.map.get(k) ?? null; }
-  setItem(k: string, v: string) { this.map.set(k, v); }
-  removeItem(k: string) { this.map.delete(k); }
-  clear() { this.map.clear(); }
+  get length() {
+    return this.map.size;
+  }
+  key(i: number) {
+    return [...this.map.keys()][i] ?? null;
+  }
+  getItem(k: string) {
+    return this.map.get(k) ?? null;
+  }
+  setItem(k: string, v: string) {
+    this.map.set(k, v);
+  }
+  removeItem(k: string) {
+    this.map.delete(k);
+  }
+  clear() {
+    this.map.clear();
+  }
 }
 
 async function open(storage?: MemoryStorage): Promise<Core> {
@@ -53,13 +65,23 @@ test("font size L redraws the same text with a larger line pitch", async () => {
   const core = await open();
   try {
     readChapter4Page3(core);
-    const body = (runs: ReturnType<Core["texts"]>) => runs.filter((r) => r.y > 30 && r.y < 232 && r.text.trim().length > 20);
+    const body = (runs: ReturnType<Core["texts"]>) =>
+      runs.filter((r) => r.y > 30 && r.y < 232 && r.text.trim().length > 20);
     const small = body(core.texts());
     settings(core, 0); // S -> M
     settings(core, 0); // M -> L
     const large = body(core.texts());
     const pitch = (runs: typeof small) => runs[1].y - runs[0].y;
-    console.log("pitch S=" + pitch(small) + " L=" + pitch(large) + " | S first: " + small[0].text.slice(0, 40) + " | L lines: " + large.length);
+    console.log(
+      "pitch S=" +
+        pitch(small) +
+        " L=" +
+        pitch(large) +
+        " | S first: " +
+        small[0].text.slice(0, 40) +
+        " | L lines: " +
+        large.length,
+    );
     expect(pitch(large)).toBeGreaterThan(pitch(small));
     const firstWords = small[0].text.split(" ").slice(0, 3).join(" ");
     expect(large.map((r) => r.text).join(" ")).toContain(firstWords);
@@ -81,7 +103,9 @@ test("dark theme paints the page in the bg-slate-950 color", async () => {
     settings(core, 1); // Theme -> dark
     core.texts();
     const dark = core.pixel(470, 262);
-    console.log("background light=" + light + " dark=" + dark + " slate-950=" + scrim);
+    console.log(
+      "background light=" + light + " dark=" + dark + " slate-950=" + scrim,
+    );
     expect(light).toBe("#ffffff");
     expect(dark).toBe(scrim);
   } finally {

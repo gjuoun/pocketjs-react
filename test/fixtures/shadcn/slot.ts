@@ -4,6 +4,8 @@
 // The registry JSX/logic is otherwise byte-for-byte; only import specifiers are remapped.
 export const Slot = {
   Root: () => {
-    throw new Error("pocketjs-react compat fixture: asChild/Slot is not supported until C3/C5");
+    throw new Error(
+      "pocketjs-react compat fixture: asChild/Slot is not supported until C3/C5",
+    );
   },
 };

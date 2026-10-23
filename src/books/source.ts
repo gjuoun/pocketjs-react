@@ -4,7 +4,7 @@
 // at launch through the host (books/host.ts), listed with origin "host".
 import { existsSync, file, fsHost, readdirSync } from "@pocketjs/framework/fs";
 import { bundledAsset, bundledAssetNames } from "./assets.ts";
-import { openEpub, type EpubBook } from "./epub.ts";
+import { type EpubBook, openEpub } from "./epub.ts";
 
 export interface BookEntry {
   id: string;
@@ -14,7 +14,12 @@ export interface BookEntry {
   open(): EpubBook;
 }
 
-function entry(id: string, origin: BookEntry["origin"], bytes: () => Uint8Array, fallbackTitle: string): BookEntry {
+function entry(
+  id: string,
+  origin: BookEntry["origin"],
+  bytes: () => Uint8Array,
+  fallbackTitle: string,
+): BookEntry {
   let book: EpubBook | null = null;
   const open = () => (book ??= openEpub(bytes()));
   let title = fallbackTitle;
@@ -29,14 +34,26 @@ function entry(id: string, origin: BookEntry["origin"], bytes: () => Uint8Array,
 }
 
 /** A book that is already open (the host-delivered one), listed under its own title. */
-export function openedBook(id: string, origin: BookEntry["origin"], book: EpubBook): BookEntry {
-  return { id, title: book.title, author: book.author, origin, open: () => book };
+export function openedBook(
+  id: string,
+  origin: BookEntry["origin"],
+  book: EpubBook,
+): BookEntry {
+  return {
+    id,
+    title: book.title,
+    author: book.author,
+    origin,
+    open: () => book,
+  };
 }
 
 export function bundledBooks(): BookEntry[] {
   return bundledAssetNames()
     .filter((name) => name.toLowerCase().endsWith(".epub"))
-    .map((name) => entry("bundled:" + name, "bundled", () => bundledAsset(name), name));
+    .map((name) =>
+      entry("bundled:" + name, "bundled", () => bundledAsset(name), name),
+    );
 }
 
 export interface FileBooks {
@@ -48,6 +65,13 @@ export interface FileBooks {
 export function fileBooks(): FileBooks {
   if (!fsHost()) return { available: false, books: [] };
   if (!existsSync("books")) return { available: true, books: [] };
-  const names = (readdirSync("books") as string[]).filter((n) => n.toLowerCase().endsWith(".epub"));
-  return { available: true, books: names.map((name) => entry("file:" + name, "file", () => file("books/" + name).bytes(), name)) };
+  const names = (readdirSync("books") as string[]).filter((n) =>
+    n.toLowerCase().endsWith(".epub"),
+  );
+  return {
+    available: true,
+    books: names.map((name) =>
+      entry("file:" + name, "file", () => file("books/" + name).bytes(), name),
+    ),
+  };
 }

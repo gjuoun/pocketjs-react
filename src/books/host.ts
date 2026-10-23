@@ -8,9 +8,12 @@ import { takeHostMessages } from "../input/pointer.ts";
 import { addFramePump } from "../renderer/mount.ts";
 import { base64ToBytes } from "./assets.ts";
 import { openEpub } from "./epub.ts";
-import { openedBook, type BookEntry } from "./source.ts";
+import { type BookEntry, openedBook } from "./source.ts";
 
-export type HostBook = { status: "none" } | { status: "opened"; book: BookEntry } | { status: "failed"; error: string };
+export type HostBook =
+  | { status: "none" }
+  | { status: "opened"; book: BookEntry }
+  | { status: "failed"; error: string };
 
 let state: HostBook = { status: "none" };
 let pumping = false;
@@ -28,7 +31,14 @@ function receive(text: string): HostBook {
     bytes = data.length;
     const epub = openEpub(data);
     const book = openedBook("host:" + epub.title, "host", epub);
-    console.log("reader: host book opened title=" + JSON.stringify(epub.title) + " bytes=" + bytes + " ms=" + (now() - t0).toFixed(1));
+    console.log(
+      "reader: host book opened title=" +
+        JSON.stringify(epub.title) +
+        " bytes=" +
+        bytes +
+        " ms=" +
+        (now() - t0).toFixed(1),
+    );
     return { status: "opened", book };
   } catch (error) {
     const message = String(error instanceof Error ? error.message : error);

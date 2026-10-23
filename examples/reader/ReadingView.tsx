@@ -1,8 +1,24 @@
 // Reading view: LEFT/RIGHT turn pages (across chapter edges), UP/DOWN scroll by three lines,
 // L/R jump to the previous/next chapter, CROSS goes back to the contents. Mouse: click the left
 // or right half of the page to turn it.
+
+import {
+  BTN,
+  cjkSafe,
+  type EpubBook,
+  FONT_SIZES,
+  type FontSize,
+  hasRuntimeGlyphs,
+  missingCharacters,
+  missingNotice,
+  PageView,
+  paginate,
+  Text,
+  useButton,
+  useGlyphWarmup,
+  View,
+} from "pocketjs-react";
 import { useMemo } from "react";
-import { BTN, cjkSafe, FONT_SIZES, missingCharacters, missingNotice, PageView, Text, useButton, useGlyphWarmup, View, hasRuntimeGlyphs, paginate, type EpubBook, type FontSize } from "pocketjs-react";
 import type { Theme } from "./theme.ts";
 
 export const PAGE = { width: 456, height: 198 };
@@ -32,50 +48,129 @@ export function ReadingView(props: {
     // The header row shows the chapter title, so a leading heading with the same text is dropped.
     const blocks = book.chapter(chapter);
     const name = book.toc.find((e) => e.index === chapter)?.title;
-    return blocks[0]?.kind === "heading" && blocks[0].text === name ? blocks.slice(1) : blocks;
+    return blocks[0]?.kind === "heading" && blocks[0].text === name
+      ? blocks.slice(1)
+      : blocks;
   };
-  const layout = useMemo(() => paginate(blocksOf(position.chapter), { size, width: PAGE.width, height: PAGE.height }), [book, position.chapter, size]);
+  const layout = useMemo(
+    () =>
+      paginate(blocksOf(position.chapter), {
+        size,
+        width: PAGE.width,
+        height: PAGE.height,
+      }),
+    [book, position.chapter, size],
+  );
   // On a host that draws missing glyphs at run time, warm the next chapter's characters while this one is read.
   const warm = useMemo(() => {
     if (!hasRuntimeGlyphs()) return { current: "", next: "" };
-    const text = (chapter: number) => (book.toc.find((e) => e.index === chapter)?.title ?? "") + blocksOf(chapter).map((b) => b.text).join("");
-    return { current: text(position.chapter), next: position.chapter + 1 < chapters ? text(position.chapter + 1) : "" };
+    const text = (chapter: number) =>
+      (book.toc.find((e) => e.index === chapter)?.title ?? "") +
+      blocksOf(chapter)
+        .map((b) => b.text)
+        .join("");
+    return {
+      current: text(position.chapter),
+      next: position.chapter + 1 < chapters ? text(position.chapter + 1) : "",
+    };
   }, [book, position.chapter]);
   useGlyphWarmup(warm.current, warm.next, FONT_SIZES[size].slot);
   // Characters of this chapter the host cannot draw (they show as boxes): said in the footer.
-  const missing = useMemo(() => missingCharacters(blocksOf(position.chapter).map((b) => b.text).join("\n")).length, [book, position.chapter]);
+  const missing = useMemo(
+    () =>
+      missingCharacters(
+        blocksOf(position.chapter)
+          .map((b) => b.text)
+          .join("\n"),
+      ).length,
+    [book, position.chapter],
+  );
   const per = layout.linesPerPage;
   const total = Math.max(1, Math.ceil(layout.lines.length / per));
   const line = layout.lineOf(position);
-  const at = (chapter: number, index: number, lines = layout.lines): Position => {
+  const at = (
+    chapter: number,
+    index: number,
+    lines = layout.lines,
+  ): Position => {
     const l = lines[Math.max(0, Math.min(index, lines.length - 1))];
     return { chapter, block: l?.block ?? 0, offset: l?.offset ?? 0 };
   };
   const page = Math.floor(line / per) + 1;
   const shown = layout.lines.slice(line, line + per);
   // Dev aid: the computed lines of the page on screen, for host-page tests to compare with what the core drew.
-  (globalThis as { __readerPage?: string[] }).__readerPage = shown.map((l) => l.text);
-  const title = book.toc.find((e) => e.index === position.chapter)?.title ?? "Section " + (position.chapter + 1);
+  (globalThis as { __readerPage?: string[] }).__readerPage = shown.map(
+    (l) => l.text,
+  );
+  const title =
+    book.toc.find((e) => e.index === position.chapter)?.title ??
+    "Section " + (position.chapter + 1);
 
-  const start = (chapter: number): Position => ({ chapter, block: 0, offset: 0 });
+  const start = (chapter: number): Position => ({
+    chapter,
+    block: 0,
+    offset: 0,
+  });
   const lastPageOf = (chapter: number): Position => {
-    const l = paginate(blocksOf(chapter), { size, width: PAGE.width, height: PAGE.height });
-    return at(chapter, Math.floor((l.lines.length - 1) / l.linesPerPage) * l.linesPerPage, l.lines);
+    const l = paginate(blocksOf(chapter), {
+      size,
+      width: PAGE.width,
+      height: PAGE.height,
+    });
+    return at(
+      chapter,
+      Math.floor((l.lines.length - 1) / l.linesPerPage) * l.linesPerPage,
+      l.lines,
+    );
   };
   const next = () => {
-    if (line + per < layout.lines.length) props.onMove(at(position.chapter, Math.floor(line / per) * per + per));
-    else if (position.chapter + 1 < chapters) props.onMove(start(position.chapter + 1));
+    if (line + per < layout.lines.length)
+      props.onMove(at(position.chapter, Math.floor(line / per) * per + per));
+    else if (position.chapter + 1 < chapters)
+      props.onMove(start(position.chapter + 1));
   };
   const prev = () => {
-    if (line > 0) props.onMove(at(position.chapter, Math.max(0, Math.ceil(line / per) * per - per)));
-    else if (position.chapter > 0) props.onMove(lastPageOf(position.chapter - 1));
+    if (line > 0)
+      props.onMove(
+        at(position.chapter, Math.max(0, Math.ceil(line / per) * per - per)),
+      );
+    else if (position.chapter > 0)
+      props.onMove(lastPageOf(position.chapter - 1));
   };
   useButton(BTN.RIGHT, next, { enabled: props.active });
   useButton(BTN.LEFT, prev, { enabled: props.active });
-  useButton(BTN.DOWN, () => props.onMove(at(position.chapter, Math.min(line + 3, Math.max(0, layout.lines.length - per)))), { enabled: props.active });
-  useButton(BTN.UP, () => props.onMove(at(position.chapter, Math.max(0, line - 3))), { enabled: props.active });
-  useButton(BTN.RTRIGGER, () => position.chapter + 1 < chapters && props.onMove(start(position.chapter + 1)), { enabled: props.active });
-  useButton(BTN.LTRIGGER, () => position.chapter > 0 && props.onMove(start(position.chapter - 1)), { enabled: props.active });
+  useButton(
+    BTN.DOWN,
+    () =>
+      props.onMove(
+        at(
+          position.chapter,
+          Math.min(line + 3, Math.max(0, layout.lines.length - per)),
+        ),
+      ),
+    { enabled: props.active },
+  );
+  useButton(
+    BTN.UP,
+    () => props.onMove(at(position.chapter, Math.max(0, line - 3))),
+    {
+      enabled: props.active,
+    },
+  );
+  useButton(
+    BTN.RTRIGGER,
+    () =>
+      position.chapter + 1 < chapters &&
+      props.onMove(start(position.chapter + 1)),
+    { enabled: props.active },
+  );
+  useButton(
+    BTN.LTRIGGER,
+    () => position.chapter > 0 && props.onMove(start(position.chapter - 1)),
+    {
+      enabled: props.active,
+    },
+  );
   useButton(BTN.CROSS, props.onBack, { enabled: props.active });
 
   return (
@@ -86,11 +181,22 @@ export function ReadingView(props: {
           <View className="w-[228px] h-[198px]" focusable onPress={prev} />
           <View className="w-[228px] h-[198px]" focusable onPress={next} />
         </View>
-        <PageView lines={shown} size={size} width={PAGE.width} dark={props.dark} />
+        <PageView
+          lines={shown}
+          size={size}
+          width={PAGE.width}
+          dark={props.dark}
+        />
       </View>
       <View className="flex-row justify-between">
-        <Text className={props.theme.muted}>{missing > 0 ? missingNotice(missing) : "LEFT/RIGHT page  ·  L/R chapter  ·  START menu"}</Text>
-        <Text className={props.theme.muted}>{"page " + page + "/" + total}</Text>
+        <Text className={props.theme.muted}>
+          {missing > 0
+            ? missingNotice(missing)
+            : "LEFT/RIGHT page  ·  L/R chapter  ·  START menu"}
+        </Text>
+        <Text className={props.theme.muted}>
+          {"page " + page + "/" + total}
+        </Text>
       </View>
     </View>
   );

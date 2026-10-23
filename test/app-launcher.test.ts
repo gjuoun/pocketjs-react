@@ -2,7 +2,16 @@
 // desktop host's argv. Runs the real script in a fake bundle with POCKETREADER_DRY_RUN=1, which
 // prints the argv instead of exec'ing the host, and a stub for osascript.
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -27,22 +36,45 @@ afterAll(() => rmSync(dir, { recursive: true, force: true }));
 /** A stub for osascript: records that it ran, then prints `answer` and exits with `code`. */
 function chooser(answer: string, code: number): string {
   const stub = join(dir, "chooser-" + code + ".sh");
-  writeFileSync(stub, "#!/bin/sh\necho ran > " + JSON.stringify(join(dir, "chooser-ran")) + "\nprintf '%s' " + JSON.stringify(answer) + "\nexit " + code + "\n");
+  writeFileSync(
+    stub,
+    "#!/bin/sh\necho ran > " +
+      JSON.stringify(join(dir, "chooser-ran")) +
+      "\nprintf '%s' " +
+      JSON.stringify(answer) +
+      "\nexit " +
+      code +
+      "\n",
+  );
   chmodSync(stub, 0o755);
   return stub;
 }
 
-function launch(args: string[], osascript?: string): { argv: string[]; chooserRan: boolean } {
-  if (!existsSync(LAUNCHER)) throw new Error("no launcher at tools/app/launcher.sh");
+function launch(
+  args: string[],
+  osascript?: string,
+): { argv: string[]; chooserRan: boolean } {
+  if (!existsSync(LAUNCHER))
+    throw new Error("no launcher at tools/app/launcher.sh");
   const exe = join(app, "MacOS/PocketReader");
   copyFileSync(LAUNCHER, exe);
   chmodSync(exe, 0o755);
   rmSync(join(dir, "chooser-ran"), { force: true });
-  const env: Record<string, string> = { PATH: "/usr/bin:/bin", TMPDIR: join(dir, "tmp"), POCKETREADER_DRY_RUN: "1" };
+  const env: Record<string, string> = {
+    PATH: "/usr/bin:/bin",
+    TMPDIR: join(dir, "tmp"),
+    POCKETREADER_DRY_RUN: "1",
+  };
   if (osascript) env.POCKETREADER_OSASCRIPT = osascript;
   const proc = Bun.spawnSync([exe, ...args], { env });
-  if (proc.exitCode !== 0) throw new Error("launcher exit " + proc.exitCode + ": " + proc.stderr.toString());
-  return { argv: proc.stdout.toString().split("\n").filter(Boolean), chooserRan: existsSync(join(dir, "chooser-ran")) };
+  if (proc.exitCode !== 0)
+    throw new Error(
+      "launcher exit " + proc.exitCode + ": " + proc.stderr.toString(),
+    );
+  return {
+    argv: proc.stdout.toString().split("\n").filter(Boolean),
+    chooserRan: existsSync(join(dir, "chooser-ran")),
+  };
 }
 
 const after = (argv: string[], flag: string) => argv[argv.indexOf(flag) + 1];
@@ -52,7 +84,9 @@ test("--book sends the file as base64 text through --file, with the reader's com
   expect(chooserRan).toBe(false);
   expect(argv[0]).toBe(join(app, "MacOS/pocket-desktop-host"));
   expect(after(argv, "--companions")).toBe("reader");
-  expect(after(argv, "--js")).toEndWith("Contents/MacOS/../Resources/reader.js");
+  expect(after(argv, "--js")).toEndWith(
+    "Contents/MacOS/../Resources/reader.js",
+  );
   expect(after(argv, "--title")).toBe("PocketReader — My Book.epub");
   const sent = readFileSync(after(argv, "--file"), "utf8").trim();
   expect(sent).toBe(Buffer.from(readFileSync(book)).toString("base64"));
@@ -61,7 +95,9 @@ test("--book sends the file as base64 text through --file, with the reader's com
 test("a book picked in the chooser is sent the same way", () => {
   const { argv, chooserRan } = launch([], chooser(book, 0));
   expect(chooserRan).toBe(true);
-  expect(readFileSync(after(argv, "--file"), "utf8").trim()).toBe(Buffer.from(readFileSync(book)).toString("base64"));
+  expect(readFileSync(after(argv, "--file"), "utf8").trim()).toBe(
+    Buffer.from(readFileSync(book)).toString("base64"),
+  );
 });
 
 test("a cancelled chooser starts the host without --file (the bundled book)", () => {
@@ -73,7 +109,10 @@ test("a cancelled chooser starts the host without --file (the bundled book)", ()
 });
 
 test("--no-chooser skips the chooser and host args after -- come last", () => {
-  const { argv, chooserRan } = launch(["--no-chooser", "--", "--quit-after", "5"], chooser(book, 0));
+  const { argv, chooserRan } = launch(
+    ["--no-chooser", "--", "--quit-after", "5"],
+    chooser(book, 0),
+  );
   expect(chooserRan).toBe(false);
   expect(argv).not.toContain("--file");
   expect(argv.slice(-2)).toEqual(["--quit-after", "5"]);

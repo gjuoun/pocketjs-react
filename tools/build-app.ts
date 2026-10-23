@@ -11,7 +11,13 @@
 // signature and no notarization, so Gatekeeper on another Mac refuses it until it is opened
 // with right-click > Open.
 import { createHash } from "node:crypto";
-import { chmodSync, copyFileSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import {
+  chmodSync,
+  copyFileSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 import { makeIcns } from "./app/icon.ts";
 import { buildReader } from "./build-reader.ts";
@@ -22,17 +28,30 @@ export const BUNDLE_ID = "io.github.pocketjs-react.pocketreader";
 
 function run(cmd: string[]): string {
   const proc = Bun.spawnSync(cmd);
-  if (proc.exitCode !== 0) throw new Error(cmd.join(" ") + " failed: " + proc.stderr.toString() + proc.stdout.toString());
+  if (proc.exitCode !== 0)
+    throw new Error(
+      cmd.join(" ") +
+        " failed: " +
+        proc.stderr.toString() +
+        proc.stdout.toString(),
+    );
   return proc.stdout.toString() + proc.stderr.toString();
 }
 
-const sha256 = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
+const sha256 = (file: string) =>
+  createHash("sha256").update(readFileSync(file)).digest("hex");
 
-export async function buildApp(opts: { outdir?: string; cjk?: boolean } = {}): Promise<{ app: string }> {
+export async function buildApp(
+  opts: { outdir?: string; cjk?: boolean } = {},
+): Promise<{ app: string }> {
   const host = desktopHost();
   const outdir = resolve(opts.outdir ?? join(ROOT, "dist"));
   const stage = join(outdir, "app-stage");
-  const built = await buildReader({ outdir: stage, minify: true, cjk: opts.cjk });
+  const built = await buildReader({
+    outdir: stage,
+    minify: true,
+    cjk: opts.cjk,
+  });
 
   const app = join(outdir, "PocketReader.app");
   const macos = join(app, "Contents/MacOS");
@@ -41,14 +60,20 @@ export async function buildApp(opts: { outdir?: string; cjk?: boolean } = {}): P
   mkdirSync(macos, { recursive: true });
   mkdirSync(resources, { recursive: true });
 
-  copyFileSync(join(ROOT, "tools/app/launcher.sh"), join(macos, "PocketReader"));
+  copyFileSync(
+    join(ROOT, "tools/app/launcher.sh"),
+    join(macos, "PocketReader"),
+  );
   chmodSync(join(macos, "PocketReader"), 0o755);
   const hostCopy = join(macos, "pocket-desktop-host");
   copyFileSync(host.bin, hostCopy);
   chmodSync(hostCopy, 0o755);
   const hash = sha256(hostCopy);
-  if (hash !== sha256(host.bin)) throw new Error("host copy differs from " + host.bin);
-  console.log("  host: identical to upstream build (sha256 " + hash.slice(0, 16) + ")");
+  if (hash !== sha256(host.bin))
+    throw new Error("host copy differs from " + host.bin);
+  console.log(
+    "  host: identical to upstream build (sha256 " + hash.slice(0, 16) + ")",
+  );
   copyFileSync(built.js, join(resources, "reader.js"));
   copyFileSync(built.pak, join(resources, "reader.pak"));
   await makeIcns(join(resources, "AppIcon.icns"), stage);
@@ -66,7 +91,8 @@ export async function buildApp(opts: { outdir?: string; cjk?: boolean } = {}): P
     CFBundleVersion: "1",
     LSMinimumSystemVersion: "11.0",
   };
-  for (const [key, value] of Object.entries(strings)) run(["plutil", "-insert", key, "-string", value, plist]);
+  for (const [key, value] of Object.entries(strings))
+    run(["plutil", "-insert", key, "-string", value, plist]);
   run(["plutil", "-insert", "NSHighResolutionCapable", "-bool", "YES", plist]);
 
   // Inside out: the nested Mach-O first, then the bundle (whose main executable is the script).
@@ -80,7 +106,10 @@ export async function buildApp(opts: { outdir?: string; cjk?: boolean } = {}): P
 if (import.meta.main) {
   try {
     const args = process.argv.slice(2);
-    await buildApp({ outdir: args.find((a) => a.startsWith("--outdir="))?.slice(9), cjk: args.includes("--cjk") });
+    await buildApp({
+      outdir: args.find((a) => a.startsWith("--outdir="))?.slice(9),
+      cjk: args.includes("--cjk"),
+    });
   } catch (error) {
     console.error(String(error instanceof Error ? error.message : error));
     process.exit(1);

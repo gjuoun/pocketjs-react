@@ -4,14 +4,14 @@
 // built path proves the drawn runs, d-pad focus, CIRCLE -> onClick and a pointer click.
 import { afterEach, expect, test } from "bun:test";
 import { BTN } from "@pocketjs/framework/input";
-import { build } from "../tools/build.ts";
-import { bootApp, bootCore, type Core, type TextRun } from "./harness.ts";
 import { compatStats, mount, resetCompatStats } from "../src/index.ts";
-import { compileClasses } from "../src/internal/pocket-build.ts";
 import { rootMirror } from "../src/internal/pocket.ts";
+import { compileClasses } from "../src/internal/pocket-build.ts";
 import { installBuildStyles } from "../src/style/build-styles.ts";
+import { build } from "../tools/build.ts";
 import { App } from "./fixtures/shadcn/app.tsx";
 import { Button } from "./fixtures/shadcn/button.tsx";
+import { bootApp, bootCore, type Core, type TextRun } from "./harness.ts";
 
 const OUT = "/tmp/pocketjs-react-test/compat-c1";
 let core: Core | undefined;
@@ -24,12 +24,18 @@ afterEach(() => {
 });
 
 const bootBuilt = async () => {
-  core = await bootApp(await build("test/fixtures/shadcn/main.tsx", { outdir: OUT, name: "shadcn-compat" }));
+  core = await bootApp(
+    await build("test/fixtures/shadcn/main.tsx", {
+      outdir: OUT,
+      name: "shadcn-compat",
+    }),
+  );
   core.step(0);
   return core;
 };
 const runs = (c: Core) => c.texts().map((r) => r.text);
-const runOf = (c: Core, text: string): TextRun => c.texts().find((r) => r.text === text)!;
+const runOf = (c: Core, text: string): TextRun =>
+  c.texts().find((r) => r.text === text)!;
 /** Dominant color of a text run's rect: the surface the label sits on. */
 const surface = (c: Core, r: TextRun): string => {
   const hist = new Map<string, number>();
@@ -42,7 +48,8 @@ const surface = (c: Core, r: TextRun): string => {
   return [...hist.entries()].sort((a, b) => b[1] - a[1])[0][0];
 };
 const click = (c: Core, x: number, y: number) => {
-  const q = ((globalThis as { __pocketPointer?: unknown[] }).__pocketPointer ??= []);
+  const q = ((globalThis as { __pocketPointer?: unknown[] }).__pocketPointer ??=
+    []);
   q.push({ x, y, down: true });
   c.step(0);
   q.push({ x, y, down: false });
@@ -51,7 +58,10 @@ const click = (c: Core, x: number, y: number) => {
 };
 
 test("the mapped node tree: div/button/span with provenance, badge text, press counter", async () => {
-  const built = await build("test/fixtures/shadcn/main.tsx", { outdir: OUT, name: "shadcn-compat" });
+  const built = await build("test/fixtures/shadcn/main.tsx", {
+    outdir: OUT,
+    name: "shadcn-compat",
+  });
   core = await bootCore({ classes: built.tokens });
   installBuildStyles({}, compileClasses([]).bin, built.tokens);
   mount(<App />, { compat: { classMiss: "drop" } });
@@ -72,7 +82,11 @@ test("the mapped node tree: div/button/span with provenance, badge text, press c
   expect(span.children.map((c) => c.text).join("")).toBe("pressed 0");
   // What the layer silently accepted for the verbatim sources: each data-* attr counted.
   // C2 closed the styling gap: the shadcn literals now map to PocketJS vocabulary and drop nothing.
-  expect(compatStats().droppedAttrs).toEqual({ "data-slot": 2, "data-variant": 2, "data-size": 1 });
+  expect(compatStats().droppedAttrs).toEqual({
+    "data-slot": 2,
+    "data-variant": 2,
+    "data-size": 1,
+  });
   expect(compatStats().classMiss).toEqual({ tokens: 0, literals: 0 });
 });
 
@@ -105,7 +119,10 @@ test("a pointer click on the mapped button presses it through the same focus sys
 // the same 19 the C1 E2E measured (bg-primary, inline-flex, hover:… and friends), not "every
 // token is unseen". Red until the token map lands (Step 2/3).
 test("C2: the verbatim button base drops no class tokens", async () => {
-  const built = await build("test/fixtures/shadcn/main.tsx", { outdir: OUT, name: "shadcn-compat" });
+  const built = await build("test/fixtures/shadcn/main.tsx", {
+    outdir: OUT,
+    name: "shadcn-compat",
+  });
   // Boot with the token set so the font slots the button's text-sm/font-bold need are baked;
   // the style table itself is installed empty so the literal goes through the runtime compiler.
   core = await bootCore({ classes: built.tokens });
@@ -121,10 +138,17 @@ test("C2: the verbatim button base drops no class tokens", async () => {
 
 const OUT_VARIANTS = "/tmp/pocketjs-react-test/compat-c2";
 const bootVariants = async (): Promise<Core> =>
-  (core = await bootApp(await build("test/fixtures/shadcn/variants-main.tsx", { outdir: OUT_VARIANTS, name: "variants" })));
+  (core = await bootApp(
+    await build("test/fixtures/shadcn/variants-main.tsx", {
+      outdir: OUT_VARIANTS,
+      name: "variants",
+    }),
+  ));
 
 const hasColor = (c: Core, r: TextRun, color: string): boolean => {
-  for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (c.pixel(x, y) === color) return true;
+  for (let y = r.y; y < r.y + r.h; y++)
+    for (let x = r.x; x < r.x + r.w; x++)
+      if (c.pixel(x, y) === color) return true;
   return false;
 };
 
@@ -139,7 +163,11 @@ test("C2: every Button variant paints its mapped surface", async () => {
     ["Destructive", "#dc2626"],
     ["Outline", "#ffffff"],
   ];
-  for (const [label, color] of fills) expect({ label, color: surface(c, runOf(c, label)) }).toEqual({ label, color });
+  for (const [label, color] of fills)
+    expect({ label, color: surface(c, runOf(c, label)) }).toEqual({
+      label,
+      color,
+    });
   expect(new Set(fills.map(([, color]) => color)).size).toBe(4);
   expect(surface(c, runOf(c, "Ghost"))).toBe("#f1f5f9");
   expect(surface(c, runOf(c, "Link"))).toBe("#f1f5f9");

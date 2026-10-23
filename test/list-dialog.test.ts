@@ -7,10 +7,17 @@ import { bootApp, type Core } from "./harness.ts";
 const SETTLE = 4;
 
 test("list toggles, inline-style bar, and a dialog that traps and restores focus", async () => {
-  const core = await bootApp(await build("examples/list-dialog/main.tsx", { outdir: "/tmp/pocketjs-react-test/list-dialog" }));
+  const core = await bootApp(
+    await build("examples/list-dialog/main.tsx", {
+      outdir: "/tmp/pocketjs-react-test/list-dialog",
+    }),
+  );
   try {
     const run = (text: string) => core.texts().find((r) => r.text === text);
-    const rowBg = (text: string) => { const r = run(text)!; return core.pixel(r.x - 4, r.y + 2); };
+    const rowBg = (text: string) => {
+      const r = run(text)!;
+      return core.pixel(r.x - 4, r.y + 2);
+    };
     const press = (b: number) => core.press(b, SETTLE);
     /** Width of the inline-styled bar: pixels at the track's left edge that are not the track. */
     const barWidth = () => {

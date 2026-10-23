@@ -1,15 +1,21 @@
 // FocusScope + useButton against the real wasm core: focus is read from what the core drew
 // (only the focused row paints its focus:bg-blue-600 variant).
 import { afterEach, expect, test } from "bun:test";
-import { useState, type ReactNode } from "react";
 import { BTN } from "@pocketjs/framework/input";
-import { bootCore, type Core } from "./harness.ts";
+import { type ReactNode, useState } from "react";
 import { FocusScope, mount, Text, useButton, View } from "../src/index.ts";
+import { bootCore, type Core } from "./harness.ts";
 
 const ROW = "px-2 py-1 bg-slate-800 focus:bg-blue-600";
 const TXT = "text-sm text-white";
 const PANEL = "flex-col gap-1 p-2 bg-slate-700";
-const CLASSES = [ROW, TXT, PANEL, "w-full h-full flex-col gap-1 p-2 bg-slate-900", "w-[100px] h-[10px] bg-blue-600"];
+const CLASSES = [
+  ROW,
+  TXT,
+  PANEL,
+  "w-full h-full flex-col gap-1 p-2 bg-slate-900",
+  "w-[100px] h-[10px] bg-blue-600",
+];
 let core: Core | undefined;
 afterEach(() => core?.dispose());
 
@@ -21,7 +27,11 @@ function Item(props: { label: string; onPress?: () => void }) {
   );
 }
 
-function Scope(props: { label: string; onClose: () => void; children: ReactNode }) {
+function Scope(props: {
+  label: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
   useButton(BTN.CROSS, props.onClose);
   return (
     <FocusScope className={PANEL}>
@@ -65,7 +75,9 @@ async function start(): Promise<Core> {
 function focusedLabels(c: Core): string[] {
   const runs = c.texts();
   const blue = c.pixel(12, 12);
-  return runs.filter((r) => c.pixel(r.x - 4, r.y + 2) === blue).map((r) => r.text);
+  return runs
+    .filter((r) => c.pixel(r.x - 4, r.y + 2) === blue)
+    .map((r) => r.text);
 }
 const visible = (c: Core) => c.texts().map((r) => r.text);
 

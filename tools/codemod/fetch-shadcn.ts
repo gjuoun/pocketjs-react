@@ -12,7 +12,10 @@ import { basename, resolve } from "node:path";
 
 const REGISTRY = "https://ui.shadcn.com/r/styles/";
 const DEFAULT_STYLE = "new-york-v4";
-const DEFAULT_OUT = resolve(import.meta.dir, "../../test/fixtures/shadcn-vendor/upstream");
+const DEFAULT_OUT = resolve(
+  import.meta.dir,
+  "../../test/fixtures/shadcn-vendor/upstream",
+);
 const DEFAULT_NAMES = ["button", "badge", "input", "card", "dialog"];
 
 /** Registry import specifier -> the specifier a local consumer app needs. */
@@ -31,14 +34,23 @@ export interface VendorEntry {
   remaps: string[];
 }
 
-function args(): { names: string[]; out: string; style: string; verify: boolean } {
+function args(): {
+  names: string[];
+  out: string;
+  style: string;
+  verify: boolean;
+} {
   const argv = process.argv.slice(2);
   const get = (flag: string, fallback: string) => {
     const i = argv.indexOf(flag);
     return i >= 0 && argv[i + 1] ? argv[i + 1] : fallback;
   };
   return {
-    names: argv.filter((a, i) => !a.startsWith("--") && !["--out", "--style"].includes(argv[i - 1] ?? "")),
+    names: argv.filter(
+      (a, i) =>
+        !a.startsWith("--") &&
+        !["--out", "--style"].includes(argv[i - 1] ?? ""),
+    ),
     out: resolve(get("--out", DEFAULT_OUT)),
     style: get("--style", DEFAULT_STYLE),
     verify: argv.includes("--verify"),
@@ -68,10 +80,27 @@ function notice(style: string, entries: VendorEntry[]): string {
     "|---|---|---|---|---|",
   ];
   for (const e of entries) {
-    lines.push("| `" + e.file + "` | " + e.bytes + " | `" + e.sha256 + "` | " + e.url + " | " + (e.remaps.length ? e.remaps.join("<br>") : "none") + " |");
+    lines.push(
+      "| `" +
+        e.file +
+        "` | " +
+        e.bytes +
+        " | `" +
+        e.sha256 +
+        "` | " +
+        e.url +
+        " | " +
+        (e.remaps.length ? e.remaps.join("<br>") : "none") +
+        " |",
+    );
   }
-  lines.push("", "The vendored files are data, not product code: `test/fixtures/shadcn-vendor/upstream/`");
-  lines.push("is only read by the codemod, and only its output (`../ui/`) is imported by the demo.");
+  lines.push(
+    "",
+    "The vendored files are data, not product code: `test/fixtures/shadcn-vendor/upstream/`",
+  );
+  lines.push(
+    "is only read by the codemod, and only its output (`../ui/`) is imported by the demo.",
+  );
   lines.push("");
   return lines.join("\n");
 }
@@ -84,16 +113,23 @@ export function remap(source: string): { text: string; applied: string[] } {
     const hits = text.match(pattern);
     if (!hits) continue;
     text = text.replace(pattern, replacement);
-    for (const hit of new Set(hits)) applied.push(hit + " -> " + replacement.replace(/^from /, ""));
+    for (const hit of new Set(hits))
+      applied.push(hit + " -> " + replacement.replace(/^from /, ""));
   }
   return { text, applied };
 }
 
-async function fetchOne(name: string, style: string): Promise<{ file: string; content: string; url: string }> {
+async function fetchOne(
+  name: string,
+  style: string,
+): Promise<{ file: string; content: string; url: string }> {
   const url = REGISTRY + style + "/" + name + ".json";
   const response = await fetch(url);
-  if (!response.ok) throw new Error("registry " + url + " -> HTTP " + response.status);
-  const json = (await response.json()) as { files?: { path: string; content: string }[] };
+  if (!response.ok)
+    throw new Error("registry " + url + " -> HTTP " + response.status);
+  const json = (await response.json()) as {
+    files?: { path: string; content: string }[];
+  };
   const file = json.files?.[0];
   if (!file) throw new Error("registry " + name + ": no files[] entry");
   return { file: basename(file.path), content: file.content, url };
@@ -102,7 +138,9 @@ async function fetchOne(name: string, style: string): Promise<{ file: string; co
 async function verify(out: string): Promise<number> {
   const noticePath = resolve(out, "../NOTICE.md");
   const text = await Bun.file(noticePath).text();
-  const rows = [...text.matchAll(/^\| `([^`]+)` \| (\d+) \| `([0-9a-f]{64})` \|/gm)];
+  const rows = [
+    ...text.matchAll(/^\| `([^`]+)` \| (\d+) \| `([0-9a-f]{64})` \|/gm),
+  ];
   if (rows.length === 0) {
     console.error("verify: no hash rows in " + noticePath);
     return 1;
@@ -113,9 +151,24 @@ async function verify(out: string): Promise<number> {
     const data = new Uint8Array(await Bun.file(path).arrayBuffer());
     const ok = data.byteLength === Number(bytes) && sha256(data) === hash;
     if (!ok) bad++;
-    console.log((ok ? "ok   " : "DRIFT") + " " + file + " (" + data.byteLength + " bytes, sha256 " + sha256(data).slice(0, 12) + "…)");
+    console.log(
+      (ok ? "ok   " : "DRIFT") +
+        " " +
+        file +
+        " (" +
+        data.byteLength +
+        " bytes, sha256 " +
+        sha256(data).slice(0, 12) +
+        "…)",
+    );
   }
-  console.log("verify: " + (rows.length - bad) + "/" + rows.length + " files match NOTICE.md");
+  console.log(
+    "verify: " +
+      (rows.length - bad) +
+      "/" +
+      rows.length +
+      " files match NOTICE.md",
+  );
   return bad === 0 ? 0 : 1;
 }
 
@@ -130,9 +183,24 @@ async function main(): Promise<number> {
     const { text, applied } = remap(source.content);
     const bytes = new TextEncoder().encode(text);
     await Bun.write(resolve(opts.out, source.file), bytes);
-    const entry: VendorEntry = { name, file: source.file, url: source.url, bytes: bytes.byteLength, sha256: sha256(bytes), remaps: applied };
+    const entry: VendorEntry = {
+      name,
+      file: source.file,
+      url: source.url,
+      bytes: bytes.byteLength,
+      sha256: sha256(bytes),
+      remaps: applied,
+    };
     entries.push(entry);
-    console.log("wrote " + source.file + " (" + entry.bytes + " bytes, sha256 " + entry.sha256.slice(0, 12) + "…)");
+    console.log(
+      "wrote " +
+        source.file +
+        " (" +
+        entry.bytes +
+        " bytes, sha256 " +
+        entry.sha256.slice(0, 12) +
+        "…)",
+    );
     for (const edit of applied) console.log("  remap " + edit);
   }
   const noticePath = resolve(opts.out, "../NOTICE.md");

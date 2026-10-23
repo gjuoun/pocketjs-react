@@ -24,7 +24,11 @@ function dispatch(pressed: number): void {
   }
 }
 
-export function useButton(mask: number, handler: (pressed: number) => void, opts: { enabled?: boolean } = {}): void {
+export function useButton(
+  mask: number,
+  handler: (pressed: number) => void,
+  opts: { enabled?: boolean } = {},
+): void {
   const run = useRef(handler);
   run.current = handler;
   const enabled = opts.enabled ?? true;

@@ -1,8 +1,9 @@
 // <Menu>: a Dialog holding a List of actions. Focus is trapped while it is open, CROSS closes
 // it, and selecting an item runs it (the menu closes unless the item keeps it open).
+
+import { Text } from "../elements.ts";
 import { Dialog } from "./Dialog.tsx";
 import { List } from "./List.tsx";
-import { Text } from "../elements.ts";
 
 export interface MenuItem {
   label: string;
@@ -20,7 +21,12 @@ export interface MenuProps {
 
 export function Menu(props: MenuProps) {
   return (
-    <Dialog open={props.open} onClose={props.onClose} title={props.title} panelClassName="w-[260px]">
+    <Dialog
+      open={props.open}
+      onClose={props.onClose}
+      title={props.title}
+      panelClassName="w-[260px]"
+    >
       <List
         items={props.items}
         keyOf={(item) => item.label}
@@ -28,7 +34,9 @@ export function Menu(props: MenuProps) {
           item.onSelect();
           if (!item.keepOpen) props.onClose();
         }}
-        renderItem={(item) => <Text className="text-sm text-white">{item.label}</Text>}
+        renderItem={(item) => (
+          <Text className="text-sm text-white">{item.label}</Text>
+        )}
       />
     </Dialog>
   );

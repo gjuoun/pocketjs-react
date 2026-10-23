@@ -7,7 +7,9 @@ import { buildReader } from "../tools/build-reader.ts";
 import { bootApp } from "./harness.ts";
 
 test("library -> contents -> reading -> page and chapter turns -> back to the library", async () => {
-  const core = await bootApp(await buildReader({ outdir: "/tmp/pocketjs-react-test/reader" }));
+  const core = await bootApp(
+    await buildReader({ outdir: "/tmp/pocketjs-react-test/reader" }),
+  );
   try {
     const drawn = () => core.texts().map((r) => r.text);
     expect(drawn()).toContain("Bitcoin: A Peer-to-Peer Electronic Cash System");
@@ -34,12 +36,27 @@ test("library -> contents -> reading -> page and chapter turns -> back to the li
     const runs = core.texts();
     const indicator = runs.find((r) => r.text === "page 1/4")!;
     const titleRun = runs.find((r) => r.text === "4. Proof-of-Work")!;
-    const glyphW = (r: { text: string; w: number }) => Math.min(r.w, r.text.length * 9); // text runs report the box width
-    const overlaps = (a: typeof indicator, b: typeof indicator) => a.x < b.x + glyphW(b) && b.x < a.x + glyphW(a) && a.y < b.y + b.h && b.y < a.y + a.h;
-    expect(runs.filter((r) => r !== indicator && r.text.trim() && overlaps(r, indicator)).map((r) => r.text)).toEqual([]);
+    const glyphW = (r: { text: string; w: number }) =>
+      Math.min(r.w, r.text.length * 9); // text runs report the box width
+    const overlaps = (a: typeof indicator, b: typeof indicator) =>
+      a.x < b.x + glyphW(b) &&
+      b.x < a.x + glyphW(a) &&
+      a.y < b.y + b.h &&
+      b.y < a.y + a.h;
+    expect(
+      runs
+        .filter(
+          (r) => r !== indicator && r.text.trim() && overlaps(r, indicator),
+        )
+        .map((r) => r.text),
+    ).toEqual([]);
     expect(indicator.y).toBeGreaterThanOrEqual(titleRun.y + titleRun.h);
     expect(page).toContain("page 1/4");
-    expect(page.some((t) => t.startsWith("To implement a distributed timestamp server"))).toBe(true);
+    expect(
+      page.some((t) =>
+        t.startsWith("To implement a distributed timestamp server"),
+      ),
+    ).toBe(true);
 
     core.press(BTN.RIGHT);
     core.press(BTN.RIGHT);
@@ -48,7 +65,9 @@ test("library -> contents -> reading -> page and chapter turns -> back to the li
     core.press(BTN.RTRIGGER);
     page = drawn();
     expect(page[0]).toBe("5. Network");
-    expect(page).toContain("page 1/" + page.find((t) => t.startsWith("page 1/"))!.slice(7));
+    expect(page).toContain(
+      "page 1/" + page.find((t) => t.startsWith("page 1/"))!.slice(7),
+    );
 
     core.press(BTN.CROSS); // contents
     expect(drawn()).toContain("5. Network");
@@ -60,7 +79,11 @@ test("library -> contents -> reading -> page and chapter turns -> back to the li
 });
 
 test("a contents list shorter than its window opens with its first entry focused; CIRCLE reads it", async () => {
-  const built = await build("examples/reader/main.tsx", { outdir: "/tmp/pocketjs-react-test/reader-sanguo", name: "reader-sanguo", assets: { "sanguo.epub": "test/fixtures/books/sanguo.epub" } });
+  const built = await build("examples/reader/main.tsx", {
+    outdir: "/tmp/pocketjs-react-test/reader-sanguo",
+    name: "reader-sanguo",
+    assets: { "sanguo.epub": "test/fixtures/books/sanguo.epub" },
+  });
   const core = await bootApp(built);
   try {
     const drawn = () => core.texts().map((r) => r.text);

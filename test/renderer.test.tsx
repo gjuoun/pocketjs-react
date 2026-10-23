@@ -2,10 +2,10 @@
 // caused them, unmount clears the drawn tree, and host types outside the DOM compat table
 // are rejected.
 import { afterEach, expect, test } from "bun:test";
-import { useState } from "react";
 import { BTN } from "@pocketjs/framework/input";
-import { bootCore, type Core } from "./harness.ts";
+import { useState } from "react";
 import { mount, Text, View } from "../src/index.ts";
+import { bootCore, type Core } from "./harness.ts";
 
 const CLASSES = ["text-base text-white", "p-2 bg-slate-800 focus:bg-blue-600"];
 let core: Core | undefined;
@@ -14,7 +14,11 @@ afterEach(() => core?.dispose());
 function Counter() {
   const [count, setCount] = useState(0);
   return (
-    <View className="p-2 bg-slate-800 focus:bg-blue-600" focusable onPress={() => setCount((c) => c + 1)}>
+    <View
+      className="p-2 bg-slate-800 focus:bg-blue-600"
+      focusable
+      onPress={() => setCount((c) => c + 1)}
+    >
       <Text className="text-base text-white">{"Count " + count}</Text>
     </View>
   );

@@ -5,8 +5,15 @@ import { mount, Text, View } from "pocketjs-react";
 const report: Record<string, unknown> = {};
 try {
   const names = existsSync("books") ? (readdirSync("books") as string[]) : [];
-  report.books = names.map((name) => [name, file("books/" + name).bytes().length]);
-  const state = (existsSync("state/reader.json") ? file("state/reader.json").json() : { opens: 0 }) as { opens: number };
+  report.books = names.map((name) => [
+    name,
+    file("books/" + name).bytes().length,
+  ]);
+  const state = (
+    existsSync("state/reader.json")
+      ? file("state/reader.json").json()
+      : { opens: 0 }
+  ) as { opens: number };
   report.opens = state.opens + 1;
   write("state/reader.json", JSON.stringify({ opens: report.opens }));
   try {
