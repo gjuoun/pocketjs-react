@@ -10,6 +10,7 @@ import {
   insertNode,
   removeNode,
   replaceText,
+  setDebugName,
   setProp,
   ENUMS,
   type NodeMirror,
@@ -18,6 +19,27 @@ import {
 type Props = Record<string, unknown>;
 
 const HOST_TYPES = new Set(["view", "text", "image"]);
+
+/** The DOM-compat hook, installed by mount() through the compat layer. Default identity:
+ *  every tag must already be a PocketJS host type. `count` is true on creation - the
+ *  compat layer counts what it drops once per mount, not again on every re-render. */
+export interface HostCompat {
+  type(tag: string, props: Props): string;
+  props(tag: string, props: Props, count: boolean): Props;
+}
+
+let compat: HostCompat = {
+  type: (tag) => tag,
+  props: (_tag, props) => {
+    const out: Props = {};
+    for (const key in props) if (key !== "children") out[key] = props[key];
+    return out;
+  },
+};
+
+export function setHostCompat(next: HostCompat): void {
+  compat = next;
+}
 
 /** Hooks the style layer installs (className runtime, CSS style mapping). */
 export interface PropsTransform {
@@ -68,9 +90,11 @@ const hostConfig = {
   scheduleMicrotask: queueMicrotask,
 
   createInstance(type: string, props: Props): NodeMirror {
-    if (!HOST_TYPES.has(type)) throw new Error("pocketjs-react: unknown host element <" + type + ">");
-    const node = createElement(type);
-    applyProps(node, transform.toHost(props));
+    const hostType = compat.type(type, props);
+    if (!HOST_TYPES.has(hostType)) throw new Error("pocketjs-react: unknown host element <" + type + ">");
+    const node = createElement(hostType);
+    if (hostType !== type) setDebugName(node, type);
+    applyProps(node, transform.toHost(compat.props(type, props, true)));
     transform.afterProps(node, props);
     return node;
   },
@@ -85,8 +109,12 @@ const hostConfig = {
   removeChild(parent: NodeMirror, child: NodeMirror) { removeNode(parent, child); },
   removeChildFromContainer(parent: NodeMirror, child: NodeMirror) { removeNode(parent, child); },
   commitTextUpdate(node: NodeMirror, _old: string, next: string) { replaceText(node, next); },
-  commitUpdate(node: NodeMirror, _type: string, oldProps: Props, newProps: Props) {
-    applyProps(node, transform.toHost(newProps), transform.toHost(oldProps));
+  commitUpdate(node: NodeMirror, type: string, oldProps: Props, newProps: Props) {
+    applyProps(
+      node,
+      transform.toHost(compat.props(type, newProps, false)),
+      transform.toHost(compat.props(type, oldProps, false)),
+    );
     transform.afterProps(node, newProps);
   },
   finalizeInitialChildren() { return false; },

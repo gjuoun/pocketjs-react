@@ -1,5 +1,6 @@
 // The react-reconciler renderer against the real wasm core: commits land in the frame that
-// caused them, unmount clears the drawn tree, and unknown host elements are rejected.
+// caused them, unmount clears the drawn tree, and host types outside the DOM compat table
+// are rejected.
 import { afterEach, expect, test } from "bun:test";
 import { useState } from "react";
 import { BTN } from "@pocketjs/framework/input";
@@ -39,7 +40,7 @@ test("unmount removes every drawn run", async () => {
   expect(core.texts()).toEqual([]);
 });
 
-test("an unknown host element is rejected", async () => {
+test("a host type outside the DOM compat table is rejected", async () => {
   core = await bootCore({ classes: CLASSES });
-  expect(() => mount(<div />)).toThrow("unknown host element <div>");
+  expect(() => mount(<article />)).toThrow("unknown host element <article>");
 });

@@ -17,6 +17,7 @@ export {
   resetRendererState,
   rootMirror,
   runSweep,
+  setDebugName,
   setProp,
   setStyleResolver,
   type NodeMirror,

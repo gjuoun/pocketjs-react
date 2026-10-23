@@ -29,6 +29,7 @@ import { reconciler, withPriority } from "./host-config.ts";
 import { buildStyleBin, buildStyleIds, buildStyleTokens } from "../style/build-styles.ts";
 import { initClassRuntime } from "../style/class-runtime.ts";
 import { installStyleLayer } from "../style/props.ts";
+import { installCompat } from "../compat/index.ts";
 import { installPointer } from "../input/pointer.ts";
 
 export interface MountOptions {
@@ -85,6 +86,7 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
   registerStyles(opts.styles ?? buildStyleIds());
   initClassRuntime(opts.styleBin ?? (opts.styles ? new Uint8Array(0) : buildStyleBin()), buildStyleTokens());
   installStyleLayer();
+  installCompat();
   const removePointer = installPointer();
 
   const nativeTextures = host.kind === "native" ? (host.ops as HostOps & { __textures?: Record<string, number> }).__textures : undefined;
