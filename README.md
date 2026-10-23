@@ -16,6 +16,7 @@ The demo above shows an English and a simplified Chinese book in the macOS app.
 - **Tailwind + clsx + cn** — `className` takes any string React code builds: literals, ternaries, `clsx(...)`, `cn(...)` (clsx + tailwind-merge). Each class combination becomes a native style record, so `focus:`, `active:` and transitions stay native.
 - **Inline styles** — the standard React `style` prop with camelCase CSS names, mapped to the core's properties.
 - **D-pad input** — `FocusScope` (traps focus, restores it on close) and `useButton` (face and shoulder buttons, innermost handler wins), built on PocketJS's own focus manager. Confirm = CIRCLE, back = CROSS.
+- **DOM compat (C1)** — plain React DOM tags mount: `div/section/main/header/footer/nav/aside/ul/ol/li` → view, `span/p/label/strong/em/code/pre/h1..h6` → text, `button/a` → focusable view (CIRCLE presses), `input` renders without crashing (real input is not here yet). DOM-only props (`data-*`, `aria-*`, `type`, `disabled`, …) are dropped and counted, `onClick` becomes a press. See "DOM compat" below.
 - **Components** — `List` (d-pad-operable rows, optionally a scrolling window), `Dialog` (portaled overlay that traps focus and closes on back), `Grid` (row/column d-pad movement), `Tabs` (shoulder buttons switch, focus remembered per tab) and `Menu`.
 - **Mouse as a second layer** — a click focuses and presses what it points at, through the same focus system (an open dialog keeps clicks behind it inert).
 - **Per-frame hook** — `useFrame(cb)` runs once per host frame with a 0-based counter (the React counterpart of the framework's frame pump), for games and animations.
@@ -193,6 +194,25 @@ Spacing is N × 4 px. Arbitrary values `[Npx]` work on every numeric utility (ne
 - filters, background images, `fixed`/`sticky`, scrolling.
 
 Most of these need new drawing features in the PocketJS core (it lays out with flexbox only and draws rects, gradients, rounded rects, inset borders, four baked shadows, baked bitmap fonts, images and transforms), not something this repo can add on its own.
+
+## DOM compat
+
+JSX written with plain React DOM tags runs on the native tree, so components written in DOM vocabulary (for example shadcn/ui sources) mount without rewriting their tags:
+
+| DOM tag | Mounts as |
+|---|---|
+| `div` `section` `main` `header` `footer` `nav` `aside` `ul` `ol` `li` | view |
+| `button` `a` | view + focusable (`onClick` fires on CIRCLE or a click; `a` navigates nowhere) |
+| `span` `p` `label` `strong` `em` `code` `pre` `h1`–`h6` | text |
+| `input` | view (renders; text input is not implemented yet) |
+
+Each mapped element carries its DOM tag as its `debugName`, so DevTools and errors still say `button`. Tags outside the table throw, naming the tag and the table.
+
+**Props** land in one of four buckets: `onClick` aliases to `onPress`; `data-*`/`aria-*` and the DOM surface PocketJS has no answer for yet (`role`, `id`, `type`, `disabled`, `tabIndex`, `href`, `value`, `onChange`, `onFocus`, …) are **dropped and counted**; the PocketJS surface (`className`, `style`, `focusable`, `onPress`, `debugName`, `ref`) passes through; anything unrecognized **throws by default** — pass `mount(el, { compat: { unknownProps: "drop" } })` to drop and count instead. Note a dropped `disabled` still focuses and presses (no disabled semantics yet).
+
+**What the layer accepted is inspectable**: `compatStats()` reports dropped and unknown attrs per name, unknown tags, and class-miss counts (`resetCompatStats()` clears). Nothing disappears silently.
+
+**shadcn-style class strings** are another story: their utilities are mostly outside the compiler subset (`bg-primary`, `inline-flex`, `hover:`, …). `mount(el, { compat: { classMiss: "drop" } })` keeps the supported subset of a literal, drops the rest and counts it, instead of throwing on the browser host. The tokens themselves are not mapped yet — that is the next layer (semantic-color/token mapping), so expect unstyled-but-correct structure.
 
 ## The style prop
 
