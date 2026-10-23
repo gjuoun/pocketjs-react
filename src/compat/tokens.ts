@@ -58,9 +58,12 @@ export const TOKEN_MAP: Readonly<Record<string, string>> = {
   "fill-current": "",
   "underline": "",
   "underline-offset-4": "",
-  // rounded-full needs a build-time known w/h in the same literal ([R] rule would throw).
-  "rounded-full": "",
 };
+
+/** rounded-full compiles only with a pinned w/h in the same literal (the [R] rule throws
+ *  otherwise). Spelled as a pattern, not a map key: the build scan collects every source
+ *  string literal, and a bare "rounded-full" would throw during pass 1. */
+const NEEDS_SIZE = /^rounded-full$/;
 
 /** Prefixes that map onto a PocketJS variant. Anything else is dropped by the rewriter. */
 const VARIANTS: Readonly<Record<string, string>> = {
@@ -99,6 +102,7 @@ export function rewriteToken(tok: string): string {
   if (size) return "w-" + size[1] + " h-" + size[1];
   // ring-* draws an outline the core does not have (C10); ring-offset-* likewise.
   if (tok === "ring" || tok.startsWith("ring-")) return "";
+  if (NEEDS_SIZE.test(tok)) return "";
   return tok;
 }
 

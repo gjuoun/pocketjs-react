@@ -41,7 +41,10 @@ test("classMiss drop: a shadcn-shaped literal mounts, counts, and the supported 
   c.step(0);
   c.render();
   expect(core!.pixel(20, 20)).toBe("#1e293b");
-  expect(compatStats().classMiss).toEqual({ tokens: 4, literals: 1 });
+  // C2 maps bg-primary -> bg-slate-900 and drops rounded-full; the mapped vocabulary is not
+  // in this ad-hoc build table yet, so the remaining miss is the mapping's own target.
+  expect(compatStats().classMiss).toEqual({ tokens: 3, literals: 1 });
+  expect(compatStats().tokenMap).toEqual({ mapped: 1, dropped: 1 });
 });
 
 test("classMiss drop: an entirely unknown literal leaves the node unstyled, not crashed", async () => {
@@ -49,5 +52,14 @@ test("classMiss drop: an entirely unknown literal leaves the node unstyled, not 
   mount(<div className="bg-primary font-semibold" />, { compat: { classMiss: "drop" } });
   c.step(0);
   expect(compatStats().classMiss).toEqual({ tokens: 2, literals: 1 });
+  expect(compatStats().tokenMap).toEqual({ mapped: 2, dropped: 0 });
   expect(rootMirror.children[0].children[0].children.length).toBe(0);
+});
+
+test("tokenMap: false keeps the shadcn vocabulary and counts it as a plain miss", async () => {
+  const c = await boot();
+  mount(<div className="bg-primary" />, { compat: { classMiss: "drop", tokenMap: false } });
+  c.step(0);
+  expect(compatStats().classMiss).toEqual({ tokens: 1, literals: 1 });
+  expect(compatStats().tokenMap).toEqual({ mapped: 0, dropped: 0 });
 });

@@ -13,6 +13,8 @@ export interface CompatStats {
   unknownTags: number;
   /** Class tokens/literals dropped under compat: { classMiss: "drop" }. */
   classMiss: { tokens: number; literals: number };
+  /** C2 token map activity: tokens moved to PocketJS vocabulary, tokens dropped on purpose. */
+  tokenMap: { mapped: number; dropped: number };
 }
 
 const droppedAttrs: Record<string, number> = {};
@@ -41,6 +43,7 @@ export function compatStats(): CompatStats {
     unknownAttrs: { ...unknownAttrs },
     unknownTags,
     classMiss: { tokens: classRuntimeStats.droppedTokens, literals: classRuntimeStats.droppedLiterals },
+    tokenMap: { mapped: classRuntimeStats.mappedTokens, dropped: classRuntimeStats.mapDroppedTokens },
   };
 }
 

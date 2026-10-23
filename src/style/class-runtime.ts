@@ -26,6 +26,7 @@ import {
   type StyleRecord,
 } from "../internal/pocket.ts";
 import { getHost, getOps } from "@pocketjs/framework/host";
+import { rewrite } from "../compat/tokens.ts";
 
 const HEADER_SIZE = 12;
 
@@ -52,6 +53,10 @@ export const classRuntimeStats = {
   droppedTokens: 0,
   /** Literals that produced no style id under the drop policy (all-unknown or rejected). */
   droppedLiterals: 0,
+  /** Tokens the compat token map moved to PocketJS vocabulary (bg-primary -> bg-slate-900). */
+  mappedTokens: 0,
+  /** Tokens the compat token map dropped on purpose (dark:, rounded-full, ring-*, ...). */
+  mapDroppedTokens: 0,
 };
 
 /** What happens to class tokens the build scan never collected. "throw" keeps the strict
@@ -61,10 +66,21 @@ export const classRuntimeStats = {
 export type ClassMissPolicy = "throw" | "drop";
 let missPolicy: ClassMissPolicy = "throw";
 
-/** Zero the class-miss counters (compatStats() owns the public reset). */
+/** Zero the class-miss and token-map counters (compatStats() owns the public reset). */
 export function resetClassMissStats(): void {
   classRuntimeStats.droppedTokens = 0;
   classRuntimeStats.droppedLiterals = 0;
+  classRuntimeStats.mappedTokens = 0;
+  classRuntimeStats.mapDroppedTokens = 0;
+}
+
+/** The C2 token map: rewrite shadcn vocabulary into PocketJS vocabulary before resolving.
+ *  Off until mount() installs the compat layer, so direct class-runtime users keep the
+ *  strict contract; compat mounts turn it on by default (opt out with tokenMap: false). */
+let tokenMapEnabled = false;
+
+export function setTokenMapEnabled(enabled: boolean): void {
+  tokenMapEnabled = enabled;
 }
 
 export function setClassMissPolicy(mode: ClassMissPolicy): void {
@@ -195,9 +211,15 @@ export function resolveClass(cls: string): number | null {
 
 /** Apply a node's className (called by the host config on create and update). */
 export function applyClassName(node: NodeMirror, cls: unknown): void {
-  const next = typeof cls === "string" ? cls : "";
+  const raw = typeof cls === "string" ? cls : "";
+  const rewritten = tokenMapEnabled ? rewrite(raw) : undefined;
+  const next = rewritten ? rewritten.text : raw;
   if (applied.get(node) === next) return;
   applied.set(node, next);
+  if (rewritten) {
+    classRuntimeStats.mappedTokens += rewritten.mapped;
+    classRuntimeStats.mapDroppedTokens += rewritten.dropped;
+  }
   if (next.trim() === "") {
     appliedId.delete(node);
     getOps().setStyle(node.id, STYLE_ID_NONE);
