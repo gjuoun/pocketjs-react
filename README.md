@@ -17,6 +17,7 @@ The demo above shows an English and a simplified Chinese book in the macOS app.
 - **Inline styles** — the standard React `style` prop with camelCase CSS names, mapped to the core's properties.
 - **D-pad input** — `FocusScope` (traps focus, restores it on close) and `useButton` (face and shoulder buttons, innermost handler wins), built on PocketJS's own focus manager. Confirm = CIRCLE, back = CROSS.
 - **DOM compat (C1)** — plain React DOM tags mount: `div/section/main/header/footer/nav/aside/ul/ol/li` → view, `span/p/label/strong/em/code/pre/h1..h6` → text, `button/a` → focusable view (CIRCLE presses), `input` renders without crashing (real input is not here yet). DOM-only props (`data-*`, `aria-*`, `type`, `disabled`, …) are dropped and counted, `onClick` becomes a press. See "DOM compat" below.
+- **Semantic token map (C2)** — shadcn's semantic colors and utilities (`bg-primary`, `text-muted-foreground`, `border-input`, `hover:` …) are rewritten onto the fixed 19-family palette at build and run time, so verbatim shadcn components render styled instead of unstyled-but-correct. What the map drops is counted in `compatStats().tokenMap`. See "Semantic token map (C2)" below.
 - **Components** — `List` (d-pad-operable rows, optionally a scrolling window), `Dialog` (portaled overlay that traps focus and closes on back), `Grid` (row/column d-pad movement), `Tabs` (shoulder buttons switch, focus remembered per tab) and `Menu`.
 - **Mouse as a second layer** — a click focuses and presses what it points at, through the same focus system (an open dialog keeps clicks behind it inert).
 - **Per-frame hook** — `useFrame(cb)` runs once per host frame with a 0-based counter (the React counterpart of the framework's frame pump), for games and animations.
@@ -212,7 +213,31 @@ Each mapped element carries its DOM tag as its `debugName`, so DevTools and erro
 
 **What the layer accepted is inspectable**: `compatStats()` reports dropped and unknown attrs per name, unknown tags, and class-miss counts (`resetCompatStats()` clears). Nothing disappears silently.
 
-**shadcn-style class strings** are another story: their utilities are mostly outside the compiler subset (`bg-primary`, `inline-flex`, `hover:`, …). `mount(el, { compat: { classMiss: "drop" } })` keeps the supported subset of a literal, drops the rest and counts it, instead of throwing on the browser host. The tokens themselves are not mapped yet — that is the next layer (semantic-color/token mapping), so expect unstyled-but-correct structure.
+**shadcn-style class strings** are mapped since C2 (next section): the fixed table rewrites them at build time and again at run time, and what it drops is counted. `mount(el, { compat: { classMiss: "drop" } })` stays as the safety net for tokens neither the map nor the compiler knows — it keeps the supported subset, counts the rest and never crashes the browser host.
+
+### Semantic token map (C2)
+
+shadcn's vocabulary is rewritten through one fixed table (`src/compat/tokens.ts`), used twice: `tools/build.ts` rewrites every scanned literal before compiling the style table, and the runtime rewrites an incoming `className` the same way before resolving it, so a runtime rewrite is an exact table hit (a `twMerge` reorder falls back to the runtime compiler). Values are fixed — the existing 19-family Tailwind v3 palette, one light theme, no build-time theme table and no dark variant.
+
+| shadcn | PocketJS | shadcn | PocketJS |
+|---|---|---|---|
+| `bg-background` `bg-card` `bg-popover` | `bg-white` | `bg-primary` | `bg-slate-900` |
+| `text-foreground` `text-primary` `text-card-foreground` `text-popover-foreground` `text-accent-foreground` | `text-slate-900` | `text-primary-foreground` | `text-white` |
+| `bg-secondary` | `bg-slate-200` | `text-secondary-foreground` | `text-slate-900` |
+| `bg-muted` | `bg-slate-100` | `text-muted-foreground` | `text-slate-500` |
+| `bg-accent` | `bg-slate-200` | `bg-destructive` | `bg-red-600` |
+| `bg-border` | `bg-slate-200` | `text-destructive-foreground` | `text-white` |
+| `border-border` `border-input` | `border-slate-200` | `border-ring` | `border-slate-900` |
+
+Utilities: `inline-flex` → `flex`, `font-medium`/`font-semibold` → `font-bold`, `size-N` → `w-N h-N`, `shadow-xs` → `shadow`, `rounded-xs` → `rounded-sm`, `transition-[color,box-shadow]` → `transition-colors`, `leading-none` → `leading-[1]`, `h-px` → `h-[1px]`, `-mx-1` → `mx-[-4px]`, `overflow-x-hidden` → `overflow-hidden`, `tracking-tight`/`tracking-widest` → `tracking-wide`.
+
+States: `hover:` → `active:` (the press cue; PocketJS has no pointer), `focus-visible:` → `focus:`, `focus:`/`active:` pass through, `/NN` opacity modifiers are stripped. `dark:`, `disabled:`, `aria-*`, `data-*`, `sm:`/`md:`, `file:`, `placeholder:`, `has-[…]`, `[&…]` and `[a&]` are dropped and counted — a fixed light palette has no second theme and the core has no such state.
+
+Dropped on purpose (counted, not silently kept): `w-fit`, `whitespace-nowrap`, `outline-none`, `ml-auto`, `cursor-default`, `fill-current`, `underline`/`underline-offset-4`, `rounded-full` (it compiles only with a pinned `w-N h-N` in the same literal, so a badge is not a pill) and `ring-*` (the core draws no ring; same gap as the Dialog's `fixed`/`grid`/`calc()`).
+
+`mount(el, { compat: { tokenMap: false } })` turns the runtime rewrite off; `compatStats().tokenMap` reports `{ mapped, dropped }` so nothing disappears silently.
+
+Known gap: the core has no text-color inheritance. A `text-*` color applies to a text host (`span`/`p`/`label`/…), so a Badge label takes its mapped color while a Button label — a `view` with a text child — keeps the default white. Fills are correct either way; inheritance belongs to the text layer, not this table.
 
 ## The style prop
 
