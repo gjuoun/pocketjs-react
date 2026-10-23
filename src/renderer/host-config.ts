@@ -7,17 +7,39 @@ import {
   applyProps,
   createElement,
   createTextNode,
+  ENUMS,
   insertNode,
+  type NodeMirror,
   removeNode,
   replaceText,
+  setDebugName,
   setProp,
-  ENUMS,
-  type NodeMirror,
 } from "../internal/pocket.ts";
 
 type Props = Record<string, unknown>;
 
 const HOST_TYPES = new Set(["view", "text", "image"]);
+
+/** The DOM-compat hook, installed by mount() through the compat layer. Default identity:
+ *  every tag must already be a PocketJS host type. `count` is true on creation - the
+ *  compat layer counts what it drops once per mount, not again on every re-render. */
+export interface HostCompat {
+  type(tag: string, props: Props): string;
+  props(tag: string, props: Props, count: boolean): Props;
+}
+
+let compat: HostCompat = {
+  type: (tag) => tag,
+  props: (_tag, props) => {
+    const out: Props = {};
+    for (const key in props) if (key !== "children") out[key] = props[key];
+    return out;
+  },
+};
+
+export function setHostCompat(next: HostCompat): void {
+  compat = next;
+}
 
 /** Hooks the style layer installs (className runtime, CSS style mapping). */
 export interface PropsTransform {
@@ -68,66 +90,150 @@ const hostConfig = {
   scheduleMicrotask: queueMicrotask,
 
   createInstance(type: string, props: Props): NodeMirror {
-    if (!HOST_TYPES.has(type)) throw new Error("pocketjs-react: unknown host element <" + type + ">");
-    const node = createElement(type);
-    applyProps(node, transform.toHost(props));
+    const hostType = compat.type(type, props);
+    if (!HOST_TYPES.has(hostType))
+      throw new Error("pocketjs-react: unknown host element <" + type + ">");
+    const node = createElement(hostType);
+    if (hostType !== type) setDebugName(node, type);
+    applyProps(node, transform.toHost(compat.props(type, props, true)));
     transform.afterProps(node, props);
     return node;
   },
   createTextInstance(text: string): NodeMirror {
     return createTextNode(text);
   },
-  appendInitialChild(parent: NodeMirror, child: NodeMirror) { insertNode(parent, child); },
-  appendChild(parent: NodeMirror, child: NodeMirror) { insertNode(parent, child); },
-  appendChildToContainer(parent: NodeMirror, child: NodeMirror) { insertNode(parent, child); },
-  insertBefore(parent: NodeMirror, child: NodeMirror, before: NodeMirror) { insertNode(parent, child, before); },
-  insertInContainerBefore(parent: NodeMirror, child: NodeMirror, before: NodeMirror) { insertNode(parent, child, before); },
-  removeChild(parent: NodeMirror, child: NodeMirror) { removeNode(parent, child); },
-  removeChildFromContainer(parent: NodeMirror, child: NodeMirror) { removeNode(parent, child); },
-  commitTextUpdate(node: NodeMirror, _old: string, next: string) { replaceText(node, next); },
-  commitUpdate(node: NodeMirror, _type: string, oldProps: Props, newProps: Props) {
-    applyProps(node, transform.toHost(newProps), transform.toHost(oldProps));
+  appendInitialChild(parent: NodeMirror, child: NodeMirror) {
+    insertNode(parent, child);
+  },
+  appendChild(parent: NodeMirror, child: NodeMirror) {
+    insertNode(parent, child);
+  },
+  appendChildToContainer(parent: NodeMirror, child: NodeMirror) {
+    insertNode(parent, child);
+  },
+  insertBefore(parent: NodeMirror, child: NodeMirror, before: NodeMirror) {
+    insertNode(parent, child, before);
+  },
+  insertInContainerBefore(
+    parent: NodeMirror,
+    child: NodeMirror,
+    before: NodeMirror,
+  ) {
+    insertNode(parent, child, before);
+  },
+  removeChild(parent: NodeMirror, child: NodeMirror) {
+    removeNode(parent, child);
+  },
+  removeChildFromContainer(parent: NodeMirror, child: NodeMirror) {
+    removeNode(parent, child);
+  },
+  commitTextUpdate(node: NodeMirror, _old: string, next: string) {
+    replaceText(node, next);
+  },
+  commitUpdate(
+    node: NodeMirror,
+    type: string,
+    oldProps: Props,
+    newProps: Props,
+  ) {
+    applyProps(
+      node,
+      transform.toHost(compat.props(type, newProps, false)),
+      transform.toHost(compat.props(type, oldProps, false)),
+    );
     transform.afterProps(node, newProps);
   },
-  finalizeInitialChildren() { return false; },
-  shouldSetTextContent() { return false; },
-  getRootHostContext() { return {}; },
-  getChildHostContext(context: unknown) { return context; },
-  getPublicInstance(node: NodeMirror) { return node; },
-  prepareForCommit() { return null; },
-  resetAfterCommit() { transform.afterCommit(); },
+  finalizeInitialChildren() {
+    return false;
+  },
+  shouldSetTextContent() {
+    return false;
+  },
+  getRootHostContext() {
+    return {};
+  },
+  getChildHostContext(context: unknown) {
+    return context;
+  },
+  getPublicInstance(node: NodeMirror) {
+    return node;
+  },
+  prepareForCommit() {
+    return null;
+  },
+  resetAfterCommit() {
+    transform.afterCommit();
+  },
   preparePortalMount() {},
   clearContainer(container: NodeMirror) {
     for (const child of [...container.children]) removeNode(container, child);
   },
-  hideInstance(node: NodeMirror) { setProp(node, "style", { display: ENUMS.Display.None }); },
-  unhideInstance(node: NodeMirror) { setProp(node, "style", { display: ENUMS.Display.Flex }); },
-  hideTextInstance(node: NodeMirror) { replaceText(node, ""); },
-  unhideTextInstance(node: NodeMirror, text: string) { replaceText(node, text); },
-  setCurrentUpdatePriority(priority: number) { currentPriority = priority; },
-  getCurrentUpdatePriority() { return currentPriority; },
-  resolveUpdatePriority() { return currentPriority || DefaultEventPriority; },
-  maySuspendCommit() { return false; },
-  maySuspendCommitOnUpdate() { return false; },
-  maySuspendCommitInSyncRender() { return false; },
-  preloadInstance() { return true; },
+  hideInstance(node: NodeMirror) {
+    setProp(node, "style", { display: ENUMS.Display.None });
+  },
+  unhideInstance(node: NodeMirror) {
+    setProp(node, "style", { display: ENUMS.Display.Flex });
+  },
+  hideTextInstance(node: NodeMirror) {
+    replaceText(node, "");
+  },
+  unhideTextInstance(node: NodeMirror, text: string) {
+    replaceText(node, text);
+  },
+  setCurrentUpdatePriority(priority: number) {
+    currentPriority = priority;
+  },
+  getCurrentUpdatePriority() {
+    return currentPriority;
+  },
+  resolveUpdatePriority() {
+    return currentPriority || DefaultEventPriority;
+  },
+  maySuspendCommit() {
+    return false;
+  },
+  maySuspendCommitOnUpdate() {
+    return false;
+  },
+  maySuspendCommitInSyncRender() {
+    return false;
+  },
+  preloadInstance() {
+    return true;
+  },
   startSuspendingCommit() {},
   suspendInstance() {},
-  waitForCommitToBeReady() { return null; },
-  getInstanceFromNode() { return null; },
+  waitForCommitToBeReady() {
+    return null;
+  },
+  getInstanceFromNode() {
+    return null;
+  },
   beforeActiveInstanceBlur() {},
   afterActiveInstanceBlur() {},
   prepareScopeUpdate() {},
-  getInstanceFromScope() { return null; },
+  getInstanceFromScope() {
+    return null;
+  },
   detachDeletedInstance() {},
   resetFormInstance() {},
   requestPostPaintCallback() {},
-  shouldAttemptEagerTransition() { return false; },
+  shouldAttemptEagerTransition() {
+    return false;
+  },
   trackSchedulerEvent() {},
-  resolveEventType() { return null; },
-  resolveEventTimeStamp() { return -1.1; },
+  resolveEventType() {
+    return null;
+  },
+  resolveEventTimeStamp() {
+    return -1.1;
+  },
   NotPendingTransition: null,
-  HostTransitionContext: { $$typeof: Symbol.for("react.context"), _currentValue: null, _currentValue2: null },
+  HostTransitionContext: {
+    $$typeof: Symbol.for("react.context"),
+    _currentValue: null,
+    _currentValue2: null,
+  },
 };
 
 // The host config's instance types are concrete; react-reconciler's generic signature

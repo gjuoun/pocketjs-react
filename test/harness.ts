@@ -1,17 +1,39 @@
 // Test harness: the real PocketJS wasm core (the same pocketjs.wasm the browser host runs)
 // inside Bun. Boots a fresh core, installs it as globalThis.ui, steps frames and reads back
 // what the core drew: text runs with their rects, and framebuffer pixels.
-import { bakeAtlases, compileClasses, createWasmUi, FB_W, FRAMEWORK_ROOT } from "../src/internal/pocket-build.ts";
-import { registerStyles, resetRendererState, resetStyles, resolveStyle, setInputRoot, setStyleResolver } from "../src/internal/pocket.ts";
-import { detectHost, installHost } from "@pocketjs/framework/host";
 
-export interface TextRun { x: number; y: number; w: number; h: number; text: string }
+import { detectHost, installHost } from "@pocketjs/framework/host";
+import {
+  registerStyles,
+  resetRendererState,
+  resetStyles,
+  resolveStyle,
+  setInputRoot,
+  setStyleResolver,
+} from "../src/internal/pocket.ts";
+import {
+  bakeAtlases,
+  compileClasses,
+  createWasmUi,
+  FB_W,
+  FRAMEWORK_ROOT,
+} from "../src/internal/pocket-build.ts";
+
+export interface TextRun {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  text: string;
+}
 
 let wasmBytes: ArrayBuffer | undefined;
 const fontCache = new Map<number, Uint8Array>();
 
 async function wasm(): Promise<ArrayBuffer> {
-  return (wasmBytes ??= await Bun.file(FRAMEWORK_ROOT + "hosts/web/pocketjs.wasm").arrayBuffer());
+  return (wasmBytes ??= await Bun.file(
+    FRAMEWORK_ROOT + "hosts/web/pocketjs.wasm",
+  ).arrayBuffer());
 }
 
 /**
@@ -19,7 +41,9 @@ async function wasm(): Promise<ArrayBuffer> {
  * `classes` are compiled by PocketJS's Tailwind compiler into a style table and the font
  * slots they use are baked, so raw native-tree nodes can be styled and drawn.
  */
-export async function bootCore(opts: { pak?: ArrayBuffer; classes?: string[] } = {}) {
+export async function bootCore(
+  opts: { pak?: ArrayBuffer; classes?: string[] } = {},
+) {
   const core = await createWasmUi(await wasm());
   const ops = core.ops as Record<string, any>;
   const g = globalThis as Record<string, unknown>;
@@ -35,7 +59,12 @@ export async function bootCore(opts: { pak?: ArrayBuffer; classes?: string[] } =
     ops.loadStyles(styles.bin);
     for (const slot of styles.usedFontSlots) {
       if (!fontCache.has(slot)) {
-        const [atlas] = await bakeAtlases({ codepoints: new Set<number>(), slots: [slot], extraChars: "", rasterDensity: 1 });
+        const [atlas] = await bakeAtlases({
+          codepoints: new Set<number>(),
+          slots: [slot],
+          extraChars: "",
+          rasterDensity: 1,
+        });
         fontCache.set(slot, atlas.bytes as Uint8Array);
       }
       ops.loadFontAtlas(fontCache.get(slot));
@@ -77,7 +106,12 @@ export async function bootCore(opts: { pak?: ArrayBuffer; classes?: string[] } =
     pixel(x: number, y: number): string {
       if (fb.length === 0) fb = core.render();
       const i = (y * FB_W + x) * 4;
-      return "#" + [fb[i], fb[i + 1], fb[i + 2]].map((v) => v.toString(16).padStart(2, "0")).join("");
+      return (
+        "#" +
+        [fb[i], fb[i + 1], fb[i + 2]]
+          .map((v) => v.toString(16).padStart(2, "0"))
+          .join("")
+      );
     },
     render() {
       fb = core.render();
@@ -94,7 +128,10 @@ export async function bootCore(opts: { pak?: ArrayBuffer; classes?: string[] } =
 
 export type Core = Awaited<ReturnType<typeof bootCore>>;
 /** Boot a fresh core with a built app's pak and evaluate its bundle (which mounts the app). */
-export async function bootApp(built: { js: string; pak: string }): Promise<Core> {
+export async function bootApp(built: {
+  js: string;
+  pak: string;
+}): Promise<Core> {
   const core = await bootCore({ pak: await Bun.file(built.pak).arrayBuffer() });
   (0, eval)(await Bun.file(built.js).text());
   core.step(0);

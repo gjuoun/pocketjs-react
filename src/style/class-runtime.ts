@@ -11,21 +11,23 @@
 // The runtime only compiles class strings made of tokens the build scan found; a name
 // assembled at runtime (`p-${n}`) is rejected (thrown on strict hosts such as the browser,
 // reported and dropped on native ones), never compiled behind the author's back.
+
+import { getHost, getOps } from "@pocketjs/framework/host";
+import { rewrite } from "../compat/tokens.ts";
 import {
-  PROP,
-  PROP_VALUE_KIND,
-  STYLE_ID_NONE,
-  VALUE_KIND,
   decodeStyleTable,
   encodeStyleTable,
+  type NodeMirror,
+  PROP,
+  PROP_VALUE_KIND,
+  type PropName,
   parseClassLiteral,
   resolveStyle,
-  setProp,
-  type NodeMirror,
-  type PropName,
+  STYLE_ID_NONE,
   type StyleRecord,
+  setProp,
+  VALUE_KIND,
 } from "../internal/pocket.ts";
-import { getHost, getOps } from "@pocketjs/framework/host";
 
 const HEADER_SIZE = 12;
 
@@ -44,14 +46,63 @@ const applied = new WeakMap<NodeMirror, string>();
 const appliedId = new WeakMap<NodeMirror, number>();
 let records: StyleRecord[] = [];
 
-export const classRuntimeStats = { compiled: 0, appended: 0, loads: 0 };
+export const classRuntimeStats = {
+  compiled: 0,
+  appended: 0,
+  loads: 0,
+  /** Unseen tokens dropped under the classMiss drop policy (wired in that policy). */
+  droppedTokens: 0,
+  /** Literals that produced no style id under the drop policy (all-unknown or rejected). */
+  droppedLiterals: 0,
+  /** Tokens the compat token map moved to PocketJS vocabulary (bg-primary -> bg-slate-900). */
+  mappedTokens: 0,
+  /** Tokens the compat token map dropped on purpose (dark:, rounded-full, ring-*, ...). */
+  mapDroppedTokens: 0,
+};
+
+/** What happens to class tokens the build scan never collected. "throw" keeps the strict
+ *  web-host contract (and the native host's report-and-drop); "drop" keeps the supported
+ *  subset, counts the rest, and never crashes - the shadcn-compat failure mode until the
+ *  token mapper (C2) shrinks the drop set to zero. */
+export type ClassMissPolicy = "throw" | "drop";
+let missPolicy: ClassMissPolicy = "throw";
+
+/** Zero the class-miss and token-map counters (compatStats() owns the public reset). */
+export function resetClassMissStats(): void {
+  classRuntimeStats.droppedTokens = 0;
+  classRuntimeStats.droppedLiterals = 0;
+  classRuntimeStats.mappedTokens = 0;
+  classRuntimeStats.mapDroppedTokens = 0;
+}
+
+/** The C2 token map: rewrite shadcn vocabulary into PocketJS vocabulary before resolving.
+ *  Off until mount() installs the compat layer, so direct class-runtime users keep the
+ *  strict contract; compat mounts turn it on by default (opt out with tokenMap: false). */
+let tokenMapEnabled = false;
+
+export function setTokenMapEnabled(enabled: boolean): void {
+  tokenMapEnabled = enabled;
+}
+
+export function setClassMissPolicy(mode: ClassMissPolicy): void {
+  missPolicy = mode;
+}
+
+// Miss bookkeeping for the outermost resolve call only (the kept-subset recursion resets
+// nothing), so applyClassName can count a literal exactly once per unique literal. Token
+// counts accumulate straight into classRuntimeStats.
+let resolveDepth = 0;
+let missLiteral = false;
 
 function body(table: Uint8Array): Uint8Array {
   return table.subarray(HEADER_SIZE);
 }
 
 /** Start from the build's styles.bin (the table the host already loaded from the pak). */
-export function initClassRuntime(bin: Uint8Array, tokens: readonly string[] = []): void {
+export function initClassRuntime(
+  bin: Uint8Array,
+  tokens: readonly string[] = [],
+): void {
   known = new Set(tokens);
   pending.length = 0;
   cache.clear();
@@ -82,7 +133,9 @@ function append(record: StyleRecord): number {
 }
 
 function assemble(): Uint8Array {
-  const out = new Uint8Array(HEADER_SIZE + recordBytes.length + animBytes.length);
+  const out = new Uint8Array(
+    HEADER_SIZE + recordBytes.length + animBytes.length,
+  );
   out.set(header);
   new DataView(out.buffer).setUint16(6, recordCount, true);
   out.set(recordBytes, HEADER_SIZE);
@@ -92,49 +145,90 @@ function assemble(): Uint8Array {
 
 /** Style id for a class string, compiling and appending it when needed; null = not a class string. */
 export function resolveClass(cls: string): number | null {
-  const hit = resolveStyle(cls);
-  if (hit !== undefined) return hit;
-  const norm = cls.trim().replace(/\s+/g, " ");
-  const cached = cache.get(norm);
-  if (cached !== undefined) return cached;
-  if (!enabled) return null;
-  const parts = norm.split(" ");
-  const unseen = parts.filter((tok) => !known.has(tok));
-  if (unseen.length > 0) {
-    const message = "pocketjs-react: class token " + unseen.map((t) => JSON.stringify(t)).join(", ") +
-      " does not appear in the source; write Tailwind utilities as complete tokens (a name built at runtime cannot be found by the build scan)";
-    if (getHost().strict) throw new Error(message);
-    if (!reported.has(norm)) {
-      reported.add(norm);
-      console.error(message);
-    }
+  if (resolveDepth === 0) {
+    missLiteral = false;
   }
-  const kept = parts.filter((tok) => known.has(tok)).join(" ");
-  if (kept !== norm) {
-    const id = kept === "" ? null : resolveClass(kept);
+  resolveDepth++;
+  try {
+    const hit = resolveStyle(cls);
+    if (hit !== undefined) return hit;
+    const norm = cls.trim().replace(/\s+/g, " ");
+    const cached = cache.get(norm);
+    if (cached !== undefined) return cached;
+    if (!enabled) return null;
+    const parts = norm.split(" ");
+    const unseen = parts.filter((tok) => !known.has(tok));
+    if (unseen.length > 0) {
+      if (missPolicy === "drop") {
+        classRuntimeStats.droppedTokens += unseen.length;
+        classRuntimeStats.droppedLiterals++;
+        missLiteral = true;
+        if (!reported.has(norm)) {
+          reported.add(norm);
+          console.error(
+            "pocketjs-react: dropping class token(s) " +
+              unseen.map((t) => JSON.stringify(t)).join(", ") +
+              " - not in the build table (compat classMiss=drop; see compatStats)",
+          );
+        }
+      } else {
+        const message =
+          "pocketjs-react: class token " +
+          unseen.map((t) => JSON.stringify(t)).join(", ") +
+          " does not appear in the source; write Tailwind utilities as complete tokens (a name built at runtime cannot be found by the build scan)";
+        if (getHost().strict) throw new Error(message);
+        if (!reported.has(norm)) {
+          reported.add(norm);
+          console.error(message);
+        }
+      }
+    }
+    const kept = parts.filter((tok) => known.has(tok)).join(" ");
+    if (kept !== norm) {
+      const id = kept === "" ? null : resolveClass(kept);
+      cache.set(norm, id);
+      return id;
+    }
+    classRuntimeStats.compiled++;
+    let record: StyleRecord | null = null;
+    try {
+      record = parseClassLiteral(norm);
+    } catch (error) {
+      if (missPolicy === "throw") throw error;
+      // The compiler rejects some all-known literals outright (rounded-full without a
+      // build-time size): under the drop policy that is a counted miss, not a crash.
+      classRuntimeStats.droppedLiterals++;
+      missLiteral = true;
+      cache.set(norm, null);
+      return null;
+    }
+    let id: number | null = null;
+    if (record) {
+      const key = JSON.stringify(record);
+      id = canonical.get(key) ?? null;
+      if (id === null) {
+        id = append(record);
+        canonical.set(key, id);
+      }
+    }
     cache.set(norm, id);
     return id;
+  } finally {
+    resolveDepth--;
   }
-  classRuntimeStats.compiled++;
-  const record = parseClassLiteral(norm);
-  let id: number | null = null;
-  if (record) {
-    const key = JSON.stringify(record);
-    id = canonical.get(key) ?? null;
-    if (id === null) {
-      id = append(record);
-      canonical.set(key, id);
-    }
-  }
-  cache.set(norm, id);
-  return id;
 }
 
 /** Apply a node's className (called by the host config on create and update). */
 export function applyClassName(node: NodeMirror, cls: unknown): void {
-  const next = typeof cls === "string" ? cls : "";
+  const raw = typeof cls === "string" ? cls : "";
+  const rewritten = tokenMapEnabled ? rewrite(raw) : undefined;
+  const next = rewritten ? rewritten.text : raw;
   if (applied.get(node) === next) return;
   applied.set(node, next);
+  if (rewritten) {
+    classRuntimeStats.mappedTokens += rewritten.mapped;
+    classRuntimeStats.mapDroppedTokens += rewritten.dropped;
+  }
   if (next.trim() === "") {
     appliedId.delete(node);
     getOps().setStyle(node.id, STYLE_ID_NONE);
@@ -144,6 +238,12 @@ export function applyClassName(node: NodeMirror, cls: unknown): void {
   if (id !== null) appliedId.set(node, id);
   else appliedId.delete(node);
   if (id === null) {
+    if (missPolicy === "drop") {
+      // Counted unstyled (the unseen-token path already flagged the literal); never hand an
+      // unknown literal to the framework's setClass, which throws on strict hosts.
+      if (!missLiteral) classRuntimeStats.droppedLiterals++;
+      return;
+    }
     // Not compilable: let the framework report it (throws on strict hosts, counts a miss on native ones).
     setProp(node, "class", next);
     return;
@@ -170,7 +270,10 @@ const PROP_NAMES: Record<number, PropName> = Object.fromEntries(
 const f32 = new DataView(new ArrayBuffer(4));
 
 /** The base-variant value the node's current class record sets for `prop`, in setProp form. */
-export function classBaseValue(node: NodeMirror, prop: PropName): number | undefined {
+export function classBaseValue(
+  node: NodeMirror,
+  prop: PropName,
+): number | undefined {
   const id = appliedId.get(node);
   if (id === undefined) return undefined;
   const entry = records[id]?.base?.find((p) => PROP_NAMES[p.prop] === prop);

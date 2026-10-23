@@ -4,12 +4,16 @@
 // full-width forms) into the body slots from the committed Noto Sans SC subset, for hosts that
 // cannot draw glyphs at run time (the desktop host). About +8.7 MB of pak.
 import { join, resolve } from "node:path";
-import { BODY_SLOTS, build, type BuildResult } from "./build.ts";
+import { BODY_SLOTS, type BuildResult, build } from "./build.ts";
 
 const ROOT = resolve(import.meta.dir, "..");
 // Every regular (non-bold) text size the reader uses: 12 px captions plus the S/M/L body sizes.
 export const CJK_SLOTS = [0, ...BODY_SLOTS];
-export const CJK = { set: join(ROOT, "assets/fonts/cjk-set.txt"), font: join(ROOT, "assets/fonts/NotoSansSC-reader-subset.otf"), slots: CJK_SLOTS };
+export const CJK = {
+  set: join(ROOT, "assets/fonts/cjk-set.txt"),
+  font: join(ROOT, "assets/fonts/NotoSansSC-reader-subset.otf"),
+  slots: CJK_SLOTS,
+};
 
 export interface ReaderBuildOptions {
   outdir?: string;
@@ -23,13 +27,25 @@ export interface ReaderBuildOptions {
   bundleWhitepaper?: boolean;
 }
 
-export function buildReader(opts: ReaderBuildOptions = {}): Promise<BuildResult> {
+export function buildReader(
+  opts: ReaderBuildOptions = {},
+): Promise<BuildResult> {
   const whitepaper = opts.bundleWhitepaper ?? true;
   return build(join(ROOT, "examples/reader/main.tsx"), {
     outdir: opts.outdir ?? join(ROOT, "dist"),
     name: opts.name ?? "reader",
     minify: opts.minify,
-    assets: { ...(whitepaper ? { "bitcoin-whitepaper.epub": join(ROOT, "assets/books/bitcoin-whitepaper.epub") } : {}), ...opts.books },
+    assets: {
+      ...(whitepaper
+        ? {
+            "bitcoin-whitepaper.epub": join(
+              ROOT,
+              "assets/books/bitcoin-whitepaper.epub",
+            ),
+          }
+        : {}),
+      ...opts.books,
+    },
     glyphs: [join(ROOT, "assets/books/bitcoin-whitepaper.txt")],
     cjk: opts.cjk ? CJK : undefined,
   });
@@ -37,5 +53,9 @@ export function buildReader(opts: ReaderBuildOptions = {}): Promise<BuildResult>
 
 if (import.meta.main) {
   const args = process.argv.slice(2);
-  await buildReader({ outdir: args.find((a) => a.startsWith("--outdir="))?.slice(9), minify: args.includes("--minify"), cjk: args.includes("--cjk") });
+  await buildReader({
+    outdir: args.find((a) => a.startsWith("--outdir="))?.slice(9),
+    minify: args.includes("--minify"),
+    cjk: args.includes("--cjk"),
+  });
 }

@@ -38,12 +38,17 @@ function drain(): PointerEvent[] {
       } catch {
         continue;
       }
-      if (message.t === "mouse" && typeof message.x === "number" && typeof message.y === "number") {
+      if (
+        message.t === "mouse" &&
+        typeof message.x === "number" &&
+        typeof message.y === "number"
+      ) {
         events.push({ x: message.x, y: message.y, down: message.d === true });
       } else if (message.t !== "mouse") hostMessages.push(message);
     }
   }
-  const queue = (globalThis as { __pocketPointer?: PointerEvent[] }).__pocketPointer;
+  const queue = (globalThis as { __pocketPointer?: PointerEvent[] })
+    .__pocketPointer;
   if (queue && queue.length) events.push(...queue.splice(0));
   return events;
 }

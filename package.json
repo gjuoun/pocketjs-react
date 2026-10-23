@@ -10,7 +10,13 @@
     "url": "git+https://github.com/gjuoun/pocketjs-react.git"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./tools/build": "./tools/build.ts",
+    "./tools/measure/common": "./tools/measure/common.ts",
+    "./tools/measure/web": "./tools/measure/web.ts",
+    "./tools/measure/desktop": "./tools/measure/desktop.ts",
+    "./test/harness": "./test/harness.ts",
+    "./pak-cook": "./src/pak-cook.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -21,7 +27,10 @@
     "measure:desktop-shot": "bun tools/measure/desktop-shot.ts",
     "build:reader": "bun tools/build-reader.ts",
     "build:app": "bun tools/build-app.ts",
-    "serve:reader": "bun tools/web/serve.ts"
+    "serve:reader": "bun tools/web/serve.ts",
+    "codemod:shadcn": "bun tools/codemod/shadcn.ts test/fixtures/shadcn-vendor/upstream test/fixtures/shadcn-vendor/ui",
+    "build:shadcn-vendor": "bun tools/build.ts test/fixtures/shadcn-vendor/main.tsx --outdir=dist/shadcn-vendor --name=shadcn-vendor",
+    "serve:shadcn-vendor": "bun tools/web/serve.ts --js dist/shadcn-vendor/shadcn-vendor.js --pak dist/shadcn-vendor/shadcn-vendor.pak"
   },
   "dependencies": {
     "@babel/parser": "7.29.3",
@@ -35,10 +44,16 @@
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.6.2",
     "@types/bun": "1.3.14",
     "@types/opentype.js": "1.3.10",
     "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "@types/react-reconciler": "0.34.1",
+    "class-variance-authority": "0.7.1",
+    "lucide-react": "1.61.0",
+    "radix-ui": "1.8.1",
+    "react-dom": "19.3.1",
     "tailwind-merge": "3.7.0",
     "typescript": "5.9.3"
   }

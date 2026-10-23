@@ -2,7 +2,7 @@
 // the same utilities draw as static literals (reference swatches in the same frame).
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { BTN } from "@pocketjs/framework/input";
-import { build, type BuildResult } from "../tools/build.ts";
+import { type BuildResult, build } from "../tools/build.ts";
 import { bootApp, bootCore, type Core, type TextRun } from "./harness.ts";
 
 let built: BuildResult;
@@ -10,7 +10,9 @@ let core: Core;
 const SETTLE = 15; // transition-colors duration-150 is 9 frames at 60 Hz
 
 beforeAll(async () => {
-  built = await build("test/fixtures/dynamic/main.tsx", { outdir: "/tmp/pocketjs-react-test/class-runtime" });
+  built = await build("test/fixtures/dynamic/main.tsx", {
+    outdir: "/tmp/pocketjs-react-test/class-runtime",
+  });
   core = await bootApp(built);
 });
 afterAll(() => core.dispose());
@@ -21,12 +23,24 @@ const run = (text: string): TextRun => {
   return r;
 };
 /** Swatch color: the 30x10 box left of its label (gap-2 = 8 px). */
-const swatch = (label: string) => { const r = run(label); return core.pixel(r.x - 8 - 15, r.y + Math.floor(r.h / 2)); };
+const swatch = (label: string) => {
+  const r = run(label);
+  return core.pixel(r.x - 8 - 15, r.y + Math.floor(r.h / 2));
+};
 /** Row background just left of the row label. */
-const rowBg = (label: string) => { const r = run(label); return core.pixel(r.x - 4, r.y + 2); };
+const rowBg = (label: string) => {
+  const r = run(label);
+  return core.pixel(r.x - 4, r.y + 2);
+};
 /** The 30x10 badge at the row's right edge. */
-const badge = (label: string) => { const r = run(label); return core.pixel(440, r.y + Math.floor(r.h / 2)); };
-const press = (b: number) => { core.press(b); for (let i = 0; i < SETTLE; i++) core.step(0); };
+const badge = (label: string) => {
+  const r = run(label);
+  return core.pixel(440, r.y + Math.floor(r.h / 2));
+};
+const press = (b: number) => {
+  core.press(b);
+  for (let i = 0; i < SETTLE; i++) core.step(0);
+};
 
 let alphaX0 = 0;
 let alphaBg0 = "";
@@ -84,10 +98,14 @@ test("200 new class combinations in one commit cost one loadStyles, earlier ids 
   expect(badge("Bravo")).toBe(swatch("dim"));
 });
 test("a utility name assembled at runtime is rejected, as with Tailwind", async () => {
-  const name = await build("test/fixtures/built-name/main.tsx", { outdir: "/tmp/pocketjs-react-test/class-runtime" });
+  const name = await build("test/fixtures/built-name/main.tsx", {
+    outdir: "/tmp/pocketjs-react-test/class-runtime",
+  });
   const other = await bootCore({ pak: await Bun.file(name.pak).arrayBuffer() });
   try {
-    expect(() => (0, eval)(require("node:fs").readFileSync(name.js, "utf8"))).toThrow('"w-[40px]" does not appear in the source');
+    expect(() =>
+      (0, eval)(require("node:fs").readFileSync(name.js, "utf8")),
+    ).toThrow('"w-[40px]" does not appear in the source');
   } finally {
     other.dispose();
   }

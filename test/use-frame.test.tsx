@@ -1,11 +1,13 @@
 // useFrame: one callback per host frame, with a 0-based counter, stopped on unmount.
 import { expect, test } from "bun:test";
-import { bootCore } from "./harness.ts";
 import { mount, useFrame, View } from "../src/index.ts";
+import { bootCore } from "./harness.ts";
 
 let seen: number[] = [];
 function Probe() {
-  useFrame((frame) => { seen.push(frame); });
+  useFrame((frame) => {
+    seen.push(frame);
+  });
   return <View style={{ width: 4, height: 4 }} />;
 }
 

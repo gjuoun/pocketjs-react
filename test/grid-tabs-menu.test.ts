@@ -2,12 +2,14 @@
 // color (the blue swatch at the top), never from internal state.
 import { beforeAll, expect, test } from "bun:test";
 import { BTN } from "@pocketjs/framework/input";
-import { build, type BuildResult } from "../tools/build.ts";
+import { type BuildResult, build } from "../tools/build.ts";
 import { bootApp, type Core } from "./harness.ts";
 
 let built: BuildResult;
 beforeAll(async () => {
-  built = await build("test/fixtures/components/main.tsx", { outdir: "/tmp/pocketjs-react-test/components" });
+  built = await build("test/fixtures/components/main.tsx", {
+    outdir: "/tmp/pocketjs-react-test/components",
+  });
 });
 
 let blue = "";
@@ -19,11 +21,14 @@ async function screen(mode: string): Promise<Core> {
   blue = core.pixel(10, 12); // the reference swatch, sampled before any overlay covers it
   return core;
 }
-const selected = () => (globalThis as { __selected?: string[] }).__selected ?? [];
+const selected = () =>
+  (globalThis as { __selected?: string[] }).__selected ?? [];
 
 function focused(core: Core, labels: RegExp): string[] {
   const runs = core.texts();
-  return runs.filter((r) => labels.test(r.text) && core.pixel(r.x - 3, r.y + 2) === blue).map((r) => r.text);
+  return runs
+    .filter((r) => labels.test(r.text) && core.pixel(r.x - 3, r.y + 2) === blue)
+    .map((r) => r.text);
 }
 
 test("Grid: RIGHT twice then DOWN lands on item 6; RIGHT at a row end stays", async () => {
@@ -80,7 +85,11 @@ test("Menu: START opens it with focus trapped, CROSS closes and restores", async
 test("windowed List: DOWN scrolls a 4-item window through 12 items", async () => {
   const core = await screen("list");
   try {
-    const visible = () => core.texts().map((r) => r.text).filter((t) => /^L\d+$/.test(t));
+    const visible = () =>
+      core
+        .texts()
+        .map((r) => r.text)
+        .filter((t) => /^L\d+$/.test(t));
     expect(visible()).toEqual(["L1", "L2", "L3", "L4"]);
     core.press(BTN.DOWN);
     for (let i = 0; i < 6; i++) core.press(BTN.DOWN);

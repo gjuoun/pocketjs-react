@@ -2,13 +2,21 @@
 // system as the d-pad, respects an open dialog's focus scope, and desktop svc lines are parsed.
 import { afterEach, expect, test } from "bun:test";
 import { useState } from "react";
-import { bootCore, type Core } from "./harness.ts";
 import { Dialog, mount, Text, View } from "../src/index.ts";
 import { takeHostMessages } from "../src/input/pointer.ts";
+import { bootCore, type Core } from "./harness.ts";
 
 const ROW = "px-2 py-1 bg-slate-800 focus:bg-blue-600";
 const TXT = "text-sm text-white";
-const CLASSES = [ROW, TXT, "w-full h-full flex-col gap-1 p-2 bg-slate-900", "w-[30px] h-[10px] bg-blue-600", "absolute inset-0 flex-col items-center justify-center bg-slate-950", "flex-col gap-2 p-3 rounded-xl bg-white", "text-base text-slate-950"];
+const CLASSES = [
+  ROW,
+  TXT,
+  "w-full h-full flex-col gap-1 p-2 bg-slate-900",
+  "w-[30px] h-[10px] bg-blue-600",
+  "absolute inset-0 flex-col items-center justify-center bg-slate-950",
+  "flex-col gap-2 p-3 rounded-xl bg-white",
+  "text-base text-slate-950",
+];
 let core: Core | undefined;
 const pressed: string[] = [];
 afterEach(() => {
@@ -23,7 +31,12 @@ function App(props: { dialog?: boolean }) {
     <View className="w-full h-full flex-col gap-1 p-2 bg-slate-900">
       <View className="w-[30px] h-[10px] bg-blue-600" />
       {["One", "Two", "Three"].map((label) => (
-        <View key={label} className={ROW} focusable onPress={() => pressed.push(label)}>
+        <View
+          key={label}
+          className={ROW}
+          focusable
+          onPress={() => pressed.push(label)}
+        >
           <Text className={TXT}>{label}</Text>
         </View>
       ))}
@@ -45,7 +58,8 @@ async function start(dialog = false): Promise<{ c: Core; blue: string }> {
 }
 
 function click(c: Core, x: number, y: number) {
-  const q = ((globalThis as { __pocketPointer?: unknown[] }).__pocketPointer ??= []);
+  const q = ((globalThis as { __pocketPointer?: unknown[] }).__pocketPointer ??=
+    []);
   q.push({ x, y, down: true });
   c.step(0);
   q.push({ x, y, down: false });

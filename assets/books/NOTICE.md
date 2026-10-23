@@ -1,6 +1,6 @@
 # Bundled book: Bitcoin: A Peer-to-Peer Electronic Cash System
 
-- **Work**: *Bitcoin: A Peer-to-Peer Electronic Cash System*, Satoshi Nakamoto, 2008.
+- **Work**: _Bitcoin: A Peer-to-Peer Electronic Cash System_, Satoshi Nakamoto, 2008.
 - **Source file**: https://bitcoin.org/bitcoin.pdf
   - sha256 `b1674191a88ec5cdd733e4240a81803105dc412d6c6708d53ab94fc248f4f553`, 184,292 bytes.
 - **Licence**: MIT, as distributed by the bitcoin.org project.

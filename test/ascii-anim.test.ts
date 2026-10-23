@@ -2,20 +2,32 @@
 // and restarts on CROSS again.
 import { beforeAll, expect, test } from "bun:test";
 import { BTN } from "@pocketjs/framework/input";
-import { build, type BuildResult } from "../tools/build.ts";
+import { type BuildResult, build } from "../tools/build.ts";
 import { bootApp, type Core } from "./harness.ts";
 
 const COLS = 40;
 const ROWS = 18;
 let built: BuildResult;
 beforeAll(async () => {
-  built = await build("examples/ascii-anim/main.tsx", { outdir: "/tmp/pocketjs-react-test/ascii-anim" });
+  built = await build("examples/ascii-anim/main.tsx", {
+    outdir: "/tmp/pocketjs-react-test/ascii-anim",
+  });
 });
 
 const ROW = new RegExp("^[ .:\\-=+*#%@]{" + COLS + "}$");
-const grid = (core: Core) => core.texts().filter((r) => ROW.test(r.text)).map((r) => r.text);
-const header = (core: Core) => core.texts().find((r) => r.text.startsWith("PLASMA") || r.text.startsWith("== PAUSED =="))?.text ?? "";
-const frames = (core: Core) => Number(/FRAME (\d+)/.exec(header(core))?.[1] ?? -1);
+const grid = (core: Core) =>
+  core
+    .texts()
+    .filter((r) => ROW.test(r.text))
+    .map((r) => r.text);
+const header = (core: Core) =>
+  core
+    .texts()
+    .find(
+      (r) => r.text.startsWith("PLASMA") || r.text.startsWith("== PAUSED =="),
+    )?.text ?? "";
+const frames = (core: Core) =>
+  Number(/FRAME (\d+)/.exec(header(core))?.[1] ?? -1);
 
 test("the plasma is a 40x18 grid of characters and changes from one frame to the next", async () => {
   const core = await bootApp(built);

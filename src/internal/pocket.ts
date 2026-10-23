@@ -6,36 +6,48 @@
 import "@pocket-internal/framework/src/scheduler-polyfill.ts";
 
 export {
+  decodeStyleTable,
+  ENUMS,
+  encodeStyleTable,
+  NODE_TYPE,
+  PROP,
+  PROP_VALUE_KIND,
+  type PropName,
+  SCREEN_H,
+  SCREEN_W,
+  SIZE_FULL,
+  STYLE_ID_NONE,
+  type StyleRecord,
+  VALUE_KIND,
+} from "@pocket-internal/contracts/spec/spec.ts";
+export {
+  parseClassLiteral,
+  unknownUtilities,
+} from "@pocket-internal/framework/compiler/tailwind.ts";
+export {
+  handleFrame,
+  setHitRoot,
+  setInputRoot,
+} from "@pocket-internal/framework/src/input.ts";
+export {
   applyProps,
   createElement,
   createTextNode,
   insertNode,
   missCounters,
+  type NodeMirror,
   registerTexture,
   removeNode,
   replaceText,
   resetRendererState,
   rootMirror,
   runSweep,
+  setDebugName,
   setProp,
   setStyleResolver,
-  type NodeMirror,
 } from "@pocket-internal/framework/src/native-tree.ts";
-export { handleFrame, setHitRoot, setInputRoot } from "@pocket-internal/framework/src/input.ts";
-export { registerStyles, resetStyles, resolveStyle } from "@pocket-internal/framework/src/styles.ts";
-export { parseClassLiteral, unknownUtilities } from "@pocket-internal/framework/compiler/tailwind.ts";
 export {
-  ENUMS,
-  NODE_TYPE,
-  PROP,
-  PROP_VALUE_KIND,
-  SCREEN_H,
-  SCREEN_W,
-  SIZE_FULL,
-  STYLE_ID_NONE,
-  VALUE_KIND,
-  decodeStyleTable,
-  encodeStyleTable,
-  type PropName,
-  type StyleRecord,
-} from "@pocket-internal/contracts/spec/spec.ts";
+  registerStyles,
+  resetStyles,
+  resolveStyle,
+} from "@pocket-internal/framework/src/styles.ts";

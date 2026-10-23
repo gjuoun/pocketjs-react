@@ -4,10 +4,15 @@
 //     an inline style beats focus:/active: for the same property. The core has no op that
 //     clears an override, so a removed key is written back to the class's own value for it,
 //     or to the core default when the class does not set it.
+
+import { type NodeMirror, type PropName, setProp } from "../internal/pocket.ts";
 import { setPropsTransform } from "../renderer/host-config.ts";
-import { applyClassName, classBaseValue, flushClassTable } from "./class-runtime.ts";
-import { CORE_DEFAULTS, cssToCore, type CoreStyle } from "./css.ts";
-import { setProp, type NodeMirror, type PropName } from "../internal/pocket.ts";
+import {
+  applyClassName,
+  classBaseValue,
+  flushClassTable,
+} from "./class-runtime.ts";
+import { CORE_DEFAULTS, type CoreStyle, cssToCore } from "./css.ts";
 
 type Props = Record<string, unknown>;
 const appliedStyle = new WeakMap<NodeMirror, CoreStyle>();
@@ -36,12 +41,15 @@ export function installStyleLayer(): void {
   setPropsTransform({
     toHost(props) {
       const out: Props = {};
-      for (const key in props) if (key !== "children" && key !== "className" && key !== "style") out[key] = props[key];
+      for (const key in props)
+        if (key !== "children" && key !== "className" && key !== "style")
+          out[key] = props[key];
       return out;
     },
     afterProps(node: NodeMirror, props: Props) {
       applyClassName(node, props.className);
-      if (props.style !== undefined || appliedStyle.has(node)) applyStyle(node, props.style);
+      if (props.style !== undefined || appliedStyle.has(node))
+        applyStyle(node, props.style);
     },
     afterCommit() {
       flushClassTable();

@@ -1,11 +1,12 @@
 // <Tabs>: a header row and one panel. The shoulder buttons switch tabs (L previous, R next by
 // default); each tab remembers which of its items had focus and gets it back.
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+
 import { BTN, focusNode, getFocused } from "@pocketjs/framework/input";
+import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { Text, View } from "../elements.ts";
 import { useButton } from "../input/buttons.ts";
-import { cn } from "../style/cn.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
+import { cn } from "../style/cn.ts";
 
 export interface TabsProps {
   tabs: { title: string; content: ReactNode }[];
@@ -39,7 +40,8 @@ export function Tabs(props: TabsProps) {
     if (next === index || !panel.current) return;
     const items = focusables(panel.current);
     const focused = getFocused() as unknown as NodeMirror | null;
-    if (isWithin(focused, panel.current)) remembered.current.set(index, Math.max(0, items.indexOf(focused!)));
+    if (isWithin(focused, panel.current))
+      remembered.current.set(index, Math.max(0, items.indexOf(focused!)));
     restore.current = true;
     setIndex(next);
     props.onChange?.(next);
@@ -61,9 +63,23 @@ export function Tabs(props: TabsProps) {
         {props.tabs.map((tab, i) => (
           <View
             key={tab.title}
-            className={cn("px-3 py-1 rounded", i === index ? "bg-blue-600" : props.dark ? "bg-slate-800" : "bg-slate-200")}
+            className={cn(
+              "px-3 py-1 rounded",
+              i === index
+                ? "bg-blue-600"
+                : props.dark
+                  ? "bg-slate-800"
+                  : "bg-slate-200",
+            )}
           >
-            <Text className={cn("text-sm", i === index || props.dark ? "text-white" : "text-slate-900")}>{tab.title}</Text>
+            <Text
+              className={cn(
+                "text-sm",
+                i === index || props.dark ? "text-white" : "text-slate-900",
+              )}
+            >
+              {tab.title}
+            </Text>
           </View>
         ))}
       </View>

@@ -12,7 +12,8 @@ const RAMP = " .:-=+*#%@";
 
 export function plasma(t: number, cols = COLS, rows = ROWS): string[] {
   const out: string[] = [];
-  const cx = (cols - 1) / 2, cy = (rows - 1) / 2;
+  const cx = (cols - 1) / 2,
+    cy = (rows - 1) / 2;
   for (let y = 0; y < rows; y++) {
     let row = "";
     for (let x = 0; x < cols; x++) {
@@ -22,7 +23,7 @@ export function plasma(t: number, cols = COLS, rows = ROWS): string[] {
         Math.sin((y - t * 0.9) * 0.44) +
         Math.sin((x + y + t * 1.7) * 0.17) +
         Math.sin(ring);
-      const level = Math.floor((((v + 4) / 8) * (RAMP.length - 1) + 0.5));
+      const level = Math.floor(((v + 4) / 8) * (RAMP.length - 1) + 0.5);
       row += RAMP[Math.max(0, Math.min(RAMP.length - 1, level))];
     }
     out.push(row);

@@ -5,7 +5,11 @@ let ids: Record<string, number> = {};
 let bin: Uint8Array = new Uint8Array(0);
 let tokens: readonly string[] = [];
 
-export function installBuildStyles(table: Record<string, number>, bytes: Uint8Array, utilityTokens: readonly string[] = []): void {
+export function installBuildStyles(
+  table: Record<string, number>,
+  bytes: Uint8Array,
+  utilityTokens: readonly string[] = [],
+): void {
   ids = table;
   bin = bytes;
   tokens = utilityTokens;

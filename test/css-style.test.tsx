@@ -1,13 +1,17 @@
 // CSS-named inline styles against the real wasm core, compared with static class swatches.
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { BTN } from "@pocketjs/framework/input";
+import { mount, View } from "../src/index.ts";
 import { build } from "../tools/build.ts";
 import { bootApp, bootCore, type Core } from "./harness.ts";
-import { mount, View } from "../src/index.ts";
 
 let core: Core;
 beforeAll(async () => {
-  core = await bootApp(await build("test/fixtures/inline-style/main.tsx", { outdir: "/tmp/pocketjs-react-test/inline-style" }));
+  core = await bootApp(
+    await build("test/fixtures/inline-style/main.tsx", {
+      outdir: "/tmp/pocketjs-react-test/inline-style",
+    }),
+  );
 });
 afterAll(() => core.dispose());
 
@@ -46,9 +50,15 @@ test("removing an inline width restores the width from className", () => {
 test("an unmapped CSS property is rejected with its name", async () => {
   const raw = await bootCore({ classes: [] });
   try {
-    expect(() => mount(<View style={{ fontSize: 12 } as never} />, { styles: {} })).toThrow("style.fontSize is not supported");
+    expect(() =>
+      mount(<View style={{ fontSize: 12 } as never} />, { styles: {} }),
+    ).toThrow("style.fontSize is not supported");
   } finally {
     raw.dispose();
-    core = await bootApp(await build("test/fixtures/inline-style/main.tsx", { outdir: "/tmp/pocketjs-react-test/inline-style" }));
+    core = await bootApp(
+      await build("test/fixtures/inline-style/main.tsx", {
+        outdir: "/tmp/pocketjs-react-test/inline-style",
+      }),
+    );
   }
 });

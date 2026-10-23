@@ -2,9 +2,10 @@
 // sources. Arguments to clsx/cn are ordinary literals, so they are collected like any other.
 // This is Tailwind's own rule: a utility must appear as a complete token somewhere in the
 // source; a name assembled at runtime (`p-${n}`) cannot be found.
-import { parse } from "@babel/parser";
+
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { parse } from "@babel/parser";
 
 export interface Collected {
   /** Distinct literals in source order. */
@@ -21,7 +22,8 @@ function resolveRelative(from: string, spec: string): string | null {
   const base = resolve(dirname(from), spec);
   if (existsSync(base) && statSync(base).isFile()) return base;
   for (const ext of EXTENSIONS) if (existsSync(base + ext)) return base + ext;
-  for (const ext of EXTENSIONS) if (existsSync(join(base, "index" + ext))) return join(base, "index" + ext);
+  for (const ext of EXTENSIONS)
+    if (existsSync(join(base, "index" + ext))) return join(base, "index" + ext);
   return null;
 }
 
@@ -30,13 +32,17 @@ function sourceFiles(dir: string): string[] {
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) out.push(...sourceFiles(path));
-    else if (/\.(tsx?|jsx?)$/.test(name) && !name.endsWith(".d.ts")) out.push(path);
+    else if (/\.(tsx?|jsx?)$/.test(name) && !name.endsWith(".d.ts"))
+      out.push(path);
   }
   return out;
 }
 
 /** Scan the entry's relative-import graph plus every file under `extraDirs`. */
-export async function collect(entry: string, extraDirs: string[]): Promise<Collected> {
+export async function collect(
+  entry: string,
+  extraDirs: string[],
+): Promise<Collected> {
   const literals: string[] = [];
   const seen = new Set<string>();
   const codepoints = new Set<number>();
@@ -55,7 +61,14 @@ export async function collect(entry: string, extraDirs: string[]): Promise<Colle
     if (n.type === "StringLiteral" || n.type === "JSXText") add(n.value);
     else if (n.type === "TemplateElement") add(n.value.cooked ?? n.value.raw);
     for (const key in n) {
-      if (key === "loc" || key === "start" || key === "end" || key === "extra" || key === "comments") continue;
+      if (
+        key === "loc" ||
+        key === "start" ||
+        key === "end" ||
+        key === "extra" ||
+        key === "comments"
+      )
+        continue;
       const v = n[key];
       if (Array.isArray(v)) v.forEach(walkAst);
       else if (v && typeof v === "object") walkAst(v);
@@ -65,7 +78,11 @@ export async function collect(entry: string, extraDirs: string[]): Promise<Colle
     if (visited.has(file)) return;
     visited.add(file);
     const src = await Bun.file(file).text();
-    const ast = parse(src, { sourceType: "module", plugins: ["jsx", "typescript"], errorRecovery: false });
+    const ast = parse(src, {
+      sourceType: "module",
+      plugins: ["jsx", "typescript"],
+      errorRecovery: false,
+    });
     walkAst(ast.program);
     for (const stmt of ast.program.body) {
       const source = (stmt as { source?: { value?: string } }).source?.value;
@@ -76,6 +93,7 @@ export async function collect(entry: string, extraDirs: string[]): Promise<Colle
     }
   };
   await visit(resolve(entry));
-  for (const dir of extraDirs) for (const file of sourceFiles(dir)) await visit(file);
+  for (const dir of extraDirs)
+    for (const file of sourceFiles(dir)) await visit(file);
   return { literals, codepoints, files: [...visited] };
 }

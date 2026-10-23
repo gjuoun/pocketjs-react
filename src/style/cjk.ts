@@ -9,5 +9,8 @@ export function hasHan(text: string): boolean {
 /** `className` without `font-bold` when `text` has Han characters, so it draws in a regular slot. */
 export function cjkSafe(className: string, text: string): string {
   if (!HAN.test(text)) return className;
-  return className.split(/\s+/).filter((token) => token && token !== "font-bold").join(" ");
+  return className
+    .split(/\s+/)
+    .filter((token) => token && token !== "font-bold")
+    .join(" ");
 }

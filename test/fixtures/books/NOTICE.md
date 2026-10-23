@@ -1,6 +1,6 @@
 # Test book: 三國志演義 (Romance of the Three Kingdoms), chapters 1–3
 
-- **Work**: *三國志演義*, attributed to 羅貫中 (Luo Guanzhong), 14th century. Traditional characters.
+- **Work**: _三國志演義_, attributed to 羅貫中 (Luo Guanzhong), 14th century. Traditional characters.
 - **Source file**: Project Gutenberg eBook #23950, https://www.gutenberg.org/cache/epub/23950/pg23950.txt
   - Release date December 21, 2007; produced by Jian-Lun Huang.
   - sha256 of the file used: `ed422e10c16c19af7ca7b09ca0320012e60776b3d7cb054769b8f7d9a19aea7d`, UTF-8 with CRLF line ends.
