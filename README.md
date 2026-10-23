@@ -18,6 +18,7 @@ The demo above shows an English and a simplified Chinese book in the macOS app.
 - **D-pad input** — `FocusScope` (traps focus, restores it on close) and `useButton` (face and shoulder buttons, innermost handler wins), built on PocketJS's own focus manager. Confirm = CIRCLE, back = CROSS.
 - **DOM compat (C1)** — plain React DOM tags mount: `div/section/main/header/footer/nav/aside/ul/ol/li` → view, `span/p/label/strong/em/code/pre/h1..h6` → text, `button/a` → focusable view (CIRCLE presses), `input` renders without crashing (real input is not here yet). DOM-only props (`data-*`, `aria-*`, `type`, `disabled`, …) are dropped and counted, `onClick` becomes a press. See "DOM compat" below.
 - **Semantic token map (C2)** — shadcn's semantic colors and utilities (`bg-primary`, `text-muted-foreground`, `border-input`, `hover:` …) are rewritten onto the fixed 19-family palette at build and run time, so verbatim shadcn components render styled instead of unstyled-but-correct. What the map drops is counted in `compatStats().tokenMap`. See "Semantic token map (C2)" below.
+- **Vendored shadcn (C3)** — registry source lands in the app tree and one compiler-aware codemod rewrites it into PocketJS vocabulary (`unknownUtilities()` at generation time), so button/badge/input/card render styled and the Radix dialog reports its Portal limit honestly. See "Vendor + codemod (C3)" below.
 - **Components** — `List` (d-pad-operable rows, optionally a scrolling window), `Dialog` (portaled overlay that traps focus and closes on back), `Grid` (row/column d-pad movement), `Tabs` (shoulder buttons switch, focus remembered per tab) and `Menu`.
 - **Mouse as a second layer** — a click focuses and presses what it points at, through the same focus system (an open dialog keeps clicks behind it inert).
 - **Per-frame hook** — `useFrame(cb)` runs once per host frame with a 0-based counter (the React counterpart of the framework's frame pump), for games and animations.
@@ -238,6 +239,74 @@ Dropped on purpose (counted, not silently kept): `w-fit`, `whitespace-nowrap`, `
 `mount(el, { compat: { tokenMap: false } })` turns the runtime rewrite off; `compatStats().tokenMap` reports `{ mapped, dropped }` so nothing disappears silently.
 
 Known gap: the core has no text-color inheritance. A `text-*` color applies to a text host (`span`/`p`/`label`/…), so a Badge label takes its mapped color while a Button label — a `view` with a text child — keeps the default white. Fills are correct either way; inheritance belongs to the text layer, not this table.
+
+## Vendor + codemod (C3)
+
+Real shadcn registry source can live in the app tree and render without a runtime shim: vendor the
+files, run one codemod, build. The codemod is **compiler-aware** — it asks PocketJS's own
+`unknownUtilities()` what the core can draw — so a token the compiler rejects is removed *in the
+source* and reported by name, instead of reaching the strict web host and throwing.
+
+### The flow
+
+```sh
+bun tools/codemod/fetch-shadcn.ts             # registry -> test/fixtures/shadcn-vendor/upstream
+bun run codemod:shadcn                        # upstream -> ui (generated, committed)
+bun run build:shadcn-vendor                   # -> dist/shadcn-vendor/{js,pak}
+bun run serve:shadcn-vendor                   # browser host at http://127.0.0.1:8140
+```
+
+The reference consumer app is `test/fixtures/shadcn-vendor/`:
+
+| Path | What it is |
+|---|---|
+| `upstream/` | the registry payloads, verbatim; only import specifiers are remapped |
+| `NOTICE.md` | registry URL, bytes and sha256 per file; `fetch-shadcn.ts --verify` checks them offline |
+| `ui/` | codemod output, committed and never hand-edited — `--check` fails on drift |
+| `app.tsx` / `main.tsx` | the consumer demo: button, badge, input, card and the Radix dialog |
+
+Five components are vendored (button, badge, input, card, dialog).
+`test/codemod-shadcn.test.ts` pins the committed `ui/` to the codemod output, the idempotency and
+the diagnostics; `test/shadcn-vendor.test.tsx` builds the demo and asserts what the host draws,
+including a mount under `{ classMiss: "throw", tokenMap: false }` — the proof that the rewritten
+source needs neither the C2 map nor the drop policy.
+
+### Rules
+
+| Rule | Change | Reason |
+|---|---|---|
+| R0 | `rounded-full` → `rounded-[Npx]` | a pill is `min(w,h)/2`; N comes from `h-N` (2N) or `py-N` + `text-*` (a badge lands on 10px). The C2 map drops the token, because the [R] rule needs a pinned size in the same literal. |
+| R1 | the C2 map | one table for build, runtime and codemod (`src/compat/tokens.ts`) |
+| R2 | `grid` → `flex flex-col`, `flex-col-reverse` → `flex-col`, `sr-only` → `hidden`, `@container/*` dropped | the core lays out with flexbox; a one-column grid stacks |
+| R3 | `unknownUtilities()` filter | the build-time capability probe the C2 map cannot do |
+| R4 | `asChild ? Slot.Root : "tag"` → `"tag"`; the `Slot` import and `asChild` plumbing go away | C1 F1 policy; a real Slot (and asChild semantics) is C5 |
+| R5 | an all-dropped literal becomes `""` | `cn("", className)` is harmless |
+
+Class positions are structural, not "anywhere under `cva`": `cva`'s base and its `variants`
+values, `cn`/`clsx`/`twMerge` arguments, and JSX `className`. `defaultVariants` holds values, not
+class strings — the codemod's first false positive, now pinned by a test. Only string spans are
+rewritten, so every other byte of a vendored file is untouched and a second run is a no-op.
+
+`bun tools/codemod/shadcn.ts <src> <out> [--report] [--json] [--check]` reports, per file, the
+literal count and the tokens it mapped, substituted, dropped by the map, dropped by the compiler,
+flattened from `asChild`, emptied and skipped, plus any residual. For the vendored five:
+`40 literals, 39 changed, 50 mapped, 2 asChild, 0 residual`; `fixed`×2, `shadow-sm`,
+`col-start-2` and friends are dropped by name, and `grid`/`sr-only`/`rounded-full` are substituted
+by name.
+
+### What it does not do
+
+- **Dialog content does not appear.** Radix's Portal needs a document body and the guest has none,
+  so the trigger renders while `DialogContent` stays out — the same result the JG-145 audit
+  measured. Native dialog primitives are C5; `fixed`/`grid`/`calc()`/percentage offsets are C10.
+- **Icons.** `lucide-react`'s `<path d>` is still an unknown prop; icons are C7.
+- **Text color inheritance.** The core has no `text-*` inheritance (C2's known gap), so a view's
+  text keeps the default white. The demo gives the Card and the dialog trigger a dark surface of
+  their own; shadcn's white card would be white-on-white until the text layer inherits color.
+- **`hover:`** still maps to the press cue `active:`; there is no pointer.
+
+The demo needs `radix-ui`, `lucide-react` and `react-dom` as dev dependencies (the fixture only);
+its bundle carries the Radix dialog even though the content never mounts.
 
 ## The style prop
 

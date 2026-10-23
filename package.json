@@ -27,7 +27,10 @@
     "measure:desktop-shot": "bun tools/measure/desktop-shot.ts",
     "build:reader": "bun tools/build-reader.ts",
     "build:app": "bun tools/build-app.ts",
-    "serve:reader": "bun tools/web/serve.ts"
+    "serve:reader": "bun tools/web/serve.ts",
+    "codemod:shadcn": "bun tools/codemod/shadcn.ts test/fixtures/shadcn-vendor/upstream test/fixtures/shadcn-vendor/ui",
+    "build:shadcn-vendor": "bun tools/build.ts test/fixtures/shadcn-vendor/main.tsx --outdir=dist/shadcn-vendor --name=shadcn-vendor",
+    "serve:shadcn-vendor": "bun tools/web/serve.ts --js dist/shadcn-vendor/shadcn-vendor.js --pak dist/shadcn-vendor/shadcn-vendor.pak"
   },
   "dependencies": {
     "@babel/parser": "7.29.3",
