@@ -29,7 +29,7 @@ import { reconciler, withPriority } from "./host-config.ts";
 import { buildStyleBin, buildStyleIds, buildStyleTokens } from "../style/build-styles.ts";
 import { initClassRuntime } from "../style/class-runtime.ts";
 import { installStyleLayer } from "../style/props.ts";
-import { installCompat } from "../compat/index.ts";
+import { installCompat, type CompatOptions } from "../compat/index.ts";
 import { installPointer } from "../input/pointer.ts";
 
 export interface MountOptions {
@@ -39,6 +39,8 @@ export interface MountOptions {
   styleBin?: Uint8Array;
   /** Host ops; defaults to globalThis.ui. */
   ops?: HostOps;
+  /** DOM compat policy (tag/prop mapping is always on; this only tunes failure modes). */
+  compat?: CompatOptions;
 }
 
 type FrameListener = (pressed: number, buttons: number) => void;
@@ -86,7 +88,7 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
   registerStyles(opts.styles ?? buildStyleIds());
   initClassRuntime(opts.styleBin ?? (opts.styles ? new Uint8Array(0) : buildStyleBin()), buildStyleTokens());
   installStyleLayer();
-  installCompat();
+  installCompat(opts.compat);
   const removePointer = installPointer();
 
   const nativeTextures = host.kind === "native" ? (host.ops as HostOps & { __textures?: Record<string, number> }).__textures : undefined;

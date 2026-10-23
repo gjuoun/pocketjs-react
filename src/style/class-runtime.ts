@@ -44,7 +44,15 @@ const applied = new WeakMap<NodeMirror, string>();
 const appliedId = new WeakMap<NodeMirror, number>();
 let records: StyleRecord[] = [];
 
-export const classRuntimeStats = { compiled: 0, appended: 0, loads: 0 };
+export const classRuntimeStats = {
+  compiled: 0,
+  appended: 0,
+  loads: 0,
+  /** Unseen tokens dropped under the classMiss drop policy (wired in that policy). */
+  droppedTokens: 0,
+  /** Literals that produced no style id under the drop policy (all-unknown or rejected). */
+  droppedLiterals: 0,
+};
 
 function body(table: Uint8Array): Uint8Array {
   return table.subarray(HEADER_SIZE);

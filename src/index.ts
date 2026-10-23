@@ -1,6 +1,9 @@
 // pocketjs-react public surface.
 export { mount, type MountOptions } from "./renderer/mount.ts";
 export { useFrame } from "./renderer/use-frame.ts";
+// DOM compat (C1): React DOM tags mount on the native tree; what the layer drops or
+// cannot map is counted here instead of crashing or disappearing silently.
+export { compatStats, resetCompatStats, type CompatStats, type CompatOptions } from "./compat/index.ts";
 export { Image, Text, View, type PocketCSSProperties, type PocketHostProps, type PocketImageProps } from "./elements.ts";
 export { cn } from "./style/cn.ts";
 export { useButton } from "./input/buttons.ts";

@@ -1,24 +1,32 @@
 // The C1 DOM compat layer: maps JSX DOM tags onto PocketJS host types and gives DOM-only
 // props a counted policy. mount() calls installCompat(); until then the host config runs
-// with an identity hook and behaves exactly as before.
+// with an identity hook and behaves exactly as before. Everything silently accepted shows
+// up in compatStats().
 import { setHostCompat } from "../renderer/host-config.ts";
 import { INTERACTIVE_TAGS, hostTypeOf, unknownTagMessage } from "./tags.ts";
+import { compatProps, setUnknownPropsPolicy, type UnknownPropsPolicy } from "./props.ts";
+import { countUnknownTag } from "./stats.ts";
 
-export function installCompat(): void {
+export interface CompatOptions {
+  /** Props the compat layer does not recognize: "throw" (default) or "drop" (counted). */
+  unknownProps?: UnknownPropsPolicy;
+}
+
+export function installCompat(opts: CompatOptions = {}): void {
+  setUnknownPropsPolicy(opts.unknownProps ?? "throw");
   setHostCompat({
     type(tag) {
       const host = hostTypeOf(tag);
-      if (host === null) throw new Error(unknownTagMessage(tag));
+      if (host === null) {
+        countUnknownTag();
+        throw new Error(unknownTagMessage(tag));
+      }
       return host;
     },
-    props(tag, props) {
-      const out: Record<string, unknown> = {};
-      for (const key in props) {
-        if (key === "children") continue;
-        out[key] = props[key];
-      }
-      if (INTERACTIVE_TAGS.has(tag) && props.focusable === undefined) out.focusable = true;
-      return out;
+    props(tag, props, count) {
+      return compatProps(tag, props, INTERACTIVE_TAGS.has(tag), count);
     },
   });
 }
+
+export { compatStats, resetCompatStats, type CompatStats } from "./stats.ts";
