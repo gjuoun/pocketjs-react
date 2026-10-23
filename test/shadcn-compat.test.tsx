@@ -7,8 +7,11 @@ import { BTN } from "@pocketjs/framework/input";
 import { build } from "../tools/build.ts";
 import { bootApp, bootCore, type Core } from "./harness.ts";
 import { compatStats, mount, resetCompatStats } from "../src/index.ts";
+import { compileClasses } from "../src/internal/pocket-build.ts";
 import { rootMirror } from "../src/internal/pocket.ts";
+import { installBuildStyles } from "../src/style/build-styles.ts";
 import { App } from "./fixtures/shadcn/app.tsx";
+import { Button } from "./fixtures/shadcn/button.tsx";
 
 const OUT = "/tmp/pocketjs-react-test/compat-c1";
 let core: Core | undefined;
@@ -16,6 +19,7 @@ afterEach(() => {
   core?.dispose();
   core = undefined;
   resetCompatStats();
+  installBuildStyles({}, new Uint8Array(0), []);
   delete (globalThis as { __pocketPointer?: unknown }).__pocketPointer;
 });
 
@@ -80,4 +84,21 @@ test("a pointer click on the mapped button presses it through the same focus sys
   const save = c.texts().find((r) => r.text === "Save")!;
   click(c, save.x + 4, save.y + 4);
   expect(runs(c)).toEqual(["Save", "Beta", "pressed 1"]);
+});
+
+// C2 acceptance guard: the verbatim Button base (cva default variant + default size) must drop
+// no class tokens. The in-process runtime is fed the build's own token table, so the count is
+// the same 19 the C1 E2E measured (bg-primary, inline-flex, hover:… and friends), not "every
+// token is unseen". Red until the token map lands (Step 2/3).
+test("C2: the verbatim button base drops no class tokens", async () => {
+  const built = await build("test/fixtures/shadcn/main.tsx", { outdir: OUT, name: "shadcn-compat" });
+  core = await bootCore({ classes: [] });
+  // mount() reads the installed build table: give it the fixture build's real token set (an
+  // empty styles.bin, so literals compile at runtime) - the same state the built bundle is in.
+  installBuildStyles({}, compileClasses([]).bin, built.tokens);
+  mount(<Button>Save</Button>, { compat: { classMiss: "drop" } });
+  core.step(0);
+  const save = core.texts().find((r) => r.text === "Save")!;
+  expect(compatStats().classMiss).toEqual({ tokens: 0, literals: 0 });
+  expect(core.pixel(save.x - 4, save.y + 2)).toBe("#0f172a");
 });

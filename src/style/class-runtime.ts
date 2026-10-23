@@ -61,6 +61,12 @@ export const classRuntimeStats = {
 export type ClassMissPolicy = "throw" | "drop";
 let missPolicy: ClassMissPolicy = "throw";
 
+/** Zero the class-miss counters (compatStats() owns the public reset). */
+export function resetClassMissStats(): void {
+  classRuntimeStats.droppedTokens = 0;
+  classRuntimeStats.droppedLiterals = 0;
+}
+
 export function setClassMissPolicy(mode: ClassMissPolicy): void {
   missPolicy = mode;
 }

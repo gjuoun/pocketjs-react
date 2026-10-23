@@ -45,6 +45,8 @@ export interface BuildResult {
   bundleBytes: number;
   pakBytes: number;
   fontSlots: number[];
+  /** The utility tokens the build table holds (STYLE_TOKENS), for tests that drive the runtime directly. */
+  tokens: string[];
 }
 
 /** Font slots for every (size x weight x family) combination whose tokens appear in source. */
@@ -211,7 +213,7 @@ export async function build(entryArg: string, opts: BuildOptions = {}): Promise<
   const jsPath = join(outdir, name + ".js");
   const bundleBytes = Bun.file(jsPath).size;
   console.log("  bundle: " + bundleBytes + " bytes -> " + jsPath);
-  return { js: jsPath, pak: pakPath, bundleBytes, pakBytes: pak.length, fontSlots };
+  return { js: jsPath, pak: pakPath, bundleBytes, pakBytes: pak.length, fontSlots, tokens: [...tokens] };
 }
 
 if (import.meta.main) {
