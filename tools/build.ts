@@ -20,6 +20,7 @@
 // The build fails when any bundle input comes from PocketJS's Pocket3D-licensed paths.
 import { basename, dirname, join, resolve } from "node:path";
 import { collect } from "./collect.ts";
+import { rewriteLiteral } from "../src/compat/tokens.ts";
 import {
   DEFAULT_FONT_SLOT,
   KEY_STYLES,
@@ -103,16 +104,19 @@ export async function build(entryArg: string, opts: BuildOptions = {}): Promise<
 
   // ---- pass 1 -------------------------------------------------------------
   const scanned = await collect(entry, [join(ROOT, "src")]);
-  const styles = compileClasses(scanned.literals);
-  for (const lit of scanned.literals) {
+  // C2: rewrite shadcn vocabulary to PocketJS vocabulary before anything compiles or counts,
+  // through the same fixed table the runtime uses, so a runtime rewrite is an exact table hit.
+  const literals = scanned.literals.map(rewriteLiteral);
+  const styles = compileClasses(literals);
+  for (const lit of literals) {
     const bad = suspectClassLiteral(lit);
     if (bad) console.warn("  warning: not a supported utility: " + bad.join(", ") + " in " + JSON.stringify(lit));
   }
-  const fontSlots = slotCrossProduct(scanned.literals, styles.usedFontSlots);
+  const fontSlots = slotCrossProduct(literals, styles.usedFontSlots);
   // Every complete utility token in the source. The runtime compiles only class strings
   // made of these tokens: like Tailwind, a name assembled at runtime is not supported.
   const tokens = new Set<string>();
-  for (const lit of scanned.literals) {
+  for (const lit of literals) {
     for (const tok of lit.split(/\s+/)) if (tok && !tokens.has(tok) && unknownUtilities(tok).length === 0) tokens.add(tok);
   }
   let extraChars = "";

@@ -92,7 +92,9 @@ test("a pointer click on the mapped button presses it through the same focus sys
 // token is unseen". Red until the token map lands (Step 2/3).
 test("C2: the verbatim button base drops no class tokens", async () => {
   const built = await build("test/fixtures/shadcn/main.tsx", { outdir: OUT, name: "shadcn-compat" });
-  core = await bootCore({ classes: [] });
+  // Boot with the token set so the font slots the button's text-sm/font-bold need are baked;
+  // the style table itself is installed empty so the literal goes through the runtime compiler.
+  core = await bootCore({ classes: built.tokens });
   // mount() reads the installed build table: give it the fixture build's real token set (an
   // empty styles.bin, so literals compile at runtime) - the same state the built bundle is in.
   installBuildStyles({}, compileClasses([]).bin, built.tokens);
