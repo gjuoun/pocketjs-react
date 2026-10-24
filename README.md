@@ -16,7 +16,7 @@ The demo above shows an English and a simplified Chinese book in the macOS app.
 - **Tailwind + clsx + cn** — `className` takes any string React code builds: literals, ternaries, `clsx(...)`, `cn(...)` (clsx + tailwind-merge). Each class combination becomes a native style record, so `focus:`, `active:` and transitions stay native.
 - **Inline styles** — the standard React `style` prop with camelCase CSS names, mapped to the core's properties.
 - **D-pad input** — `FocusScope` (traps focus, restores it on close) and `useButton` (face and shoulder buttons, innermost handler wins), built on PocketJS's own focus manager. Confirm = CIRCLE, back = CROSS.
-- **DOM compat (C1)** — plain React DOM tags mount: `div/section/main/header/footer/nav/aside/ul/ol/li` → view, `span/p/label/strong/em/code/pre/h1..h6` → text, `button/a` → focusable view (CIRCLE presses), `input` renders without crashing (real input is not here yet). DOM-only props (`data-*`, `aria-*`, `type`, `disabled`, …) are dropped and counted, `onClick` becomes a press. See "DOM compat" below.
+- **DOM compat (C1)** — plain React DOM tags mount: `div/section/main/header/footer/nav/aside/ul/ol/li` → view, `span/p/label/strong/em/code/pre/h1..h6` → text, `button/a` → focusable view (CIRCLE presses), `input`/`textarea` are editable text entries with a d-pad keyboard (C4). DOM-only props (`data-*`, `aria-*`, `type`, `disabled`, …) are dropped and counted, `onClick` becomes a press. See "DOM compat" below.
 - **Semantic token map (C2)** — shadcn's semantic colors and utilities (`bg-primary`, `text-muted-foreground`, `border-input`, `hover:` …) are rewritten onto the fixed 19-family palette at build and run time, so verbatim shadcn components render styled instead of unstyled-but-correct. What the map drops is counted in `compatStats().tokenMap`. See "Semantic token map (C2)" below.
 - **Vendored shadcn (C3)** — registry source lands in the app tree and one compiler-aware codemod rewrites it into PocketJS vocabulary (`unknownUtilities()` at generation time), so button/badge/input/card render styled and the Radix dialog reports its Portal limit honestly. See "Vendor + codemod (C3)" below.
 - **Components** — `List` (d-pad-operable rows, optionally a scrolling window), `Dialog` (portaled overlay that traps focus and closes on back), `Grid` (row/column d-pad movement), `Tabs` (shoulder buttons switch, focus remembered per tab) and `Menu`.
@@ -217,7 +217,7 @@ JSX written with plain React DOM tags runs on the native tree, so components wri
 | `div` `section` `main` `header` `footer` `nav` `aside` `ul` `ol` `li` | view                                                                           |
 | `button` `a`                                                          | view + focusable (`onClick` fires on CIRCLE or a click; `a` navigates nowhere) |
 | `span` `p` `label` `strong` `em` `code` `pre` `h1`–`h6`               | text                                                                           |
-| `input`                                                               | view (renders; text input is not implemented yet)                              |
+| `input` `textarea`                                                    | view + text entry: value/onChange/placeholder (C4, see "Text input (C4)")       |
 
 Each mapped element carries its DOM tag as its `debugName`, so DevTools and errors still say `button`. Tags outside the table throw, naming the tag and the table.
 
@@ -318,6 +318,35 @@ by name.
 
 The demo needs `radix-ui`, `lucide-react` and `react-dom` as dev dependencies (the fixture only);
 its bundle carries the Radix dialog even though the content never mounts.
+
+## Text input (C4)
+
+`<input>`, `<textarea>` and the native `<TextField>` are one field: a focusable view whose text
+children the compat layer owns (React never gives an input children). CIRCLE on a focused field
+opens the on-screen keyboard on the overlay layer.
+
+| Control | Keyboard action |
+| --- | --- |
+| d-pad | move between keys (spatial, clamped at the edges) |
+| CIRCLE | press a key (types it; the `1#` and `abc` keys switch layers, `ABC` shifts) |
+| SQUARE | delete before the caret |
+| TRIANGLE | space |
+| START or `ENT` / `OK` | commit: closes and reports the final value (textarea: `ENT` inserts a newline) |
+| CROSS or `HIDE` | close without touching the value |
+
+- **onChange contract** — DOM shape: `onChange({ target: { value, name }, type: "change" })`, fired after `onInput`. Controlled: pass `value`, the app owns the string. Uncontrolled: `defaultValue` seeds it.
+- **Read-only** — `value` without `onChange` never opens a keyboard; it counts as `mappedAttrs.readOnlyField`.
+- **Counters** — `compatStats().mappedAttrs` counts what the field consumed (value, placeholder, onChange, onInput, maxLength, name, password `type`); the rest of the DOM input surface (`rows`, `autoComplete`, `min/max`, `readOnly`, …) drops and counts in `droppedAttrs`.
+- **Masks and limits** — `type="password"` shows `*`; `maxLength` refuses an insert that would pass it.
+- **Fixed colors** — value `text-slate-900`, placeholder `text-slate-500`, keycaps dark. The core has no text-color inheritance (the C2 gap), so the field picks its own pair.
+
+### Known gaps (C4)
+
+- No soft wrap, no horizontal scroll: a long value runs past the box.
+- No CJK input (the framework's IME needs an offload session this repo does not have).
+- No touch keyboard: the phone layout and its hold rules are not ported.
+- Keycaps are ASCII (`DEL ENT OK HIDE < > 1# ABC abc`); the framework's arrow glyphs are not guaranteed in the atlas.
+- No `disabled`, `autoFocus`, `onFocus/onBlur/onKeyDown` (C9). `type` other than `password` is dropped and counted.
 
 ## The style prop
 
