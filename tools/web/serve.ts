@@ -24,7 +24,7 @@ export function serveReader(
 ): ReaderServer {
   const host = FRAMEWORK_ROOT + "hosts/web/";
   const server = Bun.serve({
-    hostname: "127.0.0.1",
+    hostname: process.env.HOST ?? "127.0.0.1",
     port,
     fetch(req) {
       const path = new URL(req.url).pathname.replace(/\.\.+/g, "");
