@@ -22,9 +22,8 @@
   //   ?manual=1   no loop: a driver steps frames with window.__host.step(buttons)
   import { create } from "/app-instance.js";
   import { createBrowserFs } from "/fs-shim.js";
+  import { BTN, KEYMAP, routeKey } from "/text-entry-host.js";
 
-  const BTN = { SELECT: 0x1, START: 0x8, UP: 0x10, RIGHT: 0x20, DOWN: 0x40, LEFT: 0x80, LTRIGGER: 0x100, RTRIGGER: 0x200, TRIANGLE: 0x1000, CIRCLE: 0x2000, CROSS: 0x4000, SQUARE: 0x8000 };
-  const KEYMAP = { ArrowUp: BTN.UP, ArrowRight: BTN.RIGHT, ArrowDown: BTN.DOWN, ArrowLeft: BTN.LEFT, KeyX: BTN.CROSS, Enter: BTN.CIRCLE, KeyZ: BTN.CIRCLE, KeyA: BTN.SQUARE, KeyS: BTN.TRIANGLE, ShiftLeft: BTN.SELECT, ShiftRight: BTN.SELECT, Space: BTN.START, KeyL: BTN.LTRIGGER, KeyR: BTN.RTRIGGER, KeyQ: BTN.LTRIGGER, KeyE: BTN.RTRIGGER };
   const params = new URLSearchParams(location.search);
   const runtimeGlyphs = params.get("glyphs") !== "0";
   const manual = params.get("manual") === "1";
@@ -80,7 +79,14 @@
     pixels() { return inst ? inst.render() : null; },
   };
 
-  window.addEventListener("keydown", (e) => { const bit = KEYMAP[e.code]; if (bit === undefined) return; e.preventDefault(); keys |= bit; });
+  // Keys: a focused text field (guest flag) takes printable keys as text; otherwise the pad mapping.
+  window.addEventListener("keydown", (e) => {
+    const r = routeKey(e, globalThis.__pocketTextEntry === true);
+    if (!r) return;
+    e.preventDefault();
+    if (r.to === "button") keys |= r.bit;
+    else (globalThis.__pocketText ??= []).push(r.to === "text" ? { t: "ch", s: r.ch } : { t: "key", k: r.key });
+  });
   window.addEventListener("keyup", (e) => { const bit = KEYMAP[e.code]; if (bit === undefined) return; e.preventDefault(); keys &= ~bit; });
   window.addEventListener("blur", () => { keys = 0; });
   document.getElementById("pick").addEventListener("change", async (event) => {

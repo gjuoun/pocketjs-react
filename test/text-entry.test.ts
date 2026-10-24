@@ -23,8 +23,8 @@ test("while a field is focused, Backspace, Enter and Escape are edit keys", () =
 });
 
 test("arrows stay pad buttons in both modes", () => {
-  expect(routeKey(ev("ArrowLeft", "ArrowLeft"), true)).toEqual({ to: "button", bit: KEYMAP.ArrowLeft });
-  expect(routeKey(ev("ArrowDown", "ArrowDown"), true)).toEqual({ to: "button", bit: KEYMAP.ArrowDown });
+  expect(routeKey(ev("ArrowLeft", "ArrowLeft"), true)).toEqual({ to: "button", bit: 0x80 });
+  expect(routeKey(ev("ArrowDown", "ArrowDown"), true)).toEqual({ to: "button", bit: 0x40 });
 });
 
 test("modified printable keys are shortcuts, not text", () => {
@@ -32,15 +32,23 @@ test("modified printable keys are shortcuts, not text", () => {
   expect(routeKey(ev("KeyC", "c", { metaKey: true }), true)).toBeNull();
 });
 
+// The pad mapping as the reader shipped it before C4b, pinned as literals so the guard cannot
+// drift with the module it guards (a mutated KEYMAP must turn these red).
+const LEGACY: Record<string, number> = {
+  ArrowUp: 0x10, ArrowRight: 0x20, ArrowDown: 0x40, ArrowLeft: 0x80, KeyX: 0x4000, Enter: 0x2000, KeyZ: 0x2000,
+  KeyA: 0x8000, KeyS: 0x1000, ShiftLeft: 0x1, ShiftRight: 0x1, Space: 0x8, KeyL: 0x100, KeyR: 0x200, KeyQ: 0x100, KeyE: 0x200,
+};
+
 test("no focused field: every key keeps the pad mapping (letters are buttons)", () => {
-  expect(routeKey(ev("KeyX", "x"), false)).toEqual({ to: "button", bit: KEYMAP.KeyX });
-  expect(routeKey(ev("KeyQ", "q"), false)).toEqual({ to: "button", bit: KEYMAP.KeyQ });
-  expect(routeKey(ev("Space", " "), false)).toEqual({ to: "button", bit: KEYMAP.Space });
-  expect(routeKey(ev("Enter", "Enter"), false)).toEqual({ to: "button", bit: KEYMAP.Enter });
+  expect(routeKey(ev("KeyX", "x"), false)).toEqual({ to: "button", bit: 0x4000 });
+  expect(routeKey(ev("KeyQ", "q"), false)).toEqual({ to: "button", bit: 0x100 });
+  expect(routeKey(ev("Space", " "), false)).toEqual({ to: "button", bit: 0x8 });
+  expect(routeKey(ev("Enter", "Enter"), false)).toEqual({ to: "button", bit: 0x2000 });
 });
 
-test("no focused field: the whole KEYMAP is unchanged (regression guard)", () => {
-  for (const [code, bit] of Object.entries(KEYMAP)) {
+test("no focused field: the whole pad table is unchanged (regression guard)", () => {
+  expect(Object.keys(KEYMAP).sort()).toEqual(Object.keys(LEGACY).sort());
+  for (const [code, bit] of Object.entries(LEGACY)) {
     expect(routeKey(ev(code, code), false)).toEqual({ to: "button", bit });
   }
 });

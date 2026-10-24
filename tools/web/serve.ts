@@ -33,6 +33,8 @@ export function serveReader(
           ? HERE + "reader.html"
           : path === "/fs-shim.js"
             ? HERE + "fs-shim.js"
+            : path === "/text-entry-host.js"
+              ? HERE + "text-entry-host.js"
             : path === "/dist/app.js"
               ? app.js
               : path === "/dist/app.pak"
