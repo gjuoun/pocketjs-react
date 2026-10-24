@@ -319,34 +319,57 @@ by name.
 The demo needs `radix-ui`, `lucide-react` and `react-dom` as dev dependencies (the fixture only);
 its bundle carries the Radix dialog even though the content never mounts.
 
-## Text input (C4)
+## Text input (C4, C4b)
 
-`<input>`, `<textarea>` and the native `<TextField>` are one field: a focusable view whose text
-children the compat layer owns (React never gives an input children). CIRCLE on a focused field
-opens the on-screen keyboard on the overlay layer.
+`<input>`, `<textarea>` and the native `<TextField>` are one field: a focusable view whose text children the compat layer owns (React never gives an input children). A focused field takes typing in two ways.
+
+- **Physical keys (web host page)** — with the field focused, printable keys type straight into it, no panel opens. Letters and Space type text instead of pressing pad buttons while the field has focus; outside a field they keep their pad meaning (`Q/E/L/R` shoulders, `X` CROSS, `Z/Enter` CIRCLE, `A` SQUARE, `S` TRIANGLE, `Space` START).
+- **On-screen keyboard** — CIRCLE or a click on a focused field opens the panel on the overlay layer; the panel keeps focus while open.
+
+### Physical keys while typing
+
+| Key | Effect |
+| --- | --- |
+| printable | inserts at the caret; `maxLength` refuses past the limit |
+| Backspace | deletes before the caret |
+| Left / Right | move the caret |
+| Up / Down | move focus; the direct field closes as focus leaves it |
+| Enter | input: commits and closes; textarea: newline |
+| Escape | closes without touching the value |
+
+Ctrl, Cmd and Alt combinations are left to the browser. The page queues keys and the guest applies at most one per frame, so a controlled value catches up with its `onChange` before the next key.
+
+### On-screen keyboard
 
 | Control | Keyboard action |
 | --- | --- |
-| d-pad | move between keys (spatial, clamped at the edges) |
-| CIRCLE | press a key (types it; the `1#` and `abc` keys switch layers, `ABC` shifts) |
+| d-pad up / down | move one row; the column stays put where the row allows |
+| d-pad left / right | move one key; wraps inside the row |
+| CIRCLE | press a key (types it; `1#` and `abc` switch layers, `ABC` shifts) |
 | SQUARE | delete before the caret |
 | TRIANGLE | space |
 | START or `ENT` / `OK` | commit: closes and reports the final value (textarea: `ENT` inserts a newline) |
 | CROSS or `HIDE` | close without touching the value |
 
+Typing `quick brown fox` from the home key takes 54 d-pad moves on this layout (plus one CIRCLE per character). Two alternatives were measured and rejected: a literal row strip that keeps the column index costs 64, and a per-row memory column costs 57.
+
 - **onChange contract** — DOM shape: `onChange({ target: { value, name }, type: "change" })`, fired after `onInput`. Controlled: pass `value`, the app owns the string. Uncontrolled: `defaultValue` seeds it.
-- **Read-only** — `value` without `onChange` never opens a keyboard; it counts as `mappedAttrs.readOnlyField`.
+- **Read-only** — `value` without `onChange` never opens a keyboard and takes no typing; it counts as `mappedAttrs.readOnlyField`.
 - **Counters** — `compatStats().mappedAttrs` counts what the field consumed (value, placeholder, onChange, onInput, maxLength, name, password `type`); the rest of the DOM input surface (`rows`, `autoComplete`, `min/max`, `readOnly`, …) drops and counts in `droppedAttrs`.
 - **Masks and limits** — `type="password"` shows `*`; `maxLength` refuses an insert that would pass it.
 - **Fixed colors** — value `text-slate-900`, placeholder `text-slate-500`, keycaps dark. The core has no text-color inheritance (the C2 gap), so the field picks its own pair.
+- **Host page wiring** — `tools/web/text-entry-host.js` holds the key table (`routeKey`); the page pushes text into `globalThis.__pocketText` and reads `globalThis.__pocketTextEntry`, which the guest sets while a field has focus.
 
-### Known gaps (C4)
+### Known gaps (C4, C4b)
 
 - No soft wrap, no horizontal scroll: a long value runs past the box.
 - No CJK input (the framework's IME needs an offload session this repo does not have).
 - No touch keyboard: the phone layout and its hold rules are not ported.
 - Keycaps are ASCII (`DEL ENT OK HIDE < > 1# ABC abc`); the framework's arrow glyphs are not guaranteed in the atlas.
 - No `disabled`, `autoFocus`, `onFocus/onBlur/onKeyDown` (C9). `type` other than `password` is dropped and counted.
+- The browser cannot tell a keyboard from a pad: on the web host, any letter key types while a field has focus.
+- Direct typing has no panel, so a `CROSS` press on a letter types it; use Escape or Enter to leave a direct field.
+- Physical keys reach only the web host page; native hosts have no text seam yet.
 
 ## The style prop
 
