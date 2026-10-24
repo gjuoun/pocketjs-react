@@ -4,6 +4,7 @@
 
 import { afterEach, expect, test } from "bun:test";
 import { BTN } from "@pocketjs/framework/input";
+import { useState } from "react";
 import { compatStats, mount, resetCompatStats } from "../src/index.ts";
 import {
   FIELD_PLACEHOLDER_CLASS,
@@ -51,6 +52,53 @@ const caps = (c: Core): string[] =>
     .texts()
     .map((r) => r.text)
     .filter((t) => CAPS.includes(t));
+
+/** Type `text` through the d-pad: for each character, move focus from the current key to
+ *  the target key's (row, col) in the layout model and press CIRCLE. Uses the same ported
+ *  layout math as the panel, so no pixel positions are needed. */
+// The panel's focus persists between characters, so the model does too. It resets only on
+// open, the same way the panel remounts with its home key.
+let kb = { pos: { row: 0, col: 1 } };
+function openKeyboard(c: Core): void {
+  c.press(BTN.CIRCLE);
+  kb = { pos: { row: 0, col: 1 } }; // q, the home key
+}
+async function type(c: Core, text: string): Promise<void> {
+  const { homePos, layoutRows, navigate, oskLayer } = await import(
+    "../src/input/osk-layout.ts"
+  );
+  const rects = layoutRows(oskLayer("lower"), 480 - 2 * 4);
+  let pos = kb.pos;
+  const find = (ch: string): { row: number; col: number } => {
+    for (const row of rects)
+      for (const rect of row)
+        if (rect.key.ch === ch) return { row: rect.row, col: rect.col };
+    throw new Error("no key for " + JSON.stringify(ch));
+  };
+  const step = (dir: "up" | "down" | "left" | "right"): void => {
+    pos = navigate(rects, pos, dir);
+    c.press(
+      dir === "down"
+        ? BTN.DOWN
+        : dir === "up"
+          ? BTN.UP
+          : dir === "left"
+            ? BTN.LEFT
+            : BTN.RIGHT,
+    );
+  };
+  for (const ch of text) {
+    const target = find(ch);
+    while (pos.row < target.row) step("down");
+    while (pos.row > target.row) step("up");
+    while (pos.col !== target.col) {
+      const next = (pos.col + 1) % rects[pos.row].length;
+      step(next === target.col ? "right" : "left");
+    }
+    c.press(BTN.CIRCLE);
+  }
+  kb.pos = pos;
+}
 
 test("an <input> mounts as a focusable view with a text child the layer owns", async () => {
   const c = await boot();
@@ -141,6 +189,76 @@ test("CROSS closes the keyboard and focus returns to the field", async () => {
   // the field is focused again (the caret row): pressing CIRCLE reopens the keyboard
   c.press(BTN.CIRCLE);
   expect(caps(c).length).toBeGreaterThan(0);
+});
+
+test("typing abc drives onChange in order and the controlled value redraws", async () => {
+  const c = await boot();
+  const seen: string[] = [];
+  function App() {
+    const [value, setValue] = useState("");
+    return (
+      <div>
+        <input
+          placeholder="Name"
+          value={value}
+          onChange={(e) => {
+            seen.push(e.target.value);
+            setValue(e.target.value);
+          }}
+        />
+      </div>
+    );
+  }
+  mountApp(<App />);
+  c.step(0);
+  c.press(BTN.DOWN);
+  openKeyboard(c);
+  await type(c, "abc");
+  expect(seen).toEqual(["a", "ab", "abc"]);
+  const texts = c.texts().map((r) => r.text);
+  expect(texts).toContain("abc|");
+  expect(texts).not.toContain("Name");
+});
+
+test("SQUARE deletes, START commits and closes, maxLength truncates", async () => {
+  const c = await boot();
+  const seen: string[] = [];
+  function App() {
+    const [value, setValue] = useState("");
+    return (
+      <div>
+        <input
+          placeholder="Name"
+          value={value}
+          maxLength={4}
+          onChange={(e) => {
+            seen.push(e.target.value);
+            setValue(e.target.value);
+          }}
+        />
+      </div>
+    );
+  }
+  mountApp(<App />);
+  c.step(0);
+  c.press(BTN.DOWN);
+  openKeyboard(c);
+  await type(c, "abc");
+  c.press(BTN.SQUARE); // delete one character
+  expect(seen[seen.length - 1]).toBe("ab");
+  expect(c.texts().map((r) => r.text)).toContain("ab|");
+  c.press(BTN.START); // commit and close
+  expect(caps(c)).toEqual([]);
+  expect(c.texts().map((r) => r.text)).toContain("ab");
+  // reopen: maxLength=4 admits one more character, then refuses the fifth
+  openKeyboard(c);
+  await type(c, "d");
+  expect(seen[seen.length - 1]).toBe("abd");
+  await type(c, "e");
+  expect(seen[seen.length - 1]).toBe("abde");
+  await type(c, "f"); // the 5th character: insertAt refuses, nothing is reported
+  expect(seen[seen.length - 1]).toBe("abde");
+  expect(c.texts().map((r) => r.text)).toContain("abde|");
 });
 
 test("the rest of the DOM input surface drops and counts instead of throwing", async () => {

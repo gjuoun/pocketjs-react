@@ -168,8 +168,9 @@ export function fieldFor(node: NodeMirror): TextFieldBinding | undefined {
 function render(binding: TextFieldBinding): void {
   // The field is bound at createInstance time, before React inserts it into the tree: the
   // text children are attached to the view itself, so they travel with it on insert.
+  // The caret is NOT clamped here: a controlled field's props can lag one frame behind an
+  // edit, and clamping against the stale value would throw the caret back to 0.
   const value = valueOf(binding);
-  binding.caret = Math.max(0, Math.min(binding.caret, value.length));
   const shown = display(value, binding.caret, binding.open, {
     masked: binding.input.masked,
     multiline: binding.input.multiline,
