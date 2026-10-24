@@ -324,7 +324,7 @@ its bundle carries the Radix dialog even though the content never mounts.
 `<input>`, `<textarea>` and the native `<TextField>` are one field: a focusable view whose text children the compat layer owns (React never gives an input children). A focused field takes typing in two ways.
 
 - **Physical keys (web host page)** — with the field focused, printable keys type straight into it, no panel opens. Letters and Space type text instead of pressing pad buttons while the field has focus; outside a field they keep their pad meaning (`Q/E/L/R` shoulders, `X` CROSS, `Z/Enter` CIRCLE, `A` SQUARE, `S` TRIANGLE, `Space` START).
-- **On-screen keyboard** — CIRCLE or a click on a focused field opens the panel on the overlay layer; the panel keeps focus while open.
+- **On-screen keyboard** — CIRCLE or a mouse click on a focused field opens the panel on the overlay layer; the panel keeps focus while open. On a touch host a finger tap on a field summons the native keyboard instead: a hidden textarea takes its text (IME included, sent once committed) into the same seam. The panel opens on a tap only where that bridge is unavailable.
 
 ### Physical keys while typing
 
@@ -364,7 +364,7 @@ Typing `quick brown fox` from the home key takes 54 d-pad moves on this layout (
 
 - No soft wrap, no horizontal scroll: a long value runs past the box.
 - No CJK input (the framework's IME needs an offload session this repo does not have).
-- No touch keyboard: the phone layout and its hold rules are not ported.
+- Touch uses the native keyboard; the panel's phone layout and hold rules are not ported. Native IME is verified with simulated composition events only, not on a device (iOS focus-in-gesture is unverified).
 - Keycaps are ASCII (`DEL ENT OK HIDE < > 1# ABC abc`); the framework's arrow glyphs are not guaranteed in the atlas.
 - No `disabled`, `autoFocus`, `onFocus/onBlur/onKeyDown` (C9). `type` other than `password` is dropped and counted.
 - The browser cannot tell a keyboard from a pad: on the web host, any letter key types while a field has focus.
