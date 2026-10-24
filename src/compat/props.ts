@@ -7,7 +7,16 @@
 //   pass     the PocketJS host surface (className/style/focusable/onPress/debugName/ref)
 //   unknown  anything else - throws naming the prop, the tag and the switch, or drops and
 //            counts under mount({ compat: { unknownProps: "drop" } })
-import { countDroppedAttr, countUnknownAttr } from "./stats.ts";
+//
+// C4 adds a fifth bucket for text entry tags (input/textarea): the field surface
+// (value/defaultValue/placeholder/maxLength/onChange/onInput/name, and type=password) is
+// consumed by the field binding and counted in mappedAttrs; the rest of the DOM input
+// surface (rows, autoComplete, min/max, readOnly, ...) drops and counts instead of throwing,
+// because shadcn's {...props} pass-through must not crash. onClick is left to the binding:
+// pressing the field opens its keyboard and then calls the app's handler.
+import type { TextFieldInput } from "../input/text-field.ts";
+import { TEXT_ENTRY_TAGS } from "./tags.ts";
+import { countDroppedAttr, countMappedAttr, countUnknownAttr } from "./stats.ts";
 
 const ALIAS: Record<string, string> = { onClick: "onPress" };
 
@@ -58,6 +67,55 @@ const PASS = new Set([
   "ref",
 ]);
 
+/** Props the text field binding consumes; they never reach the native view. */
+const TEXT_FIELD_ATTRS = new Set([
+  "value",
+  "defaultValue",
+  "placeholder",
+  "maxLength",
+  "onChange",
+  "onInput",
+  "name",
+]);
+
+/** The rest of the DOM input surface. PocketJS has no answer for these (C4 keeps the field
+ *  to value/maxLength/placeholder), so they drop and count rather than throw: a shadcn
+ *  component spreads whatever props its caller passed. */
+const INPUT_DROP_ATTRS = new Set([
+  "readOnly",
+  "rows",
+  "cols",
+  "wrap",
+  "autoComplete",
+  "autoCapitalize",
+  "autoCorrect",
+  "spellCheck",
+  "inputMode",
+  "enterKeyHint",
+  "minLength",
+  "min",
+  "max",
+  "step",
+  "pattern",
+  "form",
+  "formAction",
+  "formMethod",
+  "formNoValidate",
+  "list",
+  "multiple",
+  "accept",
+  "capture",
+  "checked",
+  "required",
+  "dirName",
+  "onPaste",
+  "onCut",
+  "onCopy",
+  "onSelect",
+  "onCompositionStart",
+  "onCompositionEnd",
+]);
+
 export type UnknownPropsPolicy = "throw" | "drop";
 let unknownProps: UnknownPropsPolicy = "throw";
 
@@ -67,15 +125,57 @@ export function setUnknownPropsPolicy(mode: UnknownPropsPolicy): void {
 
 export type Props = Record<string, unknown>;
 
+/** Normalize the raw DOM props of a text entry into the field's own input. Counts what
+ *  the mapping consumed (once per mount) so nothing disappears silently. */
+export function textFieldInput(
+  tag: string,
+  props: Props,
+  count: boolean,
+): TextFieldInput {
+  const masked = props.type === "password";
+  const readOnly = props.value !== undefined && props.onChange === undefined;
+  if (count) {
+    for (const key of TEXT_FIELD_ATTRS) if (key in props) countMappedAttr(key);
+    if (masked) countMappedAttr("type");
+    if (props.onClick !== undefined) countMappedAttr("onClick");
+    if (readOnly) countMappedAttr("readOnlyField");
+  }
+  const text = (value: unknown): string | undefined =>
+    typeof value === "string"
+      ? value
+      : typeof value === "number"
+        ? String(value)
+        : undefined;
+  return {
+    value: text(props.value),
+    defaultValue: text(props.defaultValue),
+    placeholder: text(props.placeholder),
+    maxLength: typeof props.maxLength === "number" ? props.maxLength : undefined,
+    masked,
+    multiline: tag === "textarea",
+    name: text(props.name),
+    onChange: props.onChange as TextFieldInput["onChange"],
+    onInput: props.onInput as TextFieldInput["onInput"],
+    onClick: props.onClick as TextFieldInput["onClick"],
+  };
+}
+
 export function compatProps(
   tag: string,
   props: Props,
   interactive: boolean,
   count: boolean,
 ): Props {
+  const text = TEXT_ENTRY_TAGS.has(tag);
   const out: Props = {};
   for (const key in props) {
     if (key === "children") continue;
+    if (
+      text &&
+      (TEXT_FIELD_ATTRS.has(key) || (key === "type" && props.type === "password"))
+    )
+      continue;
+    if (text && key === "onClick") continue;
     const alias = ALIAS[key];
     if (alias !== undefined) {
       out[alias] = props[key];
@@ -89,7 +189,8 @@ export function compatProps(
       key.startsWith("data-") ||
       key.startsWith("aria-") ||
       DROP_ATTRS.has(key) ||
-      DROP_EVENTS.has(key)
+      DROP_EVENTS.has(key) ||
+      (text && INPUT_DROP_ATTRS.has(key))
     ) {
       if (count) countDroppedAttr(key);
       continue;
@@ -112,7 +213,7 @@ export function compatProps(
   // native View/Text surface behaves exactly as before.
   const focusable =
     props.focusable ??
-    (interactive || "onClick" in props || "onPointerDown" in props);
+    (interactive || text || "onClick" in props || "onPointerDown" in props);
   if (focusable) out.focusable = true;
   else if (props.focusable === false) out.focusable = false;
   return out;

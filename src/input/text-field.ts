@@ -15,8 +15,10 @@ import {
   removeNode,
   replaceText,
   rootMirror,
-  setProp,
 } from "../internal/pocket.ts";
+// The class runtime owns "compiled but not yet loaded": applying a class through it queues
+// the node until the table grows, which setProp alone would not do.
+import { applyClassName } from "../style/class-runtime.ts";
 
 /** Value text and placeholder text are fixed literals: the core has no text-color
  *  inheritance (the C2 known gap), so the field picks its own pair. */
@@ -155,7 +157,8 @@ export function fieldFor(node: NodeMirror): TextFieldBinding | undefined {
 
 /** Draw the binding's current value into its text children, creating or dropping lines. */
 function render(binding: TextFieldBinding): void {
-  if (!binding.node.parent) return; // detached: nothing to draw
+  // The field is bound at createInstance time, before React inserts it into the tree: the
+  // text children are attached to the view itself, so they travel with it on insert.
   const value = valueOf(binding);
   binding.caret = Math.max(0, Math.min(binding.caret, value.length));
   const shown = display(value, binding.caret, binding.open, {
@@ -180,7 +183,7 @@ function render(binding: TextFieldBinding): void {
     if (text.text !== shown.lines[i]) replaceText(text, shown.lines[i]);
     if (binding.classes[i] !== cls) {
       binding.classes[i] = cls;
-      setProp(text, "class", cls);
+      applyClassName(text, cls);
     }
   }
 }
