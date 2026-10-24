@@ -88,7 +88,10 @@ export function display(
   const at = Math.max(0, Math.min(caret, shown.length));
   const text = open ? shown.slice(0, at) + CARET + shown.slice(at) : shown;
   const lines = opts.multiline ? text.split("\n") : [text];
-  return { lines: lines.map((line) => (line === "" ? " " : line)), placeholder: false };
+  return {
+    lines: lines.map((line) => (line === "" ? " " : line)),
+    placeholder: false,
+  };
 }
 
 /** Insert at the caret, refusing an insert that would pass maxLength. */
@@ -98,9 +101,13 @@ export function insertAt(
   text: string,
   maxLength?: number,
 ): { value: string; caret: number } | null {
-  if (maxLength !== undefined && value.length + text.length > maxLength) return null;
+  if (maxLength !== undefined && value.length + text.length > maxLength)
+    return null;
   const at = Math.max(0, Math.min(caret, value.length));
-  return { value: value.slice(0, at) + text + value.slice(at), caret: at + text.length };
+  return {
+    value: value.slice(0, at) + text + value.slice(at),
+    caret: at + text.length,
+  };
 }
 
 /** Delete one character before the caret. */
@@ -148,7 +155,9 @@ export function valueOf(binding: TextFieldBinding): string {
 
 /** Read-only fields (value without onChange) render but never open a keyboard. */
 export function isReadOnly(binding: TextFieldBinding): boolean {
-  return binding.input.value !== undefined && binding.input.onChange === undefined;
+  return (
+    binding.input.value !== undefined && binding.input.onChange === undefined
+  );
 }
 
 export function fieldFor(node: NodeMirror): TextFieldBinding | undefined {
@@ -174,9 +183,10 @@ function render(binding: TextFieldBinding): void {
     insertNode(binding.node, text);
   }
   while (binding.texts.length > shown.lines.length) {
-    const text = binding.texts.pop()!;
+    const extra = binding.texts.pop();
+    if (!extra) break;
     binding.classes.pop();
-    removeNode(binding.node, text);
+    removeNode(binding.node, extra);
   }
   for (let i = 0; i < shown.lines.length; i++) {
     const text = binding.texts[i];
@@ -229,7 +239,10 @@ export function openField(binding: TextFieldBinding): void {
 }
 
 /** Close the keyboard; `restore` is false when focus is moving to another field. */
-export function closeField(binding: TextFieldBinding, restoreCaret = true): void {
+export function closeField(
+  binding: TextFieldBinding,
+  restoreCaret = true,
+): void {
   if (!binding.open) return;
   binding.open = false;
   if (restoreCaret) binding.caret = valueOf(binding).length;
@@ -239,7 +252,12 @@ export function closeField(binding: TextFieldBinding, restoreCaret = true): void
 }
 
 export function insertText(binding: TextFieldBinding, text: string): void {
-  const next = insertAt(valueOf(binding), binding.caret, text, binding.input.maxLength);
+  const next = insertAt(
+    valueOf(binding),
+    binding.caret,
+    text,
+    binding.input.maxLength,
+  );
   if (!next) return;
   edit(binding, next.value, next.caret);
 }
