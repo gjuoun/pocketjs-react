@@ -31,3 +31,57 @@ export function routeKey(e, entryActive) {
   const bit = KEYMAP[e.code];
   return bit === undefined ? null : { to: "button", bit };
 }
+
+// ---- C4c native-keyboard bridge (touch hosts) ----------------------------------------------
+// A hidden <textarea> takes the native keyboard's input and its IME. Its text is sent to the
+// same __pocketText seam as physical keys, but only once it is final: during a composition the
+// preedit stays in the field (the IME needs it) and the committed string is sent on compositionend.
+
+/** Per-field bridge state: whether a composition is open, and the commit just sent (its echo is dropped). */
+export function createBridgeState() {
+  return { composing: false, pending: null };
+}
+
+/** compositionstart on the hidden field. */
+export function bridgeCompositionStart(state) {
+  state.composing = true;
+}
+
+/** compositionend: the committed string is the text, sent once. */
+export function bridgeCompositionEnd(state, data, emit) {
+  state.composing = false;
+  state.pending = data ? data : null;
+  if (data) emit({ t: "ch", s: data });
+}
+
+/**
+ * beforeinput on the hidden field. Returns true when the native edit must be cancelled (the
+ * text went through emit instead); false lets the browser edit the field (composition only).
+ */
+export function bridgeBeforeInput(state, e, emit) {
+  if (state.composing || e.isComposing || e.inputType === "insertCompositionText") return false;
+  // The browser may repeat a commit as its own edit right after compositionend: drop the echo.
+  const echo = state.pending !== null && e.data === state.pending && (e.inputType === "insertFromComposition" || e.inputType === "insertText");
+  state.pending = null;
+  if (echo) return true;
+  switch (e.inputType) {
+    case "insertText":
+    case "insertReplacementText":
+      if (e.data) emit({ t: "ch", s: e.data });
+      return true;
+    case "insertFromPaste": {
+      const text = e.data ?? e.dataTransfer?.getData?.("text/plain") ?? "";
+      if (text) emit({ t: "ch", s: text });
+      return true;
+    }
+    case "insertLineBreak":
+    case "insertParagraph":
+      emit({ t: "key", k: "Enter" });
+      return true;
+    case "deleteContentBackward":
+      emit({ t: "key", k: "Backspace" });
+      return true;
+    default:
+      return true; // other edits on the hidden field are not text: cancel them
+  }
+}

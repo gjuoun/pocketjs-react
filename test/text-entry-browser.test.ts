@@ -126,3 +126,68 @@ test("the pad alone types field B through the row-strip keyboard: 54 d-pad moves
   await press(BTN.CROSS); // close without touching the value
   expect(await keycapsDrawn()).toEqual([]);
 }, 120000);
+
+// ---- C4c: a touch host summons the native keyboard; the bridge feeds the same seam ----
+
+const open = async (query: string): Promise<void> => {
+  await chrome.navigate(server.url + "?" + query);
+  for (let i = 0; i < 100 && !(await evaluate("!!window.__ready")); i++) await Bun.sleep(100);
+  // count the bridge's focus() calls on the hidden entry (focus events are not dispatched while the
+  // headless window lacks system focus): a non-touch host must never ask for it
+  await evaluate("(() => { window.__nativeFocusCalls = 0; const e = document.getElementById('native-entry'); const f = e.focus.bind(e); e.focus = (o) => { window.__nativeFocusCalls++; f(o); }; })()");
+};
+// canvas-logical (x, y) of the first point the focusable field under it answers for
+const FIND_FIELD = "(() => { for (let y = 0; y < 272; y += 2) for (let x = 0; x < 480; x += 2) if (globalThis.__pocketTextHitAt(x, y)) return x + ',' + y; return ''; })()";
+// A finger tap as a touch browser sends it: pointer events, then the compatibility mouse events.
+const tapAt = (x: number, y: number): Promise<unknown> =>
+  evaluate(
+    "(() => { const c = document.getElementById('screen'); const r = c.getBoundingClientRect(); " +
+      "const o = { clientX: r.left + " + x + " * r.width / c.width, clientY: r.top + " + y + " * r.height / c.height, bubbles: true, pointerType: 'touch' }; " +
+      "c.dispatchEvent(new PointerEvent('pointerdown', o)); c.dispatchEvent(new PointerEvent('pointerup', o)); " +
+      "c.dispatchEvent(new MouseEvent('mousedown', o)); c.dispatchEvent(new MouseEvent('mouseup', o)); })()",
+  );
+const nativeInput = (inputType: string, data: string | null): Promise<boolean> =>
+  evaluate(
+    "document.getElementById('native-entry').dispatchEvent(new InputEvent('beforeinput', { inputType: " + JSON.stringify(inputType) + ", data: " + JSON.stringify(data) + ", cancelable: true }))",
+  );
+const nativeComposition = (type: string, data: string | null): Promise<unknown> =>
+  evaluate(
+    "document.getElementById('native-entry').dispatchEvent(new CompositionEvent(" + JSON.stringify(type) + ", { data: " + JSON.stringify(data) + ", bubbles: true }))",
+  );
+const focusedId = (): Promise<string> => evaluate("document.activeElement?.id ?? ''");
+
+test("a tap on a touch host focuses the native entry and does not auto-open the OSK", async () => {
+  await open("manual=1&touch=1");
+  await frame(0);
+  const at = String(await evaluate(FIND_FIELD)).split(",").map(Number);
+  expect(at.length).toBe(2);
+  await tapAt(at[0], at[1]);
+  for (let i = 0; i < 4; i++) await frame(0);
+  expect(await focusedId()).toBe("native-entry");
+  expect(await evaluate("window.__nativeFocusCalls")).toBeGreaterThan(0);
+  expect(await flag()).toBe(true);
+  expect(await keycapsDrawn()).toEqual([]); // the native keyboard is the keyboard
+  // the native keyboard types through the bridge into the same onChange seam
+  expect(await nativeInput("insertText", "q")).toBe(false); // cancelled: the guest types it
+  await frame(0);
+  expect(await nativeInput("insertText", "u")).toBe(false);
+  await frame(0);
+  await nativeComposition("compositionstart", "");
+  await nativeInput("insertCompositionText", "ni");
+  await nativeComposition("compositionend", "你好");
+  await frame(0);
+  expect(await nativeInput("insertFromComposition", "你好")).toBe(false); // echo, not typed again
+  await frame(0);
+  expect(await logOf("__a")).toEqual(["q", "qu", "qu你好"]);
+  expect(await keycapsDrawn()).toEqual([]);
+}, 30000);
+
+test("without a touch host a tap falls back to the OSK, and the native entry stays unfocused", async () => {
+  await open("manual=1");
+  await frame(0);
+  const at = String(await evaluate(FIND_FIELD)).split(",").map(Number);
+  await tapAt(at[0], at[1]);
+  for (let i = 0; i < 4; i++) await frame(0);
+  expect(await evaluate("window.__nativeFocusCalls")).toBe(0);
+  expect((await keycapsDrawn()).length).toBeGreaterThan(0);
+}, 30000);

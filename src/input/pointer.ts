@@ -53,6 +53,13 @@ function drain(): PointerEvent[] {
   return events;
 }
 
+let pressing = false;
+
+/** True while the pointer pump presses a node (a tap or click), not a CIRCLE press. */
+export function pressingFromPointer(): boolean {
+  return pressing;
+}
+
 export function installPointer(): () => void {
   let armed: unknown = null;
   return addFramePump(() => {
@@ -62,7 +69,14 @@ export function installPointer(): () => void {
         armed = target;
         if (target) focusNode(target);
       } else {
-        if (target && target === armed) pressNode(target);
+        if (target && target === armed) {
+          pressing = true;
+          try {
+            pressNode(target);
+          } finally {
+            pressing = false;
+          }
+        }
         armed = null;
       }
     }

@@ -1,12 +1,13 @@
-// C4b physical keys: the host page pushes printable keys and edit keys into
-// globalThis.__pocketText (tools/web/text-entry-host.js); this pump applies them to the field
-// that has focus, in direct mode (no keyboard panel). Each frame it publishes
-// globalThis.__pocketTextEntry, which the host reads to decide whether a key is text or pad input.
-// The field that has focus alone decides: a panel's keys hold focus, so letters stay buttons there.
-import { getFocused, pushFocusController } from "@pocketjs/framework/input";
+// C4b/C4c text entry: the host page pushes physical keys and native-keyboard text into
+// globalThis.__pocketText (tools/web/text-entry-host.js). This pump applies them to the field
+// that has focus, in direct mode (no keyboard panel). Each frame it publishes what the host needs:
+//   __pocketTextEntry     a text field has focus (letters are text, not pad buttons)
+//   __pocketTextMultiline the focused field is a textarea (Enter is a newline, not a commit)
+// On a touch host (__pocketTextNative) the host also asks __pocketTextHitAt(x, y) whether a tap
+// lands on an editable field, so it can summon the native keyboard inside the user gesture.
+import { getFocused, hitFocusable, pushFocusController } from "@pocketjs/framework/input";
 import type { NodeMirror } from "../internal/pocket.ts";
 import { addFramePump } from "../renderer/mount.ts";
-import { isAttached } from "./text-field.ts";
 import {
   activeField,
   backspace,
@@ -14,20 +15,29 @@ import {
   commitField,
   fieldFor,
   insertText,
+  isAttached,
   isReadOnly,
   moveCaret,
   openField,
   type TextFieldBinding,
 } from "./text-field.ts";
 
-/** One physical key, as the host page routes it while a field has focus. */
+/** One physical or native-keyboard key, as the host page routes it while a field has focus. */
 export type TextEvent = { t: "ch"; s: string } | { t: "key"; k: string };
 
 interface TextGlobals {
   __pocketText?: TextEvent[];
   __pocketTextEntry?: boolean;
+  __pocketTextMultiline?: boolean;
+  __pocketTextNative?: boolean;
+  __pocketTextHitAt?: (x: number, y: number) => boolean;
 }
 const g = globalThis as TextGlobals;
+
+/** True on a touch host whose page summons the native keyboard for a tap (C4c). */
+export function nativeKeyboard(): boolean {
+  return g.__pocketTextNative === true;
+}
 
 /** The editable field that has focus, or null. Read-only fields never take typing. */
 function focusedField(): TextFieldBinding | null {
@@ -49,9 +59,11 @@ function apply(field: TextFieldBinding, event: TextEvent): void {
       backspace(field);
       break;
     case "Enter":
-      // ENT inserts a newline in a textarea; in an input it commits and closes (F2).
-      if (field.input.multiline && field.open) insertText(field, "\n");
-      else commitField(field);
+      // ENT is a newline in a textarea and a commit in an input (F2).
+      if (field.input.multiline) {
+        if (!field.open) openField(field, "direct");
+        insertText(field, "\n");
+      } else commitField(field);
       break;
     case "Escape":
       closeField(field);
@@ -66,6 +78,11 @@ function apply(field: TextFieldBinding, event: TextEvent): void {
  */
 export function installTextEntry(): () => void {
   g.__pocketText ??= [];
+  g.__pocketTextHitAt = (x, y) => {
+    const node = hitFocusable(x, y) as NodeMirror | null;
+    const binding = node ? fieldFor(node) : undefined;
+    return binding !== undefined && !isReadOnly(binding);
+  };
   let caretNode: NodeMirror | null = null;
   let disposeCaret: (() => void) | null = null;
   const setCaretController = (field: TextFieldBinding | null): void => {
@@ -98,12 +115,16 @@ export function installTextEntry(): () => void {
     }
     const live = activeField();
     setCaretController(live?.mode === "direct" ? live : null);
-    g.__pocketTextEntry = focusedField() !== null;
+    const focused = focusedField();
+    g.__pocketTextEntry = focused !== null;
+    g.__pocketTextMultiline = focused?.input.multiline === true;
   });
 
   return () => {
     remove();
     setCaretController(null);
     g.__pocketTextEntry = false;
+    g.__pocketTextMultiline = false;
+    delete g.__pocketTextHitAt;
   };
 }
