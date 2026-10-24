@@ -48,6 +48,9 @@ export interface TextFieldInput {
   onClick?: () => void;
 }
 
+/** "panel": the on-screen keyboard is up. "direct": a physical key is typing; no panel. */
+export type FieldMode = "panel" | "direct";
+
 export interface TextFieldBinding {
   node: NodeMirror;
   tag: string;
@@ -57,6 +60,7 @@ export interface TextFieldBinding {
   /** Insertion point, clamped live against the current value. */
   caret: number;
   open: boolean;
+  mode: FieldMode;
   texts: NodeMirror[];
   classes: string[];
 }
@@ -229,10 +233,14 @@ export interface FieldResult {
 }
 
 /** Open the field's keyboard (a no-op for a read-only field). */
-export function openField(binding: TextFieldBinding): void {
+export function openField(
+  binding: TextFieldBinding,
+  mode: FieldMode = "panel",
+): void {
   if (isReadOnly(binding)) return;
   if (active && active !== binding) closeField(active, false);
   binding.open = true;
+  binding.mode = mode;
   binding.caret = valueOf(binding).length;
   active = binding;
   render(binding);
@@ -246,6 +254,7 @@ export function closeField(
 ): void {
   if (!binding.open) return;
   binding.open = false;
+  binding.mode = "panel";
   if (restoreCaret) binding.caret = valueOf(binding).length;
   if (active === binding) active = null;
   render(binding);
@@ -300,6 +309,7 @@ export function bindField(
       internal: input.defaultValue ?? "",
       caret: (input.defaultValue ?? "").length,
       open: false,
+      mode: "panel",
       texts: [],
       classes: [],
     };

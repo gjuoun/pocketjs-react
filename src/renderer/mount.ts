@@ -25,6 +25,7 @@ import { DiscreteEventPriority } from "react-reconciler/constants";
 import { type CompatOptions, installCompat } from "../compat/index.ts";
 import { OskHost } from "../input/Osk.tsx";
 import { installPointer } from "../input/pointer.ts";
+import { installTextEntry } from "../input/text-entry.ts";
 import { resetTextFields } from "../input/text-field.ts";
 import {
   createElement,
@@ -117,6 +118,7 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
   installStyleLayer();
   installCompat(opts.compat);
   const removePointer = installPointer();
+  const removeTextEntry = installTextEntry();
   // A fresh mount starts with no keyboard, even if a previous mount left one open.
   resetTextFields();
 
@@ -221,6 +223,7 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
     overlayLayer = null;
     setOskTarget(null);
     removePointer();
+    removeTextEntry();
     resetTextFields();
     (globalThis as { frame?: unknown }).frame = undefined;
   };

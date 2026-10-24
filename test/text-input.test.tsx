@@ -308,8 +308,15 @@ test("physical keys type into the focused field without opening the keyboard", a
   c.step(0);
   c.press(BTN.DOWN); // focus the field
   const queue = (globalThis as { __pocketText?: unknown[] }).__pocketText;
-  for (const ch of "abc") queue?.push({ t: "ch", s: ch });
-  c.step(0);
+  // One key per frame, and a task boundary between frames: React flushes the controlled value
+  // in a task, as the host's requestAnimationFrame loop does between frames.
+  const tick = () => new Promise((r) => setTimeout(r, 0));
+  for (const ch of "abc") {
+    queue?.push({ t: "ch", s: ch });
+    c.step(0);
+    await tick();
+    c.step(0);
+  }
   expect(seen).toEqual(["a", "ab", "abc"]);
   expect(caps(c)).toEqual([]);
 });
@@ -323,4 +330,56 @@ test("text events with no focused field are dropped, not typed", async () => {
   queue?.push({ t: "ch", s: "z" });
   c.step(0);
   expect(seen).toEqual([]);
+});
+
+// C4b: the flag the host reads is true only while a text field itself has focus.
+test("the entry flag follows focus: on a field yes, on a panel key or no focus no", async () => {
+  const c = await boot();
+  mountApp(<input placeholder="Name" />);
+  c.step(0);
+  const flag = () => (globalThis as { __pocketTextEntry?: boolean }).__pocketTextEntry;
+  c.step(0);
+  expect(flag()).toBe(false);
+  c.press(BTN.DOWN); // focus the field
+  expect(flag()).toBe(true);
+  c.press(BTN.CIRCLE); // panel open: focus moves to a key
+  expect(flag()).toBe(false);
+  c.press(BTN.CROSS); // back to the field
+  expect(flag()).toBe(true);
+});
+
+// C4b: LEFT moves the caret of a direct field (focus stays put); typing then inserts there.
+test("LEFT moves the caret of a direct-typing field; the next key inserts at the caret", async () => {
+  const c = await boot();
+  const seen: string[] = [];
+  function App() {
+    const [value, setValue] = useState("");
+    return (
+      <input
+        placeholder="Name"
+        value={value}
+        onChange={(e) => {
+          seen.push(e.target.value);
+          setValue(e.target.value);
+        }}
+      />
+    );
+  }
+  mountApp(<App />);
+  c.step(0);
+  c.press(BTN.DOWN);
+  const queue = (globalThis as { __pocketText?: { t: string; s: string }[] }).__pocketText;
+  const tick = () => new Promise((r) => setTimeout(r, 0));
+  const key = async (s: string) => {
+    queue?.push({ t: "ch", s });
+    c.step(0);
+    await tick();
+    c.step(0);
+  };
+  await key("a");
+  await key("b");
+  c.press(BTN.LEFT);
+  await tick();
+  await key("x");
+  expect(seen).toEqual(["a", "ab", "axb"]);
 });

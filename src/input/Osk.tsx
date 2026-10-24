@@ -196,7 +196,8 @@ function OskPanel(props: { field: TextFieldBinding }) {
  * keyboard exists; Osk.tsx deliberately does not import mount.ts. */
 export function OskHost(props: { target: NodeMirror }): ReactNode {
   const field = useOpenField();
-  if (!field) return null;
+  // A direct-typing field (physical keys) has no panel; only a panel-mode field portals one.
+  if (!field || field.mode !== "panel") return null;
   // A root from a disposed mount must not portal a keyboard into the live core.
   if (!oskTargetIs(props.target)) return null;
   return reconciler.createPortal(
