@@ -45,10 +45,13 @@ const surface = (c: Core, r: TextRun): string => {
 
 test("C3: the built demo renders every vendored component on the web host", async () => {
   const c = await bootBuilt();
+  // C4: the vendored <Input placeholder="Name"/> now draws its placeholder (before C4 an
+  // input could not render text at all); the rest of the list is unchanged.
   expect(c.texts().map((r) => r.text)).toEqual([
     "Save",
     "Delete",
     "Beta",
+    "Name",
     "Vendored card",
     "codemod output",
     "Card body",

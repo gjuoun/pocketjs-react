@@ -16,10 +16,16 @@ import {
   entries as pakEntries,
   get as pakGet,
 } from "@pocketjs/framework/pak";
-import type { ReactNode } from "react";
+import {
+  Fragment,
+  type ReactNode,
+  createElement as reactCreateElement,
+} from "react";
 import { DiscreteEventPriority } from "react-reconciler/constants";
 import { type CompatOptions, installCompat } from "../compat/index.ts";
+import { OskHost } from "../input/Osk.tsx";
 import { installPointer } from "../input/pointer.ts";
+import { resetTextFields } from "../input/text-field.ts";
 import {
   createElement,
   ENUMS,
@@ -47,6 +53,7 @@ import {
 import { initClassRuntime } from "../style/class-runtime.ts";
 import { installStyleLayer } from "../style/props.ts";
 import { reconciler, withPriority } from "./host-config.ts";
+import { setOskTarget } from "./osk-target.ts";
 
 export interface MountOptions {
   /** Class literal -> style id table; defaults to the table tools/build.ts compiled. */
@@ -110,6 +117,8 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
   installStyleLayer();
   installCompat(opts.compat);
   const removePointer = installPointer();
+  // A fresh mount starts with no keyboard, even if a previous mount left one open.
+  resetTextFields();
 
   const nativeTextures =
     host.kind === "native"
@@ -152,6 +161,7 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
   insertNode(rootMirror, appLayer);
   insertNode(rootMirror, overlay);
   overlayLayer = overlay;
+  setOskTarget(overlay);
   setInputRoot(rootMirror);
   setHitRoot(rootMirror);
 
@@ -187,7 +197,17 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
     runSweep();
   });
 
-  reconciler.updateContainerSync(element as never, container, null, null);
+  reconciler.updateContainerSync(
+    reactCreateElement(
+      Fragment,
+      null,
+      element,
+      reactCreateElement(OskHost, { target: overlay }),
+    ) as never,
+    container,
+    null,
+    null,
+  );
   reconciler.flushSyncWork();
   if (errors.length > 0) throw errors[0];
 
@@ -199,7 +219,9 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
     setInputRoot(null);
     setHitRoot(null);
     overlayLayer = null;
+    setOskTarget(null);
     removePointer();
+    resetTextFields();
     (globalThis as { frame?: unknown }).frame = undefined;
   };
 }

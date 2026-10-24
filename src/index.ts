@@ -57,6 +57,10 @@ export {
 export { FocusScope, type FocusScopeProps } from "./focus/FocusScope.tsx";
 export { useButton } from "./input/buttons.ts";
 export { takeHostMessages } from "./input/pointer.ts";
+// Text input (C4): <TextField> is the native spelling of <input>/<textarea> (same field,
+// same keyboard, same onChange contract).
+export { TextField, type TextFieldProps } from "./input/TextField.tsx";
+export { activeField, type TextFieldEvent } from "./input/text-field.ts";
 export { missingCharacters, missingNotice } from "./reader/coverage.ts";
 export {
   createGlyphWarmer,

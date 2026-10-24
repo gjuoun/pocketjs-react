@@ -1,7 +1,8 @@
 // C1 tag alias table: React DOM vocabulary -> PocketJS host types (the audit's L1 map,
 // product-sized). Interactive tags become focusable views, so d-pad focus and CIRCLE press
-// work on them like on every native focusable. <input> only stops crashing - real text
-// input is C4. Tags outside this table stay unknown and throw with an actionable message.
+// work on them like on every native focusable. <input>/<textarea> mount as views too (the
+// core has no text-input node) and C4's field binding gives them text children and a
+// keyboard. Tags outside this table stay unknown and throw with an actionable message.
 export const TAG_TO_HOST: Record<string, string> = {
   // boxes
   div: "view",
@@ -18,6 +19,7 @@ export const TAG_TO_HOST: Record<string, string> = {
   button: "view",
   a: "view",
   input: "view",
+  textarea: "view",
   // text
   span: "text",
   p: "text",
@@ -36,7 +38,11 @@ export const TAG_TO_HOST: Record<string, string> = {
 
 /** Tags that render as focusable views; the prop policy extends this to any tag carrying
  *  an onClick/onPointerDown handler. */
-export const INTERACTIVE_TAGS = new Set(["button", "a"]);
+export const INTERACTIVE_TAGS = new Set(["button", "a", "input", "textarea"]);
+
+/** Tags that mount as an editable field: a focusable view plus the text children the
+ *  compat layer owns (React never gives <input> children). C4. */
+export const TEXT_ENTRY_TAGS = new Set(["input", "textarea"]);
 
 const HOST_TYPES = new Set(["view", "text", "image"]);
 
@@ -58,6 +64,6 @@ export function unknownTagMessage(tag: string): string {
     tag +
     "> - not a PocketJS host type" +
     " (view/text/image) or a DOM tag in the compat table (div/section/main/header/footer/" +
-    "nav/aside/ul/ol/li, span/p/label/strong/em/code/pre/h1..h6, button/a, input)"
+    "nav/aside/ul/ol/li, span/p/label/strong/em/code/pre/h1..h6, button/a, input/textarea)"
   );
 }

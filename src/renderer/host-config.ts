@@ -26,6 +26,9 @@ const HOST_TYPES = new Set(["view", "text", "image"]);
 export interface HostCompat {
   type(tag: string, props: Props): string;
   props(tag: string, props: Props, count: boolean): Props;
+  /** After a node's host props are applied: give it state the native tree cannot express.
+   *  C4 binds text entry elements here (the field owns their text children and press). */
+  bind?(node: NodeMirror, tag: string, props: Props, count: boolean): void;
 }
 
 let compat: HostCompat = {
@@ -97,6 +100,7 @@ const hostConfig = {
     if (hostType !== type) setDebugName(node, type);
     applyProps(node, transform.toHost(compat.props(type, props, true)));
     transform.afterProps(node, props);
+    compat.bind?.(node, type, props, true);
     return node;
   },
   createTextInstance(text: string): NodeMirror {
@@ -142,6 +146,7 @@ const hostConfig = {
       transform.toHost(compat.props(type, oldProps, false)),
     );
     transform.afterProps(node, newProps);
+    compat.bind?.(node, type, newProps, false);
   },
   finalizeInitialChildren() {
     return false;

@@ -10,6 +10,8 @@
 // Variants follow the JG-145 L3 prototype: hover: -> active: (PocketJS has no pointer, so a
 // press is the hover cue), focus-visible: -> focus:. Every other prefix (dark:, disabled:,
 // aria-*, data-*, sm:/md:, file:, placeholder:, has-[...], [&...], [a&]) maps to nothing and
+// (C4) placeholder: stays dropped at class level: the placeholder color is fixed by the field,
+// not expressible as a class; the placeholder TEXT is mapped through the value prop instead.
 // is counted: the fixed palette is a single light theme and the core has no such state.
 
 /** Semantic colors and the utility aliases shadcn sources use, -> PocketJS tokens. */

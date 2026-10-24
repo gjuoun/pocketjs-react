@@ -8,6 +8,9 @@ import {
 } from "../style/class-runtime.ts";
 
 export interface CompatStats {
+  /** DOM props a real mapping consumed, name -> count (C4: value/placeholder/onChange on a
+   *  text entry). Counted once per mount, the same way droppedAttrs is. */
+  mappedAttrs: Record<string, number>;
   /** DOM props dropped by policy, name -> count (data-*, aria-*, the DOM attribute/event surface). */
   droppedAttrs: Record<string, number>;
   /** Unrecognized props dropped under compat: { unknownProps: "drop" }, name -> count. */
@@ -20,9 +23,14 @@ export interface CompatStats {
   tokenMap: { mapped: number; dropped: number };
 }
 
+const mappedAttrs: Record<string, number> = {};
 const droppedAttrs: Record<string, number> = {};
 const unknownAttrs: Record<string, number> = {};
 let unknownTags = 0;
+
+export function countMappedAttr(name: string): void {
+  mappedAttrs[name] = (mappedAttrs[name] ?? 0) + 1;
+}
 
 export function countDroppedAttr(name: string): void {
   droppedAttrs[name] = (droppedAttrs[name] ?? 0) + 1;
@@ -42,6 +50,7 @@ function clear(map: Record<string, number>): void {
 
 export function compatStats(): CompatStats {
   return {
+    mappedAttrs: { ...mappedAttrs },
     droppedAttrs: { ...droppedAttrs },
     unknownAttrs: { ...unknownAttrs },
     unknownTags,
@@ -57,6 +66,7 @@ export function compatStats(): CompatStats {
 }
 
 export function resetCompatStats(): void {
+  clear(mappedAttrs);
   clear(droppedAttrs);
   clear(unknownAttrs);
   unknownTags = 0;
