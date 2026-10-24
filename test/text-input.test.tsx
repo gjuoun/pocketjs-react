@@ -284,3 +284,43 @@ test("the rest of the DOM input surface drops and counts instead of throwing", a
   });
   expect(compatStats().mappedAttrs).toEqual({ placeholder: 1 });
 });
+
+// C4b: a physical keystroke reaches the focused field; the keyboard panel stays closed.
+test("physical keys type into the focused field without opening the keyboard", async () => {
+  const c = await boot();
+  const seen: string[] = [];
+  function App() {
+    const [value, setValue] = useState("");
+    return (
+      <div>
+        <input
+          placeholder="Name"
+          value={value}
+          onChange={(e) => {
+            seen.push(e.target.value);
+            setValue(e.target.value);
+          }}
+        />
+      </div>
+    );
+  }
+  mountApp(<App />);
+  c.step(0);
+  c.press(BTN.DOWN); // focus the field
+  const queue = (globalThis as { __pocketText?: unknown[] }).__pocketText;
+  for (const ch of "abc") queue?.push({ t: "ch", s: ch });
+  c.step(0);
+  expect(seen).toEqual(["a", "ab", "abc"]);
+  expect(caps(c)).toEqual([]);
+});
+
+test("text events with no focused field are dropped, not typed", async () => {
+  const c = await boot();
+  const seen: string[] = [];
+  mountApp(<input placeholder="Name" value="" onChange={(e) => seen.push(e.target.value)} />);
+  c.step(0);
+  const queue = (globalThis as { __pocketText?: unknown[] }).__pocketText;
+  queue?.push({ t: "ch", s: "z" });
+  c.step(0);
+  expect(seen).toEqual([]);
+});
