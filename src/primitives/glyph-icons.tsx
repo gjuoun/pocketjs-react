@@ -1,4 +1,4 @@
-// Icon glyphs for lucide-react (codemod R7, fork F1=A). The vendored shadcn sources import their
+// Icon glyphs for lucide-react (codemod R7). The vendored shadcn sources import their
 // icons from here instead of lucide, whose <svg> the DOM compat layer does not map. Each icon draws
 // its baked texture variant (tools/icon-bake.ts, pak key ui:img.icon.*); a pak without the variant
 // falls back to the old one-character placeholder and counts an iconMiss.
