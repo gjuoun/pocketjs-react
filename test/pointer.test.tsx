@@ -32,6 +32,7 @@ const CLASSES = [
   "flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-slate-800 w-[100px] h-[30px]",
   "flex-col gap-2 p-3 rounded-xl bg-slate-800 w-[300px]",
   "absolute inset-0 flex-col items-center justify-center",
+  "absolute inset-0 bg-[#0f172a99]",
 ];
 let core: Core | undefined;
 let unmount: (() => void) | undefined;
@@ -201,6 +202,7 @@ function Layers() {
               <Text className={TXT}>Open</Text>
             </DialogPrim.Trigger>
           </View>
+          <DialogPrim.Overlay />
           <DialogPrim.Content>
             <Text className={TXT}>Hello</Text>
             {scene === "nested" ? (
@@ -288,4 +290,25 @@ test("a tap inside an open menu still presses its item and closes the menu", asy
   click(c, beta.x + 4, beta.y + 4);
   expect(pressed).toEqual(["Beta"]);
   expect(c.texts().map((r) => r.text)).not.toContain("Beta");
+});
+
+// Q1-A: the Menu/Select shell is a transparent catcher, so the app behind it keeps its colour. The
+// probe is the Behind row (bg-slate-800): the app background is slate-900, the same colour as the
+// scrim tint, so a dim over it would not show. The Dialog control proves the probe sees a dim.
+test("Q1-A: a Menu opens without dimming the app behind it", async () => {
+  const menu = await layers("menu");
+  const before = menu.pixel(385, 165);
+  const open = menu.texts().find((r) => r.text === "Open")!;
+  click(menu, open.x + 4, open.y + 4);
+  expect(menu.texts().map((r) => r.text)).toContain("Alpha");
+  expect(menu.pixel(385, 165)).toBe(before);
+});
+
+test("Q1-A control: a Dialog's scrim dims the Behind row", async () => {
+  const dialog = await layers("dialog");
+  const before = dialog.pixel(110, 245);
+  const open = dialog.texts().find((r) => r.text === "Open")!;
+  click(dialog, open.x + 4, open.y + 4);
+  expect(dialog.texts().map((r) => r.text)).toContain("Hello");
+  expect(dialog.pixel(110, 245)).not.toBe(before);
 });
