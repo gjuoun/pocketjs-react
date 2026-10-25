@@ -6,15 +6,29 @@ import type { Page, TestInfo } from "@playwright/test";
 import { start } from "./server.mjs";
 
 export const ROOT = fileURLToPath(new URL("../..", import.meta.url));
+export type AppName = "text-entry" | "overlays";
 export const manifest = JSON.parse(
   readFileSync(join(ROOT, "dist/e2e/manifest.json"), "utf8"),
 ) as {
   fieldA: { x: number; y: number };
   screen: { width: number; height: number };
   fieldFontSlot: number;
+  apps: Record<AppName, { js: string; pak: string }>;
+  files: Record<string, string>;
+  hostDir: string;
 };
 export type Server = { url: string; stop(): Promise<void> };
-export const serve = (): Promise<Server> => start(manifest);
+/** The host page serving one built app (its bundle and pak come from the manifest). */
+export const serveApp = (app: AppName): Promise<Server> =>
+  start({
+    ...manifest,
+    files: {
+      ...manifest.files,
+      appJs: manifest.apps[app].js,
+      appPak: manifest.apps[app].pak,
+    },
+  });
+export const serve = (): Promise<Server> => serveApp("text-entry");
 
 // Q3=A: the host page stays unchanged. On a mobile tier the test adds the viewport meta before the
 // page loads; without it WebKit lays the page out at 980 px and a tap hit-tests <body>.

@@ -15,9 +15,9 @@ const ROOT = resolve(import.meta.dir, "../..");
 const OUT = join(ROOT, "dist/e2e");
 const PROFILE = "/tmp/pocketjs-react-test/e2e-prepare-chrome";
 const PORT = Number(process.env.E2E_PREPARE_PORT ?? 9431);
-// The first canvas point (logical 480x272) the focusable field under it answers for: field A.
+// The centre of field A (logical 480x272): the first hit's box, not its corner (a corner sits on the edge).
 const FIND_FIELD =
-  "(() => { for (let y = 0; y < 272; y += 2) for (let x = 0; x < 480; x += 2) if (globalThis.__pocketTextHitAt(x, y)) return x + ',' + y; return ''; })()";
+  "(() => { const hit = (x, y) => globalThis.__pocketTextHitAt(x, y); let x0 = -1, y0 = -1; outer: for (let y = 0; y < 272; y += 2) for (let x = 0; x < 480; x += 2) if (hit(x, y)) { x0 = x; y0 = y; break outer; } if (x0 < 0) return ''; let x1 = x0; while (x1 + 1 < 480 && hit(x1 + 1, y0)) x1++; let y1 = y0; while (y1 + 1 < 272 && hit(x0, y1 + 1)) y1++; return Math.floor((x0 + x1) / 2) + ',' + Math.floor((y0 + y1) / 2); })()";
 
 export async function prepare(): Promise<Record<string, unknown>> {
   mkdirSync(OUT, { recursive: true });
@@ -25,6 +25,14 @@ export async function prepare(): Promise<Record<string, unknown>> {
     outdir: OUT,
     name: "text-entry",
   });
+  // The C5 overlays page: its own bundle, served by its own manifest entry (see overlay.e2e.ts).
+  const overlays = await build(
+    join(ROOT, "test/fixtures/shadcn-vendor/overlays-main.tsx"),
+    {
+      outdir: OUT,
+      name: "overlays",
+    },
+  );
   const server = serveReader(app);
   const chrome = await HeadlessChrome.start({
     port: PORT,
@@ -58,6 +66,10 @@ export async function prepare(): Promise<Record<string, unknown>> {
       screen: { width: 480, height: 272 },
       fieldFontSlot: FIELD_FONT_SLOT,
       fieldA: { x: hit[0], y: hit[1] },
+      apps: {
+        "text-entry": { js: app.js, pak: app.pak },
+        overlays: { js: overlays.js, pak: overlays.pak },
+      },
     };
     writeFileSync(
       join(OUT, "manifest.json"),
