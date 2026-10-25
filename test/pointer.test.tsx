@@ -35,6 +35,7 @@ const CLASSES = [
   "absolute inset-0 flex-col items-center justify-center",
   "absolute inset-0 bg-[#0f172a99]",
   "absolute inset-0 active:bg-blue-600",
+  "absolute inset-0 active:bg-slate-800",
 ];
 let core: Core | undefined;
 let unmount: (() => void) | undefined;
@@ -355,10 +356,13 @@ describe("hover: a pointer over a menu row paints it, and never moves focus", ()
     hoverOn();
     const c = await layers("hover");
     await openMenu(c);
+    expect(paintOf(c, "Alpha")).toBe(BLUE); // focused on open
     const g = at(c, "Gamma");
     moveTo(c, g.x, g.y);
     expect(paintOf(c, "Gamma")).toBe(BLUE);
     expect(paintOf(c, "Beta")).toBe(BASE);
+    // One highlight: the hover claims it, so the focused row is suppressed to the panel colour.
+    expect(paintOf(c, "Alpha")).toBe(BASE);
   });
 
   test("a hover never moves focus", async () => {
@@ -381,6 +385,22 @@ describe("hover: a pointer over a menu row paints it, and never moves focus", ()
     expect(paintOf(c, "Gamma")).toBe(BLUE);
     leave(c);
     expect(paintOf(c, "Gamma")).toBe(BASE);
+    expect(paintOf(c, "Alpha")).toBe(BLUE); // hover-out: the focused row is blue again
+  });
+
+  test("exactly one row is blue at a time: the hovered row, else the focused row", async () => {
+    hoverOn();
+    const c = await layers("hover");
+    await openMenu(c);
+    const blue = () => ["Alpha", "Beta", "Gamma"].filter((l) => paintOf(c, l) === BLUE);
+    expect(blue()).toEqual(["Alpha"]);
+    for (const label of ["Beta", "Gamma", "Beta"]) {
+      const p = at(c, label);
+      moveTo(c, p.x, p.y);
+      expect(blue()).toEqual([label]);
+    }
+    leave(c);
+    expect(blue()).toEqual(["Alpha"]);
   });
 
   test("with the gate off (native hosts), rows carry no overlay child and a hover paints nothing", async () => {

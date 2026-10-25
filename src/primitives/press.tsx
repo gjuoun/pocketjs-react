@@ -12,7 +12,7 @@ import {
 } from "react";
 import { Text, View } from "../elements.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
-import { isHoverEnabled, markHoverOverlay } from "../input/hover.ts";
+import { isHoverEnabled, markHoverOverlay, markSuppressOverlay } from "../input/hover.ts";
 import { cn } from "../style/cn.ts";
 
 interface PressableProps {
@@ -61,7 +61,10 @@ export function Pressable(props: PressableProps) {
       {...(props.dataState !== undefined ? { "data-state": props.dataState } : {})}
     >
       {props.hoverable && isHoverEnabled() ? (
-        <View ref={markHoverOverlay} className="absolute inset-0 active:bg-blue-600" />
+        <>
+          <View ref={markSuppressOverlay} className="absolute inset-0 active:bg-slate-800" />
+          <View ref={markHoverOverlay} className="absolute inset-0 active:bg-blue-600" />
+        </>
       ) : null}
       {body}
     </View>

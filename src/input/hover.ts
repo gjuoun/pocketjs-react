@@ -1,59 +1,80 @@
 // Web hover (compat only). The web reader sets globalThis.__pocketHover before the app mounts;
 // native hosts never do, so with the gate off a Menu or Select row is exactly what it was before.
-// A hoverable row carries one transparent overlay child (absolute, inset-0, active:bg-blue-600) that
-// the core paints natively. The pump lights it on a pointer move with setActive, never by moving focus.
+// A hoverable row carries two transparent overlay children (absolute, inset-0), which the core paints natively:
+//   - a hover overlay (active:bg-blue-600), lit while the pointer is over that row;
+//   - a suppress overlay (active:bg-slate-800, the panel colour), lit on the focused row while another row
+//     is hovered, so only one row is blue at a time (one highlight).
+// The pump lights them on a pointer move with setActive. Focus never moves.
 import { getOps } from "@pocketjs/framework/host";
 import { getFocused } from "@pocketjs/framework/input";
 import type { NodeMirror } from "../internal/pocket.ts";
 
-const overlays = new WeakSet<NodeMirror>();
+type Kind = "hover" | "suppress";
+const kinds = new WeakMap<NodeMirror, Kind>();
 
 /** True only on the web reader, which sets the gate before mount. */
 export function isHoverEnabled(): boolean {
   return (globalThis as { __pocketHover?: boolean }).__pocketHover === true;
 }
 
-/** Ref target of a row's overlay child: remember it so the pump can find it. */
+/** Ref targets of a row's two overlay children. */
 export function markHoverOverlay(node: NodeMirror | null): void {
-  if (node) overlays.add(node);
+  if (node) kinds.set(node, "hover");
+}
+export function markSuppressOverlay(node: NodeMirror | null): void {
+  if (node) kinds.set(node, "suppress");
 }
 
-/** The overlay child of a row, or null when the row has none. */
-export function hoverOverlayOf(row: NodeMirror): NodeMirror | null {
+/** The overlay child of a row with the given kind, or null. */
+function overlayOf(row: NodeMirror, kind: Kind): NodeMirror | null {
   const kids = row.children;
   if (!Array.isArray(kids)) return null;
-  for (const kid of kids) if (overlays.has(kid)) return kid;
+  for (const kid of kids) if (kinds.get(kid) === kind) return kid;
   return null;
 }
 
-/** The overlay currently lit by the pointer (at most one). */
-let lit: NodeMirror | null = null;
-
-/** The overlay of the nearest row at or above `target`: a row is any node carrying one. */
-function overlayAbove(target: NodeMirror | null): NodeMirror | null {
-  for (let n = target; n; n = n.parent) {
-    const overlay = hoverOverlayOf(n);
-    // The focused row already shows the focus blue, and its CIRCLE press blue-500: no overlay over it.
-    if (overlay) return n === getFocused() ? null : overlay;
-  }
+/** The nearest row at or above `node` that carries an overlay of this kind. */
+function rowWith(node: NodeMirror | null, kind: Kind): NodeMirror | null {
+  for (let n = node; n; n = n.parent) if (overlayOf(n, kind)) return n;
   return null;
 }
 
-/** Light `next` and clear the previous overlay. A detached overlay has no live id: it is dropped, not cleared. */
-function light(next: NodeMirror | null): void {
-  if (next === lit) return;
+let litHover: NodeMirror | null = null;
+let litSuppress: NodeMirror | null = null;
+
+/** Set the two lit overlays, clearing the previous ones. A detached overlay has no live row: it is dropped. */
+function light(hover: NodeMirror | null, suppress: NodeMirror | null): void {
   const ops = getOps();
-  if (lit && lit.parent) ops.setActive?.(lit.id, 0);
-  lit = next;
-  if (next) ops.setActive?.(next.id, 1);
+  if (litHover !== hover) {
+    if (litHover?.parent) ops.setActive?.(litHover.id, 0);
+    if (hover) ops.setActive?.(hover.id, 1);
+    litHover = hover;
+  }
+  if (litSuppress !== suppress) {
+    if (litSuppress?.parent) ops.setActive?.(litSuppress.id, 0);
+    if (suppress) ops.setActive?.(suppress.id, 1);
+    litSuppress = suppress;
+  }
 }
 
-/** A pointer move: light the row under the point, or nothing while a press is armed (a press shows its own colour). */
+/**
+ * A pointer move over `target`. Hover claims the highlight: the hovered row lights, and the focused row
+ * (if it is a different row) is suppressed to the panel colour. Hovering the focused row lights nothing
+ * (its own focus blue stands). A press in progress shows its own colour, so nothing lights.
+ */
 export function hoverMove(target: NodeMirror | null, pressing: boolean): void {
-  light(pressing ? null : overlayAbove(target));
+  if (pressing) return light(null, null);
+  const focusRow = rowWith(getFocused(), "suppress");
+  for (let n = target; n; n = n.parent) {
+    const hover = overlayOf(n, "hover");
+    if (!hover) continue;
+    if (n === focusRow) return light(null, null);
+    return light(hover, focusRow ? overlayOf(focusRow, "suppress") : null);
+  }
+  light(null, null);
 }
 
-/** Clear the lit overlay: the pointer left, a press began, or focus moved. */
+/** Clear both: the pointer left, a press began, or focus moved. */
 export function hoverClear(): void {
-  light(null);
+  light(null, null);
 }

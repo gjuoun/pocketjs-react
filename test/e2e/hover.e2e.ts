@@ -88,13 +88,12 @@ test("desktop: a mouse over a Menu row paints it; focus stays put; leaving resto
   const [dx, dy] = await clientOf(page, row.x, row.y);
   await page.mouse.move(dx, dy);
   await frames(page, 4);
-  expect(await rowPaint(page, "Delete")).toEqual(BLUE_600);
-  // Edit stays blue: the hover did not move focus (a focus move would have left Edit at rest).
-  expect(await rowPaint(page, "Edit")).toEqual(BLUE_600);
+  // One highlight: the hover claims it, so the focused row (Edit) is suppressed to the panel colour.
+  expect(await rowPaint(page, "Edit")).toEqual(PANEL);
   await page.mouse.move(0, 0); // off the canvas: pointerleave
   await frames(page, 4);
   expect(await rowPaint(page, "Delete")).toEqual(PANEL);
-  expect(await rowPaint(page, "Edit")).toEqual(BLUE_600);
+  expect(await rowPaint(page, "Edit")).toEqual(BLUE_600); // hover-out: the focused row is blue again
 });
 
 test("touch tiers: a tap opens the menu and lights no hover row", async ({ page }, testInfo) => {
@@ -112,14 +111,16 @@ test("desktop: a d-pad move clears the hover; the next mouse move lights the row
   await page.mouse.move(dx, dy);
   await frames(page, 4);
   expect(await rowPaint(page, "Delete")).toEqual(BLUE_600);
-  await press(page, BTN.DOWN); // focus moves Edit -> Delete: Edit loses its focus
+  await press(page, BTN.DOWN); // focus moves Edit -> Delete: the hover is cleared, Delete takes the focus blue
+  expect(await rowPaint(page, "Delete")).toEqual(BLUE_600);
   expect(await rowPaint(page, "Edit")).toEqual(PANEL);
   await press(page, BTN.UP); // focus moves back to Edit: the hover on Delete was cleared by the focus move
   expect(await rowPaint(page, "Edit")).toEqual(BLUE_600);
   expect(await rowPaint(page, "Delete")).toEqual(PANEL);
-  await page.mouse.move(dx + 2, dy); // the next mouse move lights Delete again
+  await page.mouse.move(dx + 2, dy); // the next mouse move lights Delete again, and suppresses the focused Edit
   await frames(page, 4);
   expect(await rowPaint(page, "Delete")).toEqual(BLUE_600);
+  expect(await rowPaint(page, "Edit")).toEqual(PANEL);
 });
 
 test("desktop: CIRCLE over the hovered, focused row presses it; the press closes the menu and no hover lingers", async ({ page }, testInfo) => {
