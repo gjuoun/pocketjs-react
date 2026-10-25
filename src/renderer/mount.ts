@@ -56,6 +56,21 @@ import { installStyleLayer } from "../style/props.ts";
 import { reconciler, withPriority } from "./host-config.ts";
 import { setOskTarget } from "./osk-target.ts";
 
+const PAK_IMAGE_PREFIX = "ui:img.";
+
+/** Upload one pak IMG entry (a baked icon variant) and register its handle under the key without the prefix. */
+function uploadPakImage(ops: HostOps, key: string): void {
+  const blob = pakGet(key);
+  let handle: number;
+  if (ops.uploadImgEntry) {
+    handle = ops.uploadImgEntry(blob);
+  } else {
+    const dv = new DataView(blob.buffer, blob.byteOffset, blob.byteLength);
+    handle = ops.uploadTexture(blob.subarray(8), dv.getUint16(0, true), dv.getUint16(2, true), blob[4]);
+  }
+  if (handle >= 0) registerTexture(key.slice(PAK_IMAGE_PREFIX.length), handle);
+}
+
 export interface MountOptions {
   /** Class literal -> style id table; defaults to the table tools/build.ts compiled. */
   styles?: Record<string, number>;
@@ -137,6 +152,7 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
         if (key === "ui:styles") host.ops.loadStyles?.(pakGet(key));
         else if (key.startsWith("ui:font."))
           host.ops.loadFontAtlas?.(pakGet(key));
+        else if (key.startsWith(PAK_IMAGE_PREFIX)) uploadPakImage(host.ops, key);
       }
     }
   }
