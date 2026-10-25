@@ -3,7 +3,8 @@
 // and is placed beside its trigger (C6). Item runs onSelect and closes the menu unless the handler
 // calls preventDefault(). Sub-menus are not supported (F3=A): they throw when rendered.
 
-import { createContext, type ReactNode, useContext, useRef } from "react";
+import { pushFocusController } from "@pocketjs/framework/input";
+import { createContext, type ReactNode, useContext, useEffect, useRef } from "react";
 import { Text, View } from "../elements.ts";
 import { cn } from "../style/cn.ts";
 import { type Box, measureFocused } from "./anchor.ts";
@@ -11,6 +12,8 @@ import { ModalLayer } from "./modal-layer.tsx";
 import { Pressable } from "./press.tsx";
 import { useControllableState } from "./state.ts";
 import { ownItem, ownSurface, ownText } from "./surface.ts";
+import type { NodeMirror } from "../internal/pocket.ts";
+import { ChevronRightIcon } from "./glyph-icons.tsx";
 
 interface MenuContextValue {
   open: boolean;
@@ -286,24 +289,116 @@ export function Separator(props: { className?: string }) {
   );
 }
 
-/** Sub-menus are not supported yet (C5 F3=A): rendering one says so instead of guessing. */
+/** A sub-menu: its own open state under the menu, reached by RIGHT or CIRCLE from its trigger. */
+interface SubContextValue {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  /** The sub-trigger box, measured as the sub-menu opens (C6). Cleared on close. */
+  anchor: { current: Box | null };
+}
+
+const SubContext = createContext<SubContextValue | null>(null);
+
+function useSub(part: string): SubContextValue {
+  const ctx = useContext(SubContext);
+  if (!ctx) throw new Error(`pocketjs-react: ${part} must be used inside <DropdownMenu.Sub>`);
+  return ctx;
+}
+
+export interface SubProps {
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  children?: ReactNode;
+}
+
+export function Sub(props: SubProps) {
+  const [open, setOpen] = useControllableState(props.open, props.defaultOpen ?? false, props.onOpenChange);
+  const anchor = useRef<Box | null>(null);
+  const setOpenAnchored = (next: boolean) => {
+    if (!next) anchor.current = null;
+    setOpen(next);
+  };
+  return (
+    <SubContext.Provider value={{ open, setOpen: setOpenAnchored, anchor }}>
+      {props.children}
+    </SubContext.Provider>
+  );
+}
+
+/** The sub-trigger keeps the caller's size and layout; its own surface and state colours are the primitive's. */
+function ownSubTrigger(className: string | undefined): string {
+  return ownItem(className)
+    .split(" ")
+    .filter((token) => token !== "" && !token.startsWith("data-[state="))
+    .join(" ");
+}
+
+/** Text children become labels; the chevron (an icon child) stays as it is. */
+function labelled(children: ReactNode): ReactNode {
+  const list = Array.isArray(children) ? children : [children];
+  return list.map((child, i) =>
+    typeof child === "string" || typeof child === "number" ? (
+      <Text key={i} className="text-sm text-white">{child}</Text>
+    ) : (
+      child
+    ),
+  );
+}
+
+export interface SubTriggerProps {
+  className?: string;
+  disabled?: boolean;
+  inset?: boolean;
+  children?: ReactNode;
+}
+
+/** The row that opens its sub-menu. RIGHT (the d-pad) and CIRCLE open it; the chevron points right. */
+export function SubTrigger(props: SubTriggerProps) {
+  const sub = useSub("DropdownMenu.SubTrigger");
+  const ref = useRef<NodeMirror | null>(null);
+  const latest = useRef(sub);
+  latest.current = sub;
+  const show = () => {
+    if (!latest.current.open) latest.current.anchor.current = measureFocused();
+    latest.current.setOpen(true);
+  };
+  useEffect(() => {
+    if (props.disabled || !ref.current) return;
+    return pushFocusController(ref.current as never, (direction) => {
+      if (direction !== "right") return false;
+      show();
+      return true;
+    });
+  }, [props.disabled]);
+  return (
+    <Pressable
+      nodeRef={ref}
+      disabled={props.disabled}
+      dataState={sub.open ? "open" : "closed"}
+      className={cn(
+        "flex items-center justify-between gap-2 px-2 py-1.5 text-sm text-white focus:bg-blue-600 data-[state=open]:bg-slate-700",
+        ownSubTrigger(props.className),
+      )}
+      onPress={() => {
+        if (latest.current.open) latest.current.setOpen(false);
+        else show();
+      }}
+    >
+      {labelled(props.children)}
+      <ChevronRightIcon className="w-4 h-4" />
+    </Pressable>
+  );
+}
+
+/** Sub-menu content is not implemented yet (C9 Step 4): rendering one says so instead of guessing. */
 type Loose = {
   [key: string]: unknown;
   children?: ReactNode;
   className?: string;
 };
 function unsupportedError(name: string): Error {
-  return new Error(
-    "pocketjs-react: DropdownMenu." +
-      name +
-      " (sub-menus) is not supported yet (C5 F3)",
-  );
-}
-export function Sub(_props: Loose): never {
-  throw unsupportedError("Sub");
-}
-export function SubTrigger(_props: Loose): never {
-  throw unsupportedError("SubTrigger");
+  return new Error("pocketjs-react: DropdownMenu." + name + " is not supported yet (C9 Step 4)");
 }
 export function SubContent(_props: Loose): never {
   throw unsupportedError("SubContent");
