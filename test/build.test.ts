@@ -4,7 +4,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { BTN } from "@pocketjs/framework/input";
 import { NODE_TYPE, PROP } from "../src/internal/pocket.ts";
-import { fontSlotFor } from "../src/internal/pocket-build.ts";
+import { fontSlotFor, unpack } from "../src/internal/pocket-build.ts";
 import { build } from "../tools/build.ts";
 import { bootApp, type Core } from "./harness.ts";
 
@@ -41,6 +41,14 @@ test("the font-slot cross product draws a size + weight pair no literal spells o
   };
   expect(drawn(fontSlotFor(14, true), "Bold")).toBe(true);
   expect(drawn(fontSlotFor(24, true), "Plain")).toBe(false);
+});
+
+test("the pak carries every baked icon variant as an IMG entry", async () => {
+  const built = await build("test/fixtures/styled/main.tsx", { outdir: OUT });
+  expect(built.icons.length).toBe(18);
+  const keys = new Set(unpack(new Uint8Array(await Bun.file(built.pak).arrayBuffer())).map((b) => b.key));
+  for (const key of built.icons) expect(keys.has(key)).toBe(true);
+  expect(keys.has("ui:img.icon.chevron-down.16.slate-500")).toBe(true);
 });
 
 test("a Pocket3D-licensed input fails the build", async () => {

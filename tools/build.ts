@@ -35,6 +35,7 @@ import {
   unknownUtilities,
 } from "../src/internal/pocket-build.ts";
 import { collect } from "./collect.ts";
+import { bakeIcons, iconBlobs } from "./icon-bake.ts";
 
 const ROOT = resolve(import.meta.dir, "..");
 const TEXT_SIZES: Record<string, number> = {
@@ -59,6 +60,8 @@ export interface BuildResult {
   fontSlots: number[];
   /** The utility tokens the build table holds (STYLE_TOKENS), for tests that drive the runtime directly. */
   tokens: string[];
+  /** Pak keys of the baked icon variants (`ui:img.icon.*`). */
+  icons: string[];
 }
 
 /** Font slots for every (size x weight x family) combination whose tokens appear in source. */
@@ -238,6 +241,8 @@ export async function build(
       : [];
     bakedChars = common.map((cp) => String.fromCodePoint(cp)).join("");
   }
+  // Icon variants: one ui:img.icon.* IMG entry per (icon, size, colour).
+  const icons = iconBlobs(await bakeIcons());
   const pak = pack([
     { key: KEY_STYLES, dtype: PAK_DTYPE.u8, data: styles.bin },
     ...atlases.map((a) => ({
@@ -245,6 +250,7 @@ export async function build(
       dtype: PAK_DTYPE.u8,
       data: a.bytes,
     })),
+    ...icons,
   ]);
   const pakPath = join(outdir, name + ".pak");
   await Bun.write(pakPath, pak);
@@ -371,6 +377,7 @@ export async function build(
     pakBytes: pak.length,
     fontSlots,
     tokens: [...tokens],
+    icons: icons.map((b) => b.key),
   };
 }
 
