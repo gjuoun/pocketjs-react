@@ -150,6 +150,12 @@ async function findField(page: Page): Promise<[number, number]> {
   const at = await page.evaluate<string>(FIND_FIELD);
   expect(at).not.toBe("");
   const [x, y] = at.split(",").map(Number);
+  // The tap must land on screen: a phone viewport is narrower than the 960 px canvas, and a point past
+  // its edge never reaches the canvas on WebKit.
+  const [cx, cy] = await clientOf(page, x, y);
+  const view = await page.evaluate<[number, number]>("[innerWidth, innerHeight]");
+  expect(cx).toBeLessThan(view[0]);
+  expect(cy).toBeLessThan(view[1]);
   return [x, y];
 }
 /** Client pixels of a canvas-logical point. */
