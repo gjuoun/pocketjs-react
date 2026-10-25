@@ -1,6 +1,6 @@
 // Native DropdownMenu primitive (C5), shaped like Radix's DropdownMenu namespace so the vendored
 // shadcn dropdown-menu imports it unchanged. Root holds the open state. Content is a ModalLayer
-// and is centred until C6 anchors it. Item runs onSelect and closes the menu unless the handler
+// and is placed beside its trigger (C6). Item runs onSelect and closes the menu unless the handler
 // calls preventDefault(). Sub-menus are not supported (F3=A): they throw when rendered.
 
 import { createContext, type ReactNode, useContext, useRef } from "react";
@@ -106,7 +106,7 @@ export function Portal(props: { children?: ReactNode }) {
 export interface ContentProps {
   className?: string;
   children?: ReactNode;
-  /** Positioning and focus hooks: accepted for the vendored types, not implemented (C6, C9). */
+  /** Positioning (side, align, sideOffset, collisionPadding) places the panel (C6); focus hooks: not implemented (C9). */
   side?: "top" | "right" | "bottom" | "left";
   align?: "start" | "center" | "end";
   sideOffset?: number;

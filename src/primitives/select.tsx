@@ -1,6 +1,6 @@
 // Native Select primitive (C5), shaped like Radix's Select namespace so the vendored shadcn select
-// imports it unchanged. Root holds the value and the open state. Content is a ModalLayer, centred
-// until C6 anchors it; opening focuses the selected row (else the first). Item selects and closes.
+// imports it unchanged. Root holds the value and the open state. Content is a ModalLayer, placed
+// beside its trigger (C6); opening focuses the selected row (else the first). Item selects and closes.
 // The trigger's label comes from the Items in the tree, read before they mount, so a closed Select
 // can show its selected label. Scrolling is not implemented: the scroll buttons render nothing.
 
@@ -182,7 +182,7 @@ export function Portal(props: { children?: ReactNode }) {
 export interface ContentProps {
   className?: string;
   children?: ReactNode;
-  /** Positioning hooks: accepted for the vendored types, not implemented (C6). */
+  /** Positioning: side, align and sideOffset place the list beside its trigger (C6). */
   position?: "item-aligned" | "popper" | "";
   align?: "start" | "center" | "end";
   side?: "top" | "right" | "bottom" | "left";
