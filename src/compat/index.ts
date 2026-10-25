@@ -4,6 +4,8 @@
 // up in compatStats().
 
 import { bindField, fieldFor, openField } from "../input/text-field.ts";
+import { pressingFromPointer } from "../input/pointer.ts";
+import { nativeKeyboard } from "../input/text-entry.ts";
 import { type NodeMirror, setProp } from "../internal/pocket.ts";
 import { setHostCompat } from "../renderer/host-config.ts";
 import {
@@ -59,7 +61,8 @@ export function installCompat(opts: CompatOptions = {}): void {
       const binding = bindField(node, tag, textFieldInput(tag, props, count));
       if (!known) {
         const handler = () => {
-          openField(binding);
+          // C4c: on a touch host a tap summons the native keyboard; the panel stays for CIRCLE.
+          if (!(pressingFromPointer() && nativeKeyboard())) openField(binding);
           binding.input.onClick?.();
         };
         pressHandlers.set(node, handler);

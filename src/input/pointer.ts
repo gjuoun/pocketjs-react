@@ -9,7 +9,8 @@
 //     lines (for example {"t":"load"} from --file) are kept for takeHostMessages();
 //   - a host page (browser): it pushes {x, y, down} into `globalThis.__pocketPointer`.
 import { getOps } from "@pocketjs/framework/host";
-import { focusNode, hitFocusable, pressNode } from "@pocketjs/framework/input";
+import { focusNode, getFocused, hitFocusable, pressNode } from "@pocketjs/framework/input";
+import type { NodeMirror } from "../internal/pocket.ts";
 import { addFramePump } from "../renderer/mount.ts";
 
 export interface PointerEvent {
@@ -53,17 +54,47 @@ function drain(): PointerEvent[] {
   return events;
 }
 
+let pressing = false;
+
+/** True while the pointer pump presses a node (a tap or click), not a CIRCLE press. */
+export function pressingFromPointer(): boolean {
+  return pressing;
+}
+
+/**
+ * A press that lands on the node which already had focus when the press began (a second tap or
+ * click in a field). The text field takes it as a caret placement and returns true, so the press
+ * is not sent. Set by the text entry (installTextEntry); null otherwise.
+ */
+let focusedPress: ((node: NodeMirror, x: number, y: number) => boolean) | null = null;
+export function setFocusedPress(fn: typeof focusedPress): void {
+  focusedPress = fn;
+}
+
 export function installPointer(): () => void {
   let armed: unknown = null;
+  let armedFocused = false;
   return addFramePump(() => {
     for (const event of drain()) {
       const target = hitFocusable(event.x, event.y);
       if (event.down) {
         armed = target;
+        armedFocused = target !== null && getFocused() === target;
         if (target) focusNode(target);
       } else {
-        if (target && target === armed) pressNode(target);
+        if (target && target === armed) {
+          const placed = armedFocused && focusedPress !== null && focusedPress(target, event.x, event.y);
+          if (!placed) {
+            pressing = true;
+            try {
+              pressNode(target);
+            } finally {
+              pressing = false;
+            }
+          }
+        }
         armed = null;
+        armedFocused = false;
       }
     }
   });

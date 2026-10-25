@@ -10,6 +10,7 @@
   <label>Add books (EPUB): <input id="pick" type="file" multiple accept=".epub"></label>
   <span id="status"></span>
 </div>
+<textarea id="native-entry" tabindex="-1" aria-hidden="true" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;resize:none"></textarea>
 <canvas id="screen" width="480" height="272"></canvas>
 <div>Keys: arrows = d-pad, Enter/Z = CIRCLE (confirm), X = CROSS (back), Q/E = L/R, Space = START. Mouse clicks press what they point at.</div>
 <script type="module">
@@ -20,16 +21,32 @@
   // mouse clicks (globalThis.__pocketPointer).
   //   ?glyphs=0   runtime glyphs off (the atlases as the build baked them)
   //   ?manual=1   no loop: a driver steps frames with window.__host.step(buttons)
+  //   ?touch=1    a touch host (a tap on a field summons the native keyboard); touch screens are detected too
   import { create } from "/app-instance.js";
   import { createBrowserFs } from "/fs-shim.js";
+  import { BTN, KEYMAP, bridgeBeforeInput, bridgeCompositionEnd, bridgeCompositionStart, createBridgeState, createFocusFollower, routeKey } from "/text-entry-host.js";
 
-  const BTN = { SELECT: 0x1, START: 0x8, UP: 0x10, RIGHT: 0x20, DOWN: 0x40, LEFT: 0x80, LTRIGGER: 0x100, RTRIGGER: 0x200, TRIANGLE: 0x1000, CIRCLE: 0x2000, CROSS: 0x4000, SQUARE: 0x8000 };
-  const KEYMAP = { ArrowUp: BTN.UP, ArrowRight: BTN.RIGHT, ArrowDown: BTN.DOWN, ArrowLeft: BTN.LEFT, KeyX: BTN.CROSS, Enter: BTN.CIRCLE, KeyZ: BTN.CIRCLE, KeyA: BTN.SQUARE, KeyS: BTN.TRIANGLE, ShiftLeft: BTN.SELECT, ShiftRight: BTN.SELECT, Space: BTN.START, KeyL: BTN.LTRIGGER, KeyR: BTN.RTRIGGER, KeyQ: BTN.LTRIGGER, KeyE: BTN.RTRIGGER };
   const params = new URLSearchParams(location.search);
   const runtimeGlyphs = params.get("glyphs") !== "0";
   const manual = params.get("manual") === "1";
   const fs = createBrowserFs();
   const canvas = document.getElementById("screen");
+  // C4c: on a touch host a tap on an editable field focuses the hidden textarea, so the native
+  // keyboard (and its IME) types into the guest field through the same __pocketText seam.
+  const nativeEntry = document.getElementById("native-entry");
+  // The hidden entry always holds one zero-width character. A native Backspace then always has content
+  // to delete, so the browser sends beforeinput for it (the iOS report: no keyboard Backspace on an
+  // empty field; WebKit's exact rule is unverified here, and Chromium sends it either way).
+  const NATIVE_SENTINEL = "\u200b";
+  const armNative = () => {
+    if (nativeEntry.value !== NATIVE_SENTINEL) nativeEntry.value = NATIVE_SENTINEL;
+    nativeEntry.setSelectionRange(1, 1);
+  };
+  const touchHost = params.get("touch") === "1" || navigator.maxTouchPoints > 0;
+  globalThis.__pocketTextNative = touchHost;
+  const bridge = createBridgeState();
+  const follow = createFocusFollower();
+  const emitText = (event) => (globalThis.__pocketText ??= []).push(event);
   const ctx = canvas.getContext("2d");
   const image = ctx.createImageData(canvas.width, canvas.height);
   let inst = null;
@@ -51,6 +68,8 @@
       (window.__log ??= []).push("FRAME ERROR: " + (e && e.stack ? e.stack : e));
       inst = null;
     }
+    // The native keyboard leaves only when the guest field loses focus (an edge, not a level: see createFocusFollower).
+    if (follow.update(globalThis.__pocketTextEntry === true) && document.activeElement === nativeEntry) nativeEntry.blur();
     return performance.now() - t;
   };
   const start = async () => {
@@ -80,7 +99,19 @@
     pixels() { return inst ? inst.render() : null; },
   };
 
-  window.addEventListener("keydown", (e) => { const bit = KEYMAP[e.code]; if (bit === undefined) return; e.preventDefault(); keys |= bit; });
+  // Keys: a focused text field (guest flag) takes printable keys as text; otherwise the pad mapping.
+  window.addEventListener("keydown", (e) => {
+    if (e.target === nativeEntry) {
+      // Native text arrives through the hidden field's beforeinput; Escape closes the keyboard here.
+      if (e.key === "Escape") { emitText({ t: "key", k: "Escape" }); nativeEntry.blur(); }
+      return;
+    }
+    const r = routeKey(e, globalThis.__pocketTextEntry === true, globalThis.__pocketTextMultiline === true);
+    if (!r) return;
+    e.preventDefault();
+    if (r.to === "button") keys |= r.bit;
+    else (globalThis.__pocketText ??= []).push(r.to === "text" ? { t: "ch", s: r.ch } : { t: "key", k: r.key });
+  });
   window.addEventListener("keyup", (e) => { const bit = KEYMAP[e.code]; if (bit === undefined) return; e.preventDefault(); keys &= ~bit; });
   window.addEventListener("blur", () => { keys = 0; });
   document.getElementById("pick").addEventListener("change", async (event) => {
@@ -93,8 +124,36 @@
     const r = canvas.getBoundingClientRect();
     (globalThis.__pocketPointer ??= []).push({ x: ((event.clientX - r.left) / r.width) * canvas.width, y: ((event.clientY - r.top) / r.height) * canvas.height, down });
   };
-  canvas.addEventListener("mousedown", (e) => point(e, true));
+    // On a touch host the mouse events are the browser's echo of the tap. A mousedown on the
+  // non-focusable canvas would move focus and blur the native entry, so it keeps its focus.
+  canvas.addEventListener("mousedown", (e) => {
+    if (touchHost) e.preventDefault();
+    point(e, true);
+  });
   canvas.addEventListener("mouseup", (e) => point(e, false));
+  // A finger lift decides inside the gesture whether the native keyboard comes up: a tap on an
+  // editable field focuses the hidden textarea; a tap anywhere else lets it go.
+  canvas.addEventListener("pointerup", (e) => {
+    if (!touchHost || e.pointerType !== "touch") return;
+    const r = canvas.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * canvas.width;
+    const y = ((e.clientY - r.top) / r.height) * canvas.height;
+    if (globalThis.__pocketTextHitAt?.(x, y)) {
+      armNative();
+      nativeEntry.focus({ preventScroll: true }); // still inside the pointerup gesture (iOS)
+    }
+    else if (document.activeElement === nativeEntry) nativeEntry.blur();
+  });
+  nativeEntry.addEventListener("compositionstart", () => bridgeCompositionStart(bridge));
+  nativeEntry.addEventListener("compositionend", (e) => {
+    bridgeCompositionEnd(bridge, e.data, emitText);
+    setTimeout(() => { armNative(); }, 0); // the composed text is in the field; the seam has it, so reset to the sentinel
+  });
+  nativeEntry.addEventListener("beforeinput", (e) => {
+    if (bridgeBeforeInput(bridge, e, emitText)) e.preventDefault();
+    // Enter ends a single-line field's native keyboard, as its commit closes the field.
+    if (e.inputType === "insertLineBreak" && globalThis.__pocketTextMultiline !== true) nativeEntry.blur();
+  });
 
   if (!manual) {
     // Fixed 60 Hz steps on requestAnimationFrame, at most 4 per refresh after a stall.
