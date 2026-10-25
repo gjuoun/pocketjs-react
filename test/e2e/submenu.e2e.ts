@@ -6,6 +6,9 @@ import { openHost, type Server, serveApp } from "./helpers.ts";
 
 const BLUE_600 = [0x25, 0x63, 0xeb]; // focus:bg-blue-600
 const BLUE_500 = [0x3b, 0x82, 0xf6]; // active:bg-blue-500
+// The measured open sub-menu draws ~44k non-background and ~22k panel pixels; a blank canvas draws 0.
+const MIN_NON_BG = 10000;
+const MIN_PANEL = 5000;
 
 let server: Server;
 test.beforeAll(async () => {
@@ -54,6 +57,17 @@ async function rowPaint(page: Page, label: string): Promise<number[]> {
   return pixelAt(page, run!.x - 3, run!.y + 2);
 }
 
+
+/** Repaint the canvas from the core. In manual mode step() does not draw; draw() does (reader.html). */
+const settle = async (page: Page, n = 6) => {
+  await frames(page, n);
+  await page.evaluate("window.__host.draw()");
+};
+/** Census of the canvas as displayed (read back from its 2D context): non-background and panel pixels. */
+const canvasCensus = (page: Page) =>
+  page.evaluate<{ total: number; nonBg: number; panel: number }>(
+    "(() => { const c = document.getElementById('screen'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; const bg = [d[0], d[1], d[2]]; let nonBg = 0, panel = 0; for (let i = 0; i < d.length; i += 4) { if (d[i] !== bg[0] || d[i + 1] !== bg[1] || d[i + 2] !== bg[2]) nonBg++; if (d[i] === 0x1e && d[i + 1] === 0x29 && d[i + 2] === 0x3b) panel++; } return { total: d.length / 4, nonBg, panel }; })()",
+  );
 /** Open the page, then move the d-pad to Menu and open it with CIRCLE. */
 async function openMenu(page: Page, testInfo: Parameters<typeof openHost>[1]): Promise<void> {
   await openHost(page, testInfo, server.url + "?manual=1");
@@ -71,6 +85,12 @@ test("RIGHT opens the sub-menu, CROSS closes one level, CROSS again closes the m
   await frames(page, 4);
   expect(await shows(page, "Copy")).toBe(true);
   expect(await shows(page, "Paste")).toBe(true);
+  await settle(page);
+  // Abort before saving: a blank canvas must never reach the screenshot file.
+  const census = await canvasCensus(page);
+  expect(census.nonBg, "canvas blank: no non-background pixels").toBeGreaterThanOrEqual(MIN_NON_BG);
+  expect(census.panel, "canvas shows no panel-coloured pixels").toBeGreaterThanOrEqual(MIN_PANEL);
+  console.log("SUBMENU-OPEN census", JSON.stringify(census));
   await page.screenshot({ path: "/tmp/pocketjs-react-test/c9/submenu-open.png" });
   await press(page, BTN.CROSS);
   await frames(page, 4);
