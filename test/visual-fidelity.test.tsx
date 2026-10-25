@@ -34,7 +34,7 @@ async function bootBuilt(
   app: unknown,
 ): Promise<Core> {
   const built = await build(entry, { outdir: OUT, name });
-  core = await bootCore({ classes: built.tokens });
+  core = await bootCore({ classes: built.tokens, fontSlots: built.fontSlots });
   installBuildStyles({}, compileClasses([]).bin, built.tokens);
   unmount = mount(app as never, { compat: { classMiss: "drop" } });
   core.step(0);
@@ -207,17 +207,18 @@ test("G3 Select chevron glyph is centred in its square box (ink across, line box
   );
 });
 
-// --- G4 (Step 5): the badge label is vertically centred in its pill ---------------------------
+// --- G4 (Step 5): the badge label is vertically centred in the badge; the badge is content height ----
 test("G4 Beta label ink is vertically centred in the badge", async () => {
   const c = await bootDemo();
-  const box = measureBox(hostOf("Beta"))!;
+  const badge = hostOf("Beta").parent!;
+  const box = measureBox(badge)!;
   const ink = inkBox(c, runOf(c, "Beta"))!;
   expect(centreOff(ink, box).dy).toBeLessThanOrEqual(1);
 });
 
 test("G4 Beta badge is not stretched to the row height (content height, ±2px)", async () => {
-  const c = await bootDemo();
-  expect(measureBox(hostOf("Beta"))!.h).toBeLessThanOrEqual(24);
+  await bootDemo();
+  expect(measureBox(hostOf("Beta").parent!)!.h).toBeLessThanOrEqual(24);
 });
 
 // --- G5 (Step 8): card title and description keep an even 8px gap (guard; not reproduced) -----
