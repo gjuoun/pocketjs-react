@@ -20,9 +20,9 @@ const CLASSES = [
   "flex-col",
   "absolute inset-0 flex-col items-center justify-center",
   "flex-col p-1 rounded-md bg-slate-800 text-white w-[220px]",
-  "flex items-center gap-2 px-2 py-1.5 text-sm text-white focus:bg-blue-600",
-  "flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-slate-800 text-white",
-  "flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-slate-800 text-white w-[100px] h-[30px]",
+  "flex items-center gap-2 px-2 py-1.5 text-sm text-white focus:bg-blue-600 active:bg-blue-500",
+  "flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-slate-800 text-white active:bg-slate-700",
+  "flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-slate-800 text-white active:bg-slate-700 w-[100px] h-[30px]",
   "flex-col gap-2 p-3 rounded-xl bg-slate-800 text-white w-[300px]",
 ];
 
@@ -40,7 +40,7 @@ let scene: Scene = { kind: "menu", x: 40, y: 60 };
 const TXT = "text-sm text-white";
 const TRIG = "w-[100px] h-[30px] bg-slate-800";
 const ITEM =
-  "flex items-center gap-2 px-2 py-1.5 text-sm text-white focus:bg-blue-600";
+  "flex items-center gap-2 px-2 py-1.5 text-sm text-white focus:bg-blue-600 active:bg-blue-500";
 const at = (x: number, y: number) => ({
   position: "absolute" as const,
   left: x,
