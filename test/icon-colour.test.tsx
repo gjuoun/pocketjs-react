@@ -6,7 +6,7 @@ import { compatStats, mount, resetCompatStats } from "../src/index.ts";
 import { NODE_TYPE, type NodeMirror, rootMirror } from "../src/internal/pocket.ts";
 import { installBuildStyles } from "../src/style/build-styles.ts";
 import { iconVariantOf } from "../src/style/icon-colour.ts";
-import { ChevronDownIcon, GlyphIcon } from "../src/primitives/glyph-icons.tsx";
+import { AlarmCheckIcon, AlarmClockCheckIcon, ChevronDownIcon, GlyphIcon, Grid2x2Icon } from "../src/primitives/glyph-icons.tsx";
 import { build } from "../tools/build.ts";
 import { unpack } from "../src/internal/pocket-build.ts";
 import { bootCore, type Core } from "./harness.ts";
@@ -95,4 +95,20 @@ test("a glyph whose variant the pak lacks draws the placeholder and counts an ic
   expect(icons().length).toBe(0);
   expect(c.texts().some((r) => r.text === "?")).toBe(true);
   expect(compatStats().iconMiss).toBe(1);
+});
+
+test("an alias export draws its canonical icon's variant, and a digit-bearing name resolves", async () => {
+  await boot(
+    <div className="flex p-2 bg-white">
+      <AlarmCheckIcon />
+      <AlarmClockCheckIcon />
+      <Grid2x2Icon />
+    </div>,
+  );
+  expect(icons().map(iconVariantOf)).toEqual([
+    "icon.alarm-clock-check.16.slate-900",
+    "icon.alarm-clock-check.16.slate-900",
+    "icon.grid-2x2.16.slate-900",
+  ]);
+  expect(compatStats().iconMiss).toBe(0);
 });
