@@ -129,3 +129,34 @@ test("Select: the vendored select shows its placeholder, selects Banana once, an
   press(c, BTN.CROSS);
   expect(visible(c)).toContain("Fruit changes 1");
 });
+
+test("the vendored menu and select keep the d-pad inside them", async () => {
+  const c = await boot();
+  focusOn(c, "Menu");
+  press(c, BTN.CIRCLE);
+  const seen = new Set<string | undefined>();
+  for (let i = 0; i < 4; i++) {
+    press(c, BTN.DOWN);
+    seen.add(focused());
+  }
+  for (let i = 0; i < 4; i++) {
+    press(c, BTN.UP);
+    seen.add(focused());
+  }
+  expect(seen.has("Under")).toBe(false);
+  expect(seen.has("Open")).toBe(false);
+  expect(seen.has("Pick fruit")).toBe(false);
+  expect(seen.has("Menu")).toBe(false);
+  press(c, BTN.CROSS);
+  expect(focused()).toBe("Menu");
+  focusOn(c, "Pick fruit");
+  press(c, BTN.CIRCLE);
+  const seen2 = new Set<string | undefined>();
+  for (let i = 0; i < 4; i++) {
+    press(c, BTN.DOWN);
+    seen2.add(focused());
+  }
+  expect(seen2.has("Under")).toBe(false);
+  expect(seen2.has("Menu")).toBe(false);
+  expect(seen2.has(undefined)).toBe(false);
+});

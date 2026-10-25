@@ -21,6 +21,7 @@ afterEach(() => {
   core = undefined;
   resetCompatStats();
   installBuildStyles({}, new Uint8Array(0), []);
+  delete (globalThis as { __pocketPointer?: unknown }).__pocketPointer;
 });
 
 async function start(element: ReactNode): Promise<Core> {
@@ -52,6 +53,15 @@ function focused(): string | undefined {
 function focusOn(c: Core, label: string): void {
   for (let i = 0; i < 4 && focused() !== label; i++) press(c, BTN.DOWN);
   expect(focused()).toBe(label);
+}
+/** A click at (x, y), queued the way the pointer layer reads it (see pointer.test.tsx). */
+function click(c: Core, x: number, y: number): void {
+  const q = ((globalThis as { __pocketPointer?: unknown[] }).__pocketPointer ??= []);
+  q.push({ x, y, down: true });
+  c.step(0);
+  q.push({ x, y, down: false });
+  c.step(0);
+  c.step(0);
 }
 const screen = (children: ReactNode) => (
   <View className="w-full h-full flex-col gap-1 p-2 bg-slate-100">{children}</View>
@@ -248,4 +258,99 @@ test("select: an Item without a value is an error, not a silent empty choice", a
   await expect(
     start(screen(<Select.Root><Select.Item value="">x</Select.Item></Select.Root>)),
   ).rejects.toThrow("value");
+});
+
+test("dialog: the scrim is inert to taps (F5 fell back to B); a tap on the panel keeps it open", async () => {
+  const calls: boolean[] = [];
+  const c = await start(dialogScreen((open) => calls.push(open)));
+  focusOn(c, "Open");
+  press(c, BTN.CIRCLE);
+  const title = c.texts().find((r) => r.text === "Dialog title")!;
+  click(c, title.x + 2, title.y + 2);
+  expect(visible(c)).toContain("Dialog title");
+  click(c, 2, 2);
+  expect(visible(c)).toContain("Dialog title");
+  press(c, BTN.CROSS);
+  expect(visible(c)).not.toContain("Dialog title");
+  expect(calls).toEqual([true, false]);
+});
+
+test("nested: CROSS on a Select inside a Dialog closes only the Select; focus returns to its trigger", async () => {
+  const c = await start(
+    screen(
+      <Dialog.Root>
+        <Dialog.Trigger className="bg-slate-900 px-2 py-1 rounded-md">Open</Dialog.Trigger>
+        <Dialog.Portal>
+          <Dialog.Overlay />
+          <Dialog.Content>
+            <Dialog.Title>Dialog title</Dialog.Title>
+            <Select.Root>
+              <Select.Trigger className="bg-slate-900 px-2 py-1 rounded-md">
+                <Select.Value placeholder="Pick" />
+              </Select.Trigger>
+              <Select.Portal>
+                <Select.Content>
+                  <Select.Item value="alpha"><Select.ItemText>Alpha</Select.ItemText></Select.Item>
+                </Select.Content>
+              </Select.Portal>
+            </Select.Root>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>,
+    ),
+  );
+  focusOn(c, "Open");
+  press(c, BTN.CIRCLE);
+  focusOn(c, "Pick");
+  press(c, BTN.CIRCLE);
+  expect(visible(c)).toContain("Alpha");
+  press(c, BTN.CROSS);
+  expect(visible(c)).not.toContain("Alpha");
+  expect(visible(c)).toContain("Dialog title");
+  expect(focused()).toBe("Pick");
+  press(c, BTN.CROSS);
+  expect(visible(c)).not.toContain("Dialog title");
+  expect(focused()).toBe("Open");
+});
+
+test("nested: while the Select is open the d-pad never reaches the Dialog behind it", async () => {
+  const c = await start(
+    screen(
+      <Dialog.Root>
+        <Dialog.Trigger className="bg-slate-900 px-2 py-1 rounded-md">Open</Dialog.Trigger>
+        <Dialog.Portal>
+          <Dialog.Content>
+            <Dialog.Title>Dialog title</Dialog.Title>
+            <Select.Root>
+              <Select.Trigger className="bg-slate-900 px-2 py-1 rounded-md">
+                <Select.Value placeholder="Pick" />
+              </Select.Trigger>
+              <Select.Portal>
+                <Select.Content>
+                  <Select.Item value="alpha"><Select.ItemText>Alpha</Select.ItemText></Select.Item>
+                  <Select.Item value="beta"><Select.ItemText>Beta</Select.ItemText></Select.Item>
+                </Select.Content>
+              </Select.Portal>
+            </Select.Root>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>,
+    ),
+  );
+  focusOn(c, "Open");
+  press(c, BTN.CIRCLE);
+  focusOn(c, "Pick");
+  press(c, BTN.CIRCLE);
+  const seen = new Set<string | undefined>();
+  for (let i = 0; i < 4; i++) {
+    press(c, BTN.DOWN);
+    seen.add(focused());
+  }
+  for (let i = 0; i < 4; i++) {
+    press(c, BTN.UP);
+    seen.add(focused());
+  }
+  expect(seen.has("Open")).toBe(false);
+  expect(seen.has("Dialog title")).toBe(false);
+  expect(seen.has(undefined)).toBe(false);
 });

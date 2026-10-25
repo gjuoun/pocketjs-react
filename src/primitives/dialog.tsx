@@ -87,15 +87,16 @@ export interface OverlayProps {
   className?: string;
 }
 
-/** Full-screen scrim above the app, below the panel. Tapping it closes the dialog (F5). */
+/**
+ * Full-screen scrim above the app, below the panel. It is inert to taps: the pointer resolves to
+ * focusables inside the active focus scope only, so a scrim tap cannot close the dialog (C5 F5
+ * fell back to B, plan risk R-k). CROSS closes the dialog.
+ */
 export function Overlay(_props: OverlayProps) {
   const ctx = useDialogContext("Dialog.Overlay");
   if (!ctx.open) return null;
   return reconciler.createPortal(
-    <View
-      className="absolute inset-0 bg-slate-950"
-      onPress={() => ctx.setOpen(false)}
-    />,
+    <View className="absolute inset-0 bg-slate-950" />,
     getOverlayLayer(),
     null,
   ) as ReactNode;
