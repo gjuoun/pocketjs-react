@@ -105,7 +105,7 @@ export function Overlay(_props: OverlayProps) {
 export interface ContentProps {
   className?: string;
   children?: ReactNode;
-  /** Positioning is not used: a Dialog is centred (C6 anchors Menu and Select). Focus hooks: not implemented (C9). */
+  /** Positioning is not used: a Dialog is centred (C6 anchors Menu and Select). Focus hooks: see the README (C9). */
   side?: "top" | "right" | "bottom" | "left";
   align?: "start" | "center" | "end";
   sideOffset?: number;
