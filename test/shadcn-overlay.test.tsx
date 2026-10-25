@@ -1,9 +1,10 @@
 // C5 overlays on the real wasm core, mounted in-process like the C3 demo: the vendored shadcn
 // dialog (codemod output) opens its content into the overlay layer, traps d-pad focus, and
-// gives focus back on close. Focus is the core's focused node (getFocused).
+// gives focus back on close. Focus is the core's focused node (getFocused). The menu and the select
+// ride the same overlay layer; the last test runs them under the strict C3 policies.
 import { afterEach, expect, test } from "bun:test";
 import { BTN, getFocused } from "@pocketjs/framework/input";
-import { mount, resetCompatStats } from "../src/index.ts";
+import { compatStats, mount, resetCompatStats } from "../src/index.ts";
 import { compileClasses } from "../src/internal/pocket-build.ts";
 import { installBuildStyles } from "../src/style/build-styles.ts";
 import { build } from "../tools/build.ts";
@@ -25,11 +26,11 @@ afterEach(() => {
   installBuildStyles({}, new Uint8Array(0), []);
 });
 
-async function boot(): Promise<Core> {
+async function boot(compat: Parameters<typeof mount>[1] = { compat: { classMiss: "drop" } }): Promise<Core> {
   const built = await build(VENDOR + "/overlays-main.tsx", { outdir: OUT, name: "shadcn-overlays" });
   core = await bootCore({ classes: built.tokens });
   installBuildStyles({}, compileClasses([]).bin, built.tokens);
-  unmount = mount(<Overlays />, { compat: { classMiss: "drop" } });
+  unmount = mount(<Overlays />, compat);
   core.step(0);
   return core;
 }
@@ -159,4 +160,23 @@ test("the vendored menu and select keep the d-pad inside them", async () => {
   expect(seen2.has("Under")).toBe(false);
   expect(seen2.has("Menu")).toBe(false);
   expect(seen2.has(undefined)).toBe(false);
+});
+
+test("strict: the vendored overlays open under classMiss=throw and tokenMap=false (the source speaks PocketJS)", async () => {
+  const c = await boot({ compat: { classMiss: "throw", tokenMap: false } });
+  focusOn(c, "Open");
+  press(c, BTN.CIRCLE);
+  expect(visible(c)).toContain("Dialog title");
+  press(c, BTN.CROSS);
+  focusOn(c, "Menu");
+  press(c, BTN.CIRCLE);
+  expect(visible(c)).toContain("Edit");
+  press(c, BTN.CROSS);
+  focusOn(c, "Pick fruit");
+  press(c, BTN.CIRCLE);
+  expect(visible(c)).toContain("Banana");
+  press(c, BTN.CROSS);
+  const stats = compatStats();
+  expect(stats.classMiss).toEqual({ tokens: 0, literals: 0 });
+  expect(stats.tokenMap).toEqual({ mapped: 0, dropped: 0 });
 });
