@@ -34,6 +34,14 @@
   // C4c: on a touch host a tap on an editable field focuses the hidden textarea, so the native
   // keyboard (and its IME) types into the guest field through the same __pocketText seam.
   const nativeEntry = document.getElementById("native-entry");
+  // The hidden entry always holds one zero-width character. A native Backspace then always has content
+  // to delete, so the browser sends beforeinput for it (the iOS report: no keyboard Backspace on an
+  // empty field; WebKit's exact rule is unverified here, and Chromium sends it either way).
+  const NATIVE_SENTINEL = "\u200b";
+  const armNative = () => {
+    if (nativeEntry.value !== NATIVE_SENTINEL) nativeEntry.value = NATIVE_SENTINEL;
+    nativeEntry.setSelectionRange(1, 1);
+  };
   const touchHost = params.get("touch") === "1" || navigator.maxTouchPoints > 0;
   globalThis.__pocketTextNative = touchHost;
   const bridge = createBridgeState();
@@ -98,7 +106,7 @@
       if (e.key === "Escape") { emitText({ t: "key", k: "Escape" }); nativeEntry.blur(); }
       return;
     }
-    const r = routeKey(e, globalThis.__pocketTextEntry === true);
+    const r = routeKey(e, globalThis.__pocketTextEntry === true, globalThis.__pocketTextMultiline === true);
     if (!r) return;
     e.preventDefault();
     if (r.to === "button") keys |= r.bit;
@@ -130,13 +138,16 @@
     const r = canvas.getBoundingClientRect();
     const x = ((e.clientX - r.left) / r.width) * canvas.width;
     const y = ((e.clientY - r.top) / r.height) * canvas.height;
-    if (globalThis.__pocketTextHitAt?.(x, y)) nativeEntry.focus({ preventScroll: true });
+    if (globalThis.__pocketTextHitAt?.(x, y)) {
+      armNative();
+      nativeEntry.focus({ preventScroll: true }); // still inside the pointerup gesture (iOS)
+    }
     else if (document.activeElement === nativeEntry) nativeEntry.blur();
   });
   nativeEntry.addEventListener("compositionstart", () => bridgeCompositionStart(bridge));
   nativeEntry.addEventListener("compositionend", (e) => {
     bridgeCompositionEnd(bridge, e.data, emitText);
-    setTimeout(() => { nativeEntry.value = ""; }, 0); // the composed text is in the field; the seam has it
+    setTimeout(() => { armNative(); }, 0); // the composed text is in the field; the seam has it, so reset to the sentinel
   });
   nativeEntry.addEventListener("beforeinput", (e) => {
     if (bridgeBeforeInput(bridge, e, emitText)) e.preventDefault();

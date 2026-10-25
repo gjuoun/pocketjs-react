@@ -353,3 +353,48 @@ export function resetTextFields(): void {
     notify();
   }
 }
+
+// ---------------------------------------------------------------------------
+// Caret editing: forward delete and line movement (C4c round 3).
+// ---------------------------------------------------------------------------
+
+/** Delete the character at the caret (forward delete); the caret stays where it is. */
+export function deleteAfterAt(value: string, caret: number): { value: string; caret: number } {
+  const at = Math.max(0, Math.min(caret, value.length));
+  if (at >= value.length) return { value, caret: at };
+  return { value: value.slice(0, at) + value.slice(at + 1), caret: at };
+}
+
+/**
+ * The caret one line up (delta -1) or down (+1), keeping its column where the line is long enough.
+ * Up on the first line goes to the start of the text; down on the last line goes to the end.
+ */
+export function moveLineTo(value: string, caret: number, delta: -1 | 1): number {
+  const at = Math.max(0, Math.min(caret, value.length));
+  const lineStart = at === 0 ? 0 : value.lastIndexOf("\n", at - 1) + 1;
+  const col = at - lineStart;
+  if (delta < 0) {
+    if (lineStart === 0) return 0;
+    const prevEnd = lineStart - 1; // the newline that ends the previous line
+    const prevStart = prevEnd === 0 ? 0 : value.lastIndexOf("\n", prevEnd - 1) + 1;
+    return prevStart + Math.min(col, prevEnd - prevStart);
+  }
+  const nl = value.indexOf("\n", at);
+  if (nl === -1) return value.length;
+  const nextStart = nl + 1;
+  const nextNl = value.indexOf("\n", nextStart);
+  const nextEnd = nextNl === -1 ? value.length : nextNl;
+  return nextStart + Math.min(col, nextEnd - nextStart);
+}
+
+/** Forward delete through the field: a controlled field reports the new value. */
+export function deleteAfter(binding: TextFieldBinding): void {
+  const next = deleteAfterAt(valueOf(binding), binding.caret);
+  edit(binding, next.value, next.caret);
+}
+
+/** Move the caret one line (textarea only; the host routes Up/Down only for a textarea). */
+export function moveLine(binding: TextFieldBinding, delta: -1 | 1): void {
+  binding.caret = moveLineTo(valueOf(binding), binding.caret, delta);
+  render(binding);
+}

@@ -252,3 +252,45 @@ test("a trusted mouse echo after the tap does not take focus from the native ent
   expect(await logOf("__a")).toEqual(["q"]);
   expect(await keycapsDrawn()).toEqual([]);
 }, 30000);
+
+// C4c round 3: physical keys in direct mode (trusted CDP keys), desktop path.
+const keyTap = async (key: string, code: string): Promise<void> => {
+  await chrome.send("Input.dispatchKeyEvent", { type: "keyDown", key, code, windowsVirtualKeyCode: 0 });
+  await chrome.send("Input.dispatchKeyEvent", { type: "keyUp", key, code, windowsVirtualKeyCode: 0 });
+  await frame(0);
+  await frame(0);
+};
+
+test("physical keys: letters type, ArrowLeft moves the caret, Delete removes the character after it", async () => {
+  await open("manual=1");
+  await frame(0);
+  await press(BTN.DOWN); // focus field A
+  await keyTap("a", "KeyA");
+  await keyTap("b", "KeyB");
+  await keyTap("ArrowLeft", "ArrowLeft"); // caret between a and b
+  await keyTap("Delete", "Delete"); // removes b
+  expect(await logOf("__a")).toEqual(["a", "ab", "a"]);
+  await keyTap("Backspace", "Backspace"); // removes a
+  expect(await logOf("__a")).toEqual(["a", "ab", "a", ""]);
+  expect(await shoulder()).toBe(0);
+}, 30000);
+
+// The iOS report: a native Backspace does nothing. WebKit does not send beforeinput for an
+// empty field (not reproducible in Chromium), so the hidden entry must never be empty after a tap.
+test("the hidden native entry holds content after a tap, so a native Backspace reaches the seam", async () => {
+  await open("manual=1&touch=1");
+  await frame(0);
+  const at = String(await evaluate(FIND_FIELD)).split(",").map(Number);
+  await liftAt(at[0], at[1]);
+  await compatMouseAt(at[0], at[1]); // the tap's mouse echo: the guest sees the press and focuses the field
+  for (let i = 0; i < 2; i++) await frame(0);
+  expect(await evaluate("document.getElementById('native-entry').value.length")).toBeGreaterThan(0);
+  await chrome.send("Input.insertText", { text: "a" });
+  await frame(0);
+  await frame(0);
+  await chrome.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8, nativeVirtualKeyCode: 8, commands: ["deleteBackward"] });
+  await chrome.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8, nativeVirtualKeyCode: 8 });
+  await frame(0);
+  await frame(0);
+  expect(await logOf("__a")).toEqual(["a", ""]);
+}, 30000);

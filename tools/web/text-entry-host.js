@@ -12,7 +12,12 @@ export const BTN = { SELECT: 0x1, START: 0x8, UP: 0x10, RIGHT: 0x20, DOWN: 0x40,
 export const KEYMAP = { ArrowUp: BTN.UP, ArrowRight: BTN.RIGHT, ArrowDown: BTN.DOWN, ArrowLeft: BTN.LEFT, KeyX: BTN.CROSS, Enter: BTN.CIRCLE, KeyZ: BTN.CIRCLE, KeyA: BTN.SQUARE, KeyS: BTN.TRIANGLE, ShiftLeft: BTN.SELECT, ShiftRight: BTN.SELECT, Space: BTN.START, KeyL: BTN.LTRIGGER, KeyR: BTN.RTRIGGER, KeyQ: BTN.LTRIGGER, KeyE: BTN.RTRIGGER };
 
 /** KeyboardEvent.key -> edit key, while a text field has focus. */
-const EDIT_KEYS = { Backspace: "Backspace", Enter: "Enter", Escape: "Escape" };
+// Edit keys: Enter and Escape close or commit, Backspace and Delete remove text at the caret.
+const EDIT_KEYS = { Backspace: "Backspace", Delete: "Delete", Enter: "Enter", Escape: "Escape" };
+// Caret keys: while a field has focus, the arrows move the caret instead of the pad. Up and down are
+// caret keys only in a textarea (a single line has no line above or below: they keep moving focus).
+const CARET_KEYS = { ArrowLeft: "Left", ArrowRight: "Right" };
+const LINE_KEYS = { ArrowUp: "Up", ArrowDown: "Down" };
 
 /** One character with no Ctrl/Meta/Alt: a printable key (Space included, a space character). */
 const printable = (key) => [...key].length === 1;
@@ -21,11 +26,11 @@ const printable = (key) => [...key].length === 1;
  * @returns {{to:"text",ch:string} | {to:"key",key:string} | {to:"button",bit:number} | null}
  *   null = not ours: the browser keeps its default (Ctrl/Cmd shortcuts while typing, unmapped keys).
  */
-export function routeKey(e, entryActive) {
+export function routeKey(e, entryActive, multiline = false) {
   if (entryActive) {
     if (e.ctrlKey || e.metaKey || e.altKey) return null;
     if (printable(e.key)) return { to: "text", ch: e.key };
-    const key = EDIT_KEYS[e.key];
+    const key = EDIT_KEYS[e.key] ?? CARET_KEYS[e.key] ?? (multiline ? LINE_KEYS[e.key] : undefined);
     if (key !== undefined) return { to: "key", key };
   }
   const bit = KEYMAP[e.code];
@@ -77,6 +82,9 @@ export function bridgeBeforeInput(state, e, emit) {
     case "insertLineBreak":
     case "insertParagraph":
       emit({ t: "key", k: "Enter" });
+      return true;
+    case "deleteContentForward":
+      emit({ t: "key", k: "Delete" });
       return true;
     case "deleteContentBackward":
       emit({ t: "key", k: "Backspace" });

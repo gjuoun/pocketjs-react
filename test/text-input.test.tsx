@@ -383,3 +383,38 @@ test("LEFT moves the caret of a direct-typing field; the next key inserts at the
   await key("x");
   expect(seen).toEqual(["a", "ab", "axb"]);
 });
+
+// C4c round 3: the caret keys and forward delete edit at the caret, through the same seam.
+test("Left, Backspace and Delete edit at the caret through the text seam", async () => {
+  const c = await boot();
+  const seen: string[] = [];
+  function App() {
+    const [value, setValue] = useState("");
+    return (
+      <input
+        placeholder="Name"
+        value={value}
+        onChange={(e) => {
+          seen.push(e.target.value);
+          setValue(e.target.value);
+        }}
+      />
+    );
+  }
+  mountApp(<App />);
+  c.step(0);
+  c.press(BTN.DOWN);
+  const queue = (globalThis as { __pocketText?: unknown[] }).__pocketText;
+  const tick = () => new Promise((r) => setTimeout(r, 0));
+  const send = async (event: unknown) => {
+    queue?.push(event);
+    c.step(0);
+    await tick();
+    c.step(0);
+  };
+  for (const ch of "abc") await send({ t: "ch", s: ch });
+  await send({ t: "key", k: "Left" }); // caret 3 -> 2
+  await send({ t: "key", k: "Backspace" }); // removes b
+  await send({ t: "key", k: "Delete" }); // removes c, the character at the caret
+  expect(seen).toEqual(["a", "ab", "abc", "ac", "a"]);
+});

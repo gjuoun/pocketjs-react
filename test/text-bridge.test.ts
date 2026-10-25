@@ -90,3 +90,9 @@ test("the native entry is not blurred in the frame before the guest catches up w
   expect(follow.update(false)).toBe(true);  // the field lost focus: leave
   expect(follow.update(false)).toBe(false); // and only once
 });
+
+test("forward delete on the native field is sent as Delete and the native edit is cancelled", () => {
+  const { out, st, emit } = rig();
+  expect(bridgeBeforeInput(st, input("deleteContentForward"), emit)).toBe(true);
+  expect(out).toEqual([{ t: "key", k: "Delete" }]);
+});

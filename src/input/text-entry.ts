@@ -13,11 +13,13 @@ import {
   backspace,
   closeField,
   commitField,
+  deleteAfter,
   fieldFor,
   insertText,
   isAttached,
   isReadOnly,
   moveCaret,
+  moveLine,
   openField,
   type TextFieldBinding,
 } from "./text-field.ts";
@@ -57,6 +59,23 @@ function apply(field: TextFieldBinding, event: TextEvent): void {
     case "Backspace":
       if (!field.open) openField(field, "direct");
       backspace(field);
+      break;
+    case "Delete":
+      if (!field.open) openField(field, "direct");
+      deleteAfter(field);
+      break;
+    case "Left":
+    case "Right":
+      if (!field.open) openField(field, "direct");
+      moveCaret(field, event.k === "Left" ? -1 : 1);
+      break;
+    case "Up":
+    case "Down":
+      // The host sends these only for a textarea; the field checks again.
+      if (field.input.multiline) {
+        if (!field.open) openField(field, "direct");
+        moveLine(field, event.k === "Up" ? -1 : 1);
+      }
       break;
     case "Enter":
       // ENT is a newline in a textarea and a commit in an input (F2).

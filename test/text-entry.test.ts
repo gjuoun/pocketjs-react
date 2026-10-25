@@ -22,11 +22,21 @@ test("while a field is focused, Backspace, Enter and Escape are edit keys", () =
   expect(routeKey(ev("Escape", "Escape"), true)).toEqual({ to: "key", key: "Escape" });
 });
 
-test("arrows stay pad buttons in both modes", () => {
-  expect(routeKey(ev("ArrowLeft", "ArrowLeft"), true)).toEqual({ to: "button", bit: 0x80 });
-  expect(routeKey(ev("ArrowDown", "ArrowDown"), true)).toEqual({ to: "button", bit: 0x40 });
+test("while a field has focus, the caret keys edit it; with no field they stay pad buttons", () => {
+  expect(routeKey(ev("ArrowLeft", "ArrowLeft"), true)).toEqual({ to: "key", key: "Left" });
+  expect(routeKey(ev("ArrowRight", "ArrowRight"), true)).toEqual({ to: "key", key: "Right" });
+  expect(routeKey(ev("ArrowUp", "ArrowUp"), true, true)).toEqual({ to: "key", key: "Up" });
+  expect(routeKey(ev("ArrowDown", "ArrowDown"), true, true)).toEqual({ to: "key", key: "Down" });
+  // a single-line field has no lines: up and down keep moving focus
+  expect(routeKey(ev("ArrowUp", "ArrowUp"), true, false)).toEqual({ to: "button", bit: 0x10 });
+  expect(routeKey(ev("ArrowLeft", "ArrowLeft"), false)).toEqual({ to: "button", bit: 0x80 });
+  expect(routeKey(ev("ArrowDown", "ArrowDown"), false, true)).toEqual({ to: "button", bit: 0x40 });
 });
 
+test("forward delete is an edit key while a field has focus", () => {
+  expect(routeKey(ev("Delete", "Delete"), true)).toEqual({ to: "key", key: "Delete" });
+  expect(routeKey(ev("Delete", "Delete"), false)).toBeNull();
+});
 test("modified printable keys are shortcuts, not text", () => {
   expect(routeKey(ev("KeyC", "c", { ctrlKey: true }), true)).toBeNull();
   expect(routeKey(ev("KeyC", "c", { metaKey: true }), true)).toBeNull();
