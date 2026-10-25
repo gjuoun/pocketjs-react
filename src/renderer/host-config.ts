@@ -29,6 +29,10 @@ export interface HostCompat {
   /** After a node's host props are applied: give it state the native tree cannot express.
    *  C4 binds text entry elements here (the field owns their text children and press). */
   bind?(node: NodeMirror, tag: string, props: Props, count: boolean): void;
+  /** Where a React child really goes: a raw run under a textual view is held by a text element. */
+  hold?(parent: NodeMirror, child: NodeMirror): NodeMirror;
+  /** The node a React child was inserted as (for removal and insert-before anchors). */
+  heldBy?(child: NodeMirror): NodeMirror;
 }
 
 let compat: HostCompat = {
@@ -107,29 +111,37 @@ const hostConfig = {
     return createTextNode(text);
   },
   appendInitialChild(parent: NodeMirror, child: NodeMirror) {
-    insertNode(parent, child);
+    insertNode(parent, compat.hold?.(parent, child) ?? child);
   },
   appendChild(parent: NodeMirror, child: NodeMirror) {
-    insertNode(parent, child);
+    insertNode(parent, compat.hold?.(parent, child) ?? child);
   },
   appendChildToContainer(parent: NodeMirror, child: NodeMirror) {
-    insertNode(parent, child);
+    insertNode(parent, compat.hold?.(parent, child) ?? child);
   },
   insertBefore(parent: NodeMirror, child: NodeMirror, before: NodeMirror) {
-    insertNode(parent, child, before);
+    insertNode(
+      parent,
+      compat.hold?.(parent, child) ?? child,
+      compat.heldBy?.(before) ?? before,
+    );
   },
   insertInContainerBefore(
     parent: NodeMirror,
     child: NodeMirror,
     before: NodeMirror,
   ) {
-    insertNode(parent, child, before);
+    insertNode(
+      parent,
+      compat.hold?.(parent, child) ?? child,
+      compat.heldBy?.(before) ?? before,
+    );
   },
   removeChild(parent: NodeMirror, child: NodeMirror) {
-    removeNode(parent, child);
+    removeNode(parent, compat.heldBy?.(child) ?? child);
   },
   removeChildFromContainer(parent: NodeMirror, child: NodeMirror) {
-    removeNode(parent, child);
+    removeNode(parent, compat.heldBy?.(child) ?? child);
   },
   commitTextUpdate(node: NodeMirror, _old: string, next: string) {
     replaceText(node, next);

@@ -6,7 +6,7 @@
 import { pressingFromPointer } from "../input/pointer.ts";
 import { nativeKeyboard } from "../input/text-entry.ts";
 import { bindField, fieldFor, openField } from "../input/text-field.ts";
-import { type NodeMirror, setProp } from "../internal/pocket.ts";
+import { NODE_TYPE, type NodeMirror, setProp } from "../internal/pocket.ts";
 import { setHostCompat } from "../renderer/host-config.ts";
 import {
   type ClassMissPolicy,
@@ -27,6 +27,10 @@ import {
   TEXT_ENTRY_TAGS,
   unknownTagMessage,
 } from "./tags.ts";
+import { heldBy, holdRun, markTextual } from "./text-wrap.ts";
+
+/** DOM text tags that become views when they carry flex (JG-156). */
+const TEXTUAL_FLEX_TAGS = new Set(["span", "p", "label"]);
 
 /** One press handler per text entry node: open its keyboard, then run the app's onClick. */
 const pressHandlers = new WeakMap<NodeMirror, () => void>();
@@ -49,7 +53,14 @@ export function installCompat(opts: CompatOptions = {}): void {
   setTokenMapEnabled(opts.tokenMap ?? true);
   setTextInheritance(opts.textColor === undefined ? "#0f172a" : opts.textColor);
   setHostCompat({
-    type(tag) {
+    type(tag, props) {
+      // A DOM text tag with flex is a view: its layout (centring) is the point (JG-156).
+      if (
+        TEXTUAL_FLEX_TAGS.has(tag) &&
+        typeof props.className === "string" &&
+        /(^|\s)flex(\s|$)/.test(props.className)
+      )
+        return "view";
       const host = hostTypeOf(tag);
       if (host === null) {
         countUnknownTag();
@@ -61,6 +72,8 @@ export function installCompat(opts: CompatOptions = {}): void {
       return compatProps(tag, props, INTERACTIVE_TAGS.has(tag), count);
     },
     bind(node, tag, props, count) {
+      if (TEXTUAL_FLEX_TAGS.has(tag) && node.type === NODE_TYPE.view)
+        markTextual(node, props.className);
       if (!TEXT_ENTRY_TAGS.has(tag)) return;
       const known = fieldFor(node) !== undefined;
       const binding = bindField(node, tag, textFieldInput(tag, props, count));
@@ -74,6 +87,8 @@ export function installCompat(opts: CompatOptions = {}): void {
         setProp(node, "onPress", handler);
       }
     },
+    hold: holdRun,
+    heldBy,
   });
 }
 
