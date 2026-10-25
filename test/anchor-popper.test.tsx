@@ -19,11 +19,11 @@ const CLASSES = [
   "w-[100px] h-[30px] bg-slate-800",
   "flex-col",
   "absolute inset-0 flex-col items-center justify-center",
-  "flex-col p-1 rounded-md bg-slate-800 w-[220px]",
+  "flex-col p-1 rounded-md bg-slate-800 text-white w-[220px]",
   "flex items-center gap-2 px-2 py-1.5 text-sm text-white focus:bg-blue-600",
   "flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-slate-800 text-white",
   "flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-slate-800 text-white w-[100px] h-[30px]",
-  "flex-col gap-2 p-3 rounded-xl bg-slate-800 w-[300px]",
+  "flex-col gap-2 p-3 rounded-xl bg-slate-800 text-white w-[300px]",
 ];
 
 type Scene =

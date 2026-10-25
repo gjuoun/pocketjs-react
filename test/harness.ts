@@ -18,7 +18,9 @@ import {
   createWasmUi,
   FB_W,
   FRAMEWORK_ROOT,
+  pack,
 } from "../src/internal/pocket-build.ts";
+import { loadPack } from "@pocketjs/framework/pak";
 
 export interface TextRun {
   x: number;
@@ -56,6 +58,9 @@ export async function bootCore(
   if (opts.pak) g.__pak = opts.pak;
   else {
     delete g.__pak;
+    // The framework's pak reader is process-global and has no unload: an earlier test's pak would
+    // still be loaded by mount(). An empty pak clears it, so mount() loads nothing from this boot.
+    loadPack(pack([]).slice().buffer);
     // The compat default focus border is a class every compat focusable may carry (JG-157).
     const styles = compileClasses([...(opts.classes ?? []), DEFAULT_FOCUS]);
     ops.loadStyles(styles.bin);

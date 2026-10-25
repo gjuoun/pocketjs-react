@@ -136,7 +136,7 @@ export function Content(props: ContentProps) {
         collisionPadding: props.collisionPadding,
       }}
       panelClassName={cn(
-        "flex-col p-1 rounded-md bg-slate-800 w-[220px]",
+        "flex-col p-1 rounded-md bg-slate-800 text-white w-[220px]",
         ownSurface(props.className),
       )}
     >

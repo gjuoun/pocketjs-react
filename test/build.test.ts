@@ -4,7 +4,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { BTN } from "@pocketjs/framework/input";
 import { NODE_TYPE, PROP } from "../src/internal/pocket.ts";
-import { fontSlotFor } from "../src/internal/pocket-build.ts";
+import { fontSlotFor, unpack } from "../src/internal/pocket-build.ts";
 import { build } from "../tools/build.ts";
 import { bootApp, type Core } from "./harness.ts";
 
@@ -42,6 +42,18 @@ test("the font-slot cross product draws a size + weight pair no literal spells o
   expect(drawn(fontSlotFor(14, true), "Bold")).toBe(true);
   expect(drawn(fontSlotFor(24, true), "Plain")).toBe(false);
 });
+
+test("the pak carries every baked icon variant as an IMG entry, within the size budget", async () => {
+  const built = await build("test/fixtures/styled/main.tsx", { outdir: OUT });
+  // 1903 canonical lucide icons x 3 colours at 16 px, plus the circle's 8 px filled variant x 3.
+  expect(built.icons.length).toBe(1903 * 3 + 3);
+  const bytes = new Uint8Array(await Bun.file(built.pak).arrayBuffer());
+  const keys = new Set(unpack(bytes).map((b) => b.key));
+  for (const key of built.icons) expect(keys.has(key)).toBe(true);
+  expect(keys.has("ui:img.icon.chevron-down.16.slate-500")).toBe(true);
+  expect(keys.has("ui:img.icon.circle.8.white")).toBe(true);
+  expect(bytes.length).toBeLessThanOrEqual(4 * 1024 * 1024);
+}, 60000);
 
 test("a Pocket3D-licensed input fails the build", async () => {
   const run = Bun.spawnSync([

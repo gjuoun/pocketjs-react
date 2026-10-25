@@ -312,7 +312,10 @@ by name.
 - **Dialog content needs the native primitives.** Radix's Portal needs a document body the guest does
   not have, so the vendored dialog, dropdown menu and select import from `pocketjs-react/radix` instead
   (C5, see "Overlays (C5)"). `fixed`/`grid`/`calc()`/percentage offsets are C10.
-- **Icons.** `lucide-react`'s `<path d>` is still an unknown prop; icons are C7.
+- **Icons** are baked textures: `lucide-react` art is rasterized offline (`tools/icon-bake.ts`, resvg) into
+  `ui:img.icon.*` pak entries, one per colour variant, because the core cannot tint a texture. Each icon
+  takes the variant of the colour it inherits (`src/style/icon-colour.ts`); a pak without the variant falls
+  back to the placeholder character and counts `iconMiss` in `compatStats()`.
 - **Text color inheritance** is a compat pass (JG-156), not a core feature: a view's text takes the
   nearest ancestor's color, the mount default otherwise. Inline styles and class variants on the text
   itself still win (see 'Text color inheritance' under the utilities table).
@@ -359,7 +362,9 @@ Every primitive is controlled or uncontrolled (`useControllableState`: a control
   a trigger partly covered by a higher layer measures its visible part.
 - **No scrolling.** Long lists overflow; the scroll buttons render nothing (C10).
 - **No sub-menus** (F3). `DropdownMenu.Sub*` throw with a message naming the gap.
-- **Icons are text glyphs** (F1): `x + o v ^ >` in the build's ASCII font, until C7 draws real icons.
+- **Icons are baked textures** (F1): every canonical lucide icon (1903 at lucide-react 1.61.0), in three colours
+  at 16 px, plus the filled 8 px circle. The pak carries 5712 PSM_4444 entries (about 3.4 MiB). Any lucide export
+  resolves through `pocketjs-react/glyph-icons`; a name outside the set falls back to the placeholder and counts `iconMiss`.
 - **The panel owns its surface** (F4): shadcn's `bg-*` tokens are dropped from the vendored classes;
   the primitives paint a dark panel and set their own text color (`text-white`).
 - **Title and Description ignore size and leading tokens:** `leading-*` draws a 1px line here, and a

@@ -40,6 +40,7 @@ export {
   removeNode,
   replaceText,
   resetRendererState,
+  resolveTexture,
   rootMirror,
   runSweep,
   setDebugName,

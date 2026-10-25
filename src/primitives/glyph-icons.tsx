@@ -1,41 +1,29 @@
-// Text glyph stand-ins for lucide-react (codemod R7, fork F1=A). The vendored shadcn sources import
-// their icons from here instead of lucide, whose <svg> the DOM compat layer does not map. Each icon
-// is one ASCII character in the build's font, so it draws today; C7 replaces them with real icons.
+// Icon glyphs for lucide-react (codemod R7). The vendored shadcn sources import their icons from here
+// instead of lucide, whose <svg> the DOM compat layer does not map. The six named here are written out;
+// every other lucide export is generated into glyph-icons.gen.tsx (tools/gen-glyph-icons.ts) and
+// re-exported below. Each draws its baked texture variant (tools/icon-bake.ts, pak key ui:img.icon.*).
 
-import { Text, View } from "../elements.ts";
-import { cn } from "../style/cn.ts";
+import { GlyphIcon, type GlyphProps } from "./glyph-icon.tsx";
 
-export interface GlyphProps {
-  className?: string;
-}
-
-// JG-156: the glyph is a view that centres its character. A text run alone draws at the top-left of
-// its box, and a stretched box stretched the character. The colour is inherited from the surface
-// the icon sits on (trigger, item or panel), so a light surface gets a dark glyph. The pb-[3px] lifts the
-// character's ink 1.5px to the box centre (JG-156 R3b, placeholder polish; C7 replaces it).
-function Glyph(props: GlyphProps & { char: string }) {
-  return (
-    <View className={cn("flex items-center justify-center", props.className)}>
-      <Text className="text-sm pb-[3px]">{props.char}</Text>
-    </View>
-  );
-}
+export { GlyphIcon, type GlyphIconProps, type GlyphProps } from "./glyph-icon.tsx";
 
 export function XIcon(props: GlyphProps) {
-  return <Glyph {...props} char="x" />;
+  return <GlyphIcon {...props} name="x" px={16} char="x" />;
 }
 export function CheckIcon(props: GlyphProps) {
-  return <Glyph {...props} char="+" />;
+  return <GlyphIcon {...props} name="check" px={16} char="+" />;
 }
 export function CircleIcon(props: GlyphProps) {
-  return <Glyph {...props} char="o" />;
+  return <GlyphIcon {...props} name="circle" px={8} char="o" />;
 }
 export function ChevronDownIcon(props: GlyphProps) {
-  return <Glyph {...props} char="v" />;
+  return <GlyphIcon {...props} name="chevron-down" px={16} char="v" />;
 }
 export function ChevronUpIcon(props: GlyphProps) {
-  return <Glyph {...props} char="^" />;
+  return <GlyphIcon {...props} name="chevron-up" px={16} char="^" />;
 }
 export function ChevronRightIcon(props: GlyphProps) {
-  return <Glyph {...props} char=">" />;
+  return <GlyphIcon {...props} name="chevron-right" px={16} char=">" />;
 }
+
+export * from "./glyph-icons.gen.tsx";
