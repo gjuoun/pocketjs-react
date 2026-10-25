@@ -33,14 +33,59 @@ const at = (name: string) => (node: NodeMirror | null) => {
 function App() {
   return (
     <View className="w-full h-full flex-col bg-slate-900">
-      <View ref={at("bare")} style={{ position: "absolute", left: 40, top: 60, width: 100, height: 30 }} />
-      <View ref={at("labelled")} style={{ position: "absolute", left: 40, top: 100, width: 100, height: 30 }}>
+      <View
+        ref={at("bare")}
+        style={{
+          position: "absolute",
+          left: 40,
+          top: 60,
+          width: 100,
+          height: 30,
+        }}
+      />
+      <View
+        ref={at("labelled")}
+        style={{
+          position: "absolute",
+          left: 40,
+          top: 100,
+          width: 100,
+          height: 30,
+        }}
+      >
         <Text className="text-sm text-white">Trig</Text>
       </View>
-      <View style={{ position: "absolute", left: 200, top: 0, width: 60, height: 200, overflow: "hidden" }}>
-        <View ref={at("clipped")} style={{ position: "absolute", left: 40, top: 10, width: 100, height: 30 }} />
+      <View
+        style={{
+          position: "absolute",
+          left: 200,
+          top: 0,
+          width: 60,
+          height: 200,
+          overflow: "hidden",
+        }}
+      >
+        <View
+          ref={at("clipped")}
+          style={{
+            position: "absolute",
+            left: 40,
+            top: 10,
+            width: 100,
+            height: 30,
+          }}
+        />
       </View>
-      <View ref={at("offscreen")} style={{ position: "absolute", left: 900, top: 60, width: 100, height: 30 }} />
+      <View
+        ref={at("offscreen")}
+        style={{
+          position: "absolute",
+          left: 900,
+          top: 60,
+          width: 100,
+          height: 30,
+        }}
+      />
     </View>
   );
 }
@@ -55,11 +100,16 @@ async function start(): Promise<Core> {
 
 /** Count hit-test queries made while `fn` runs. */
 function countHitTests(fn: () => void): number {
-  const ops = getOps() as unknown as Record<string, ((x: number, y: number) => number) | undefined>;
+  const ops = getOps() as unknown as Record<
+    string,
+    ((x: number, y: number) => number) | undefined
+  >;
   const originals = { hitTestBounds: ops.hitTestBounds, hitTest: ops.hitTest };
   let calls = 0;
-  if (originals.hitTestBounds) ops.hitTestBounds = (x, y) => (calls++, originals.hitTestBounds!(x, y));
-  if (originals.hitTest) ops.hitTest = (x, y) => (calls++, originals.hitTest!(x, y));
+  if (originals.hitTestBounds)
+    ops.hitTestBounds = (x, y) => (calls++, originals.hitTestBounds!(x, y));
+  if (originals.hitTest)
+    ops.hitTest = (x, y) => (calls++, originals.hitTest!(x, y));
   try {
     fn();
   } finally {
@@ -74,24 +124,46 @@ test.skipIf(!OVERLAY)("nodeRect is exposed by the overlay core", async () => {
   expect(typeof (getOps() as { nodeRect?: unknown }).nodeRect).toBe("function");
 });
 
-test.skipIf(!OVERLAY)("measureBox reads the rect without any hit-test search", async () => {
-  await start();
-  expect(countHitTests(() => measureBox(need("labelled")))).toBe(0);
-  expect(countHitTests(() => measureBox(need("bare")))).toBe(0);
-});
+test.skipIf(!OVERLAY)(
+  "measureBox reads the rect without any hit-test search",
+  async () => {
+    await start();
+    expect(countHitTests(() => measureBox(need("labelled")))).toBe(0);
+    expect(countHitTests(() => measureBox(need("bare")))).toBe(0);
+  },
+);
 
-test.skipIf(!OVERLAY)("measureBox equals the root-space border box from nodeRect", async () => {
-  await start();
-  expect(measureBox(need("bare"))).toEqual({ x: 40, y: 60, w: 100, h: 30 });
-  expect(measureBox(need("labelled"))).toEqual({ x: 40, y: 100, w: 100, h: 30 });
-});
+test.skipIf(!OVERLAY)(
+  "measureBox equals the root-space border box from nodeRect",
+  async () => {
+    await start();
+    expect(measureBox(need("bare"))).toEqual({ x: 40, y: 60, w: 100, h: 30 });
+    expect(measureBox(need("labelled"))).toEqual({
+      x: 40,
+      y: 100,
+      w: 100,
+      h: 30,
+    });
+  },
+);
 
-test.skipIf(!OVERLAY)("a clipped box measures its untrimmed rect (overflow is not applied), clamped to the viewport", async () => {
-  await start();
-  expect(measureBox(need("clipped"))).toEqual({ x: 240, y: 10, w: 100, h: 30 });
-});
+test.skipIf(!OVERLAY)(
+  "a clipped box measures its untrimmed rect (overflow is not applied), clamped to the viewport",
+  async () => {
+    await start();
+    expect(measureBox(need("clipped"))).toEqual({
+      x: 240,
+      y: 10,
+      w: 100,
+      h: 30,
+    });
+  },
+);
 
-test.skipIf(!OVERLAY)("a node entirely outside the viewport still measures null", async () => {
-  await start();
-  expect(measureBox(need("offscreen"))).toBeNull();
-});
+test.skipIf(!OVERLAY)(
+  "a node entirely outside the viewport still measures null",
+  async () => {
+    await start();
+    expect(measureBox(need("offscreen"))).toBeNull();
+  },
+);
