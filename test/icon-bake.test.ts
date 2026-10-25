@@ -2,14 +2,11 @@
 // drawn in its own colour. The bake is offline (resvg-wasm), so these run with no network.
 import { createHash } from "node:crypto";
 import { expect, test } from "bun:test";
-import { type IconEntry, ICON_COLOURS, bakeIcons, iconBlobs } from "../tools/icon-bake.ts";
+import { type IconEntry, ICON_COLOURS, bakeIcons, iconBlobs, lucideIcons } from "../tools/icon-bake.ts";
+import { ICON_COLOUR_NAMES } from "../src/style/icon-names.ts";
 
-const EXPECTED = [
-  ...["chevron-down", "chevron-up", "chevron-right", "x", "check"].flatMap((n) =>
-    ["slate-900", "slate-500", "white"].map((c) => `icon.${n}.16.${c}`),
-  ),
-  ...["slate-900", "slate-500", "white"].map((c) => `icon.circle.8.${c}`),
-];
+/** The five demo icons the vendored sources draw: their centring is held to the box centre. */
+const DEMO = ["chevron-down", "chevron-up", "chevron-right", "x", "check"];
 
 let entries: IconEntry[] | undefined;
 async function baked(): Promise<IconEntry[]> {
@@ -29,9 +26,23 @@ function ink(e: IconEntry) {
   return { x0, y0, x1: x1 + 1, y1: y1 + 1 };
 }
 
-test("the bake yields the six icons at the expected sizes and colours", async () => {
+test("the bake yields every canonical lucide icon at 16 px in three colours, plus the 8 px circle", async () => {
+  // lucide-react 1.61.0: 1903 canonical icons; the circle also bakes its filled 8 px variant.
+  expect((await lucideIcons()).length).toBe(1903);
   const ids = (await baked()).map((e) => e.id);
-  expect(ids).toEqual(EXPECTED);
+  expect(ids.length).toBe(1903 * 3 + 3);
+  expect(new Set(ids).size).toBe(ids.length);
+  for (const c of ICON_COLOUR_NAMES) {
+    expect(ids).toContain("icon.circle.8." + c);
+    expect(ids).toContain("icon.grid-2x2.16." + c);
+  }
+});
+
+test("every variant draws some ink", async () => {
+  for (const e of await baked()) {
+    const b = ink(e);
+    expect(b.x1).toBeGreaterThan(b.x0);
+  }
 });
 
 test("every entry is a pow2 PSM_8888 IMG blob with straight-alpha pixels", async () => {
@@ -65,14 +76,15 @@ test("opaque pixels take the variant's colour; partial pixels are its colour at 
       const a = rgba[i + 3];
       if (a === 0) continue;
       if (a === 255) expect([rgba[i], rgba[i + 1], rgba[i + 2]]).toEqual(want);
-      // 8-bit premultiplied storage: a channel's rounding error is up to 255 / alpha.
-      else for (let c = 0; c < 3; c++) expect(Math.abs(rgba[i + c] - want[c])).toBeLessThanOrEqual(Math.ceil(255 / a) + 1);
+      // The core composites premultiplied colour, so the error that shows is the premultiplied one. resvg's
+      // 8-bit blending of overlapping strokes leaves at most 3 of 255 there (straight error is that over alpha).
+      else for (let c = 0; c < 3; c++) expect(Math.abs(rgba[i + c] * a / 255 - want[c] * a / 255)).toBeLessThanOrEqual(3);
     }
   }
 });
 
 test("each stroked icon is centred in its square box and not stretched", async () => {
-  for (const e of (await baked()).filter((x) => x.name !== "circle")) {
+  for (const e of (await baked()).filter((x) => DEMO.includes(x.name))) {
     const b = ink(e);
     const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
     // Chevrons and X are symmetric about the box centre; the check mark sits lower, so only its x is held.
@@ -83,7 +95,7 @@ test("each stroked icon is centred in its square box and not stretched", async (
 });
 
 test("the filled circle is a solid disc in the middle of its box", async () => {
-  for (const e of (await baked()).filter((x) => x.name === "circle")) {
+  for (const e of (await baked()).filter((x) => x.name === "circle" && x.px === 8)) {
     const { width: w, rgba } = e.image;
     const mid = (w / 2) * w + w / 2;
     expect(rgba[mid * 4 + 3]).toBeGreaterThanOrEqual(250);
