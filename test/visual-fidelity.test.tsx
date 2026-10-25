@@ -258,14 +258,34 @@ test("G8 Select check mark is a real icon once an item is selected", async () =>
   expect(compatStats().iconMiss).toBe(0);
 });
 
-test("G9 the icon sheet draws all six icons in three colour variants", async () => {
+/** The demo icons the sheet draws in three colour rows, and the cold family names on the fourth. */
+const DEMO_ICON = /^icon\.(chevron-down|chevron-up|chevron-right|x|check|circle)\./;
+const COLD = ["accessibility", "alarm-clock-check", "arrow-down-0-1", "battery", "brain-circuit", "clock-6", "cloud-rain", "diamond", "grid-2x2", "wifi-off"];
+
+test("G9 the icon sheet draws the six demo icons in three colours, and the ten cold family names", async () => {
   await bootSheet();
   const ids = iconImages().map((n) => iconVariantOf(n)).sort();
   const names = ["check", "chevron-down", "chevron-right", "chevron-up", "circle", "x"];
   const expected = [];
   for (const colour of ["slate-900", "slate-500", "white"])
     for (const name of names) expected.push(`icon.${name}.${name === "circle" ? 8 : 16}.${colour}`);
+  for (const name of COLD) expected.push(`icon.${name}.16.slate-900`);
   expect(ids).toEqual(expected.sort());
+  expect(compatStats().iconMiss).toBe(0);
+});
+
+test("G10 the cold family samples draw real ink, centred in their 16px box (±1px)", async () => {
+  const c = await bootSheet();
+  const cold = iconImages().filter((n) => !DEMO_ICON.test(iconVariantOf(n) ?? ""));
+  expect(cold.length).toBe(COLD.length);
+  for (const n of cold) {
+    const box = measureBox(n)!;
+    expect(box.w).toBe(16);
+    const ink = iconInk(c, box);
+    expect(ink).not.toBeNull();
+    expect(centreOff(ink!, box).dx).toBeLessThanOrEqual(1);
+    expect(centreOff(ink!, box).dy).toBeLessThanOrEqual(1);
+  }
 });
 
 // --- G4 (Step 5): the badge label is vertically centred in the badge; the badge is content height ----
@@ -350,7 +370,7 @@ test("screenshot: select open", async () => {
 });
 
 // --- Icon screenshots for the Gemini gate: the real icons on the demo and the icon sheet -------
-const ICON_SHOTS = "/tmp/pocketjs-react-test/jg159";
+const ICON_SHOTS = "/tmp/pocketjs-react-test/jg161";
 
 test("screenshot: select chevron, idle", async () => {
   const c = await bootOverlays();
