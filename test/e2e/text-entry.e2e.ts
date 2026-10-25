@@ -143,15 +143,14 @@ function path(from: OskPos, goal: OskPos): Dir[] {
 }
 
 // canvas-logical (x, y) of the first point the focusable field under it answers for
-// The centre of the part of the field that is on screen: a phone viewport is narrower than the 960 px canvas, and a point past its edge never reaches the canvas on WebKit.
+// The centre of the part of the field that is on screen: a point past the phone viewport's edge never reaches the canvas on WebKit.
 const FIND_FIELD =
   "(() => { const c = document.getElementById('screen'); const r = c.getBoundingClientRect(); const maxX = Math.min(c.width - 1, Math.floor((innerWidth - r.left - 1) * c.width / r.width)); const maxY = Math.min(c.height - 1, Math.floor((innerHeight - r.top - 1) * c.height / r.height)); const hit = (x, y) => globalThis.__pocketTextHitAt(x, y); let x0 = -1, y0 = -1; outer: for (let y = 0; y <= maxY; y += 2) for (let x = 0; x <= maxX; x += 2) if (hit(x, y)) { x0 = x; y0 = y; break outer; } if (x0 < 0) return ''; let x1 = x0; while (x1 + 1 <= maxX && hit(x1 + 1, y0)) x1++; let y1 = y0; while (y1 + 1 <= maxY && hit(x0, y1 + 1)) y1++; return Math.floor((x0 + x1) / 2) + ',' + Math.floor((y0 + y1) / 2); })()";
 async function findField(page: Page): Promise<[number, number]> {
   const at = await page.evaluate<string>(FIND_FIELD);
   expect(at).not.toBe("");
   const [x, y] = at.split(",").map(Number);
-  // The tap must land on screen: a phone viewport is narrower than the 960 px canvas, and a point past
-  // its edge never reaches the canvas on WebKit.
+  // The tap must land on screen: a point past the phone viewport's edge never reaches the canvas on WebKit.
   const [cx, cy] = await clientOf(page, x, y);
   const view = await page.evaluate<[number, number]>("[innerWidth, innerHeight]");
   expect(cx).toBeLessThan(view[0]);
@@ -473,8 +472,7 @@ test("a touch tap outside the field lets the native keyboard go", async ({
   await tapAt(page, testInfo, x, y);
   await settle(page);
   expect(await focusedId(page)).toBe("native-entry");
-  // A point outside both fields that also sits inside a 393 px phone viewport: the 960 px canvas overflows it
-  // (the bottom-right corner is off-screen on WebKit), so (470,262) cannot be tapped there.
+  // A point outside both fields, on screen in the phone viewport: the tap must reach the canvas and drop the field.
   expect(
     await page.evaluate<boolean>("globalThis.__pocketTextHitAt(120, 200)"),
   ).toBe(false);
