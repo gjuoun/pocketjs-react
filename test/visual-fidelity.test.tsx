@@ -188,13 +188,23 @@ test("G2 Save in its row is content-width (guard)", async () => {
 });
 
 // --- G3 (Step 4): the chevron glyph is centred in its box, not drawn at the top-left ----------
-test("G3 Select chevron glyph ink is centred in its box", async () => {
+test("G3 Select chevron glyph is centred in its square box (ink across, line box down)", async () => {
   const c = await bootOverlays();
-  const box = measureBox(hostOf("v"))!;
+  const text = hostOf("v");
+  const box = measureBox(text.parent!)!;
+  expect(box.w).toBe(box.h);
+  // Across: the ink of the character sits on the box centre. Down: a lowercase 'v' inks in the lower
+  // x-height, so its ink centre sits below the line box centre by font metrics; the line box itself
+  // must be centred.
   const ink = inkBox(c, runOf(c, "v"))!;
-  const { dx, dy } = centreOff(ink, box);
-  expect(dx).toBeLessThanOrEqual(1);
-  expect(dy).toBeLessThanOrEqual(1);
+  expect(centreOff(ink, box).dx).toBeLessThanOrEqual(1);
+  const tb = measureBox(text)!;
+  expect(Math.abs(tb.y + tb.h / 2 - (box.y + box.h / 2))).toBeLessThanOrEqual(
+    1,
+  );
+  expect(Math.abs(tb.x + tb.w / 2 - (box.x + box.w / 2))).toBeLessThanOrEqual(
+    1,
+  );
 });
 
 // --- G4 (Step 5): the badge label is vertically centred in its pill ---------------------------
