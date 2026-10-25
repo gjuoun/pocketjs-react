@@ -30,18 +30,13 @@ export const serveApp = (app: AppName): Promise<Server> =>
   });
 export const serve = (): Promise<Server> => serveApp("text-entry");
 
-// Q3=A: the host page stays unchanged. On a mobile tier the test adds the viewport meta before the
-// page loads; without it WebKit lays the page out at 980 px and a tap hit-tests <body>.
-const VIEWPORT_META =
-  "(() => { const add = () => { const parent = document.head ?? document.documentElement; if (!parent || document.querySelector('meta[name=viewport]')) return; const m = document.createElement('meta'); m.name = 'viewport'; m.content = 'width=device-width,initial-scale=1'; parent.appendChild(m); }; document.addEventListener('DOMContentLoaded', add); add(); })()";
-
 /** Open a host-page URL and wait for the guest's __ready flag. */
 export async function openHost(
   page: Page,
-  testInfo: TestInfo,
+  _testInfo: TestInfo,
   url: string,
 ): Promise<void> {
-  if (testInfo.project.use.isMobile) await page.addInitScript(VIEWPORT_META);
+  // The page declares its own viewport (width=device-width) and scales its canvas on coarse pointers.
   await page.goto(url);
   await page.waitForFunction(
     () => (window as unknown as { __ready?: boolean }).__ready === true,

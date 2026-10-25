@@ -505,8 +505,8 @@ Cards name the gate their acceptance command runs through:
 ### Notes
 
 - The touch tiers open pages with `touch=1`: WebKit's emulation reports `navigator.maxTouchPoints` 0, while an iPhone reports more.
-- The viewport meta is injected by the tests only; the host page is unchanged. Without it WebKit lays the page out at 980 px and maps taps about 2.5× off.
-- The reader canvas is 960 CSS px wide and overflows a 393 px phone viewport on WebKit. The overlay tests read points that fit the viewport.
+- The reader page declares `width=device-width` and scales its canvas to the viewport on coarse pointers. Without a viewport meta WebKit lays the page out at 980 px and zooms it out, which maps taps about 2.5× off.
+- On coarse pointers the reader canvas scales to the viewport width (at most 960 CSS px); desktop keeps 960×544. The overlay tests read points that fit the viewport.
 - The native-keyboard cases are touch-host only and skip on the `chromium` tier.
 
 ## Licensing
