@@ -109,9 +109,13 @@ test("a View with a text child measures the box, not the text", async () => {
   });
 });
 
-test("a box clipped by an overflow-hidden parent measures its visible part", async () => {
+// Without nodeRect the search trims the box to its visible part; with it the rect is untrimmed (Q2).
+test("a box clipped by an overflow-hidden parent measures its visible part (search) or its rect (nodeRect)", async () => {
   await start();
-  expect(measureBox(need("clipped"))).toEqual({ x: 240, y: 10, w: 20, h: 30 });
+  const expected = process.env.POCKETJS_CORE_ROOT
+    ? { x: 240, y: 10, w: 100, h: 30 }
+    : { x: 240, y: 10, w: 20, h: 30 };
+  expect(measureBox(need("clipped"))).toEqual(expected);
 });
 
 test("a node entirely outside the viewport measures null", async () => {
