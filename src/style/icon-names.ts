@@ -16,4 +16,4 @@ export function iconName(name: string, px: number, colour: IconColour): string {
 }
 
 /** Parses a variant name back into [name, px, colour]; anything else does not match. */
-export const ICON_NAME = /^icon\.([a-z-]+)\.(\d+)\.(slate-900|slate-500|white)$/;
+export const ICON_NAME = /^icon\.([a-z0-9-]+)\.(\d+)\.(slate-900|slate-500|white)$/;
