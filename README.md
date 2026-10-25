@@ -249,7 +249,9 @@ Dropped on purpose (counted, not silently kept): `w-fit`, `whitespace-nowrap`, `
 
 `mount(el, { compat: { tokenMap: false } })` turns the runtime rewrite off; `compatStats().tokenMap` reports `{ mapped, dropped }` so nothing disappears silently.
 
-Known gap: the core has no text-color inheritance. A `text-*` color applies to a text host (`span`/`p`/`label`/…), so a Badge label takes its mapped color while a Button label — a `view` with a text child — keeps the default white. Fills are correct either way; inheritance belongs to the text layer, not this table.
+Text color inheritance (JG-156): after each commit the compat layer gives every top-most text run that sets no color of its own the nearest ancestor color, or the mount default `compat.textColor` (`#0f172a`, slate-900; `null` turns the pass off). A node with its own color, or a `focus:`/`active:` text variant, stays native. Fills are unaffected; the table above is the mapping.
+
+Flex text tags (`span`/`p`/`label` with `flex`) are views, and a run under one is held by a text element that carries its size and weight. A run font is one baked slot per size x weight, so a combination compiles only when the build baked it (the build bakes the cross product of the source size and weight tokens).
 
 ## Vendor + codemod (C3)
 
@@ -311,9 +313,9 @@ by name.
   not have, so the vendored dialog, dropdown menu and select import from `pocketjs-react/radix` instead
   (C5, see "Overlays (C5)"). `fixed`/`grid`/`calc()`/percentage offsets are C10.
 - **Icons.** `lucide-react`'s `<path d>` is still an unknown prop; icons are C7.
-- **Text color inheritance.** The core has no `text-*` inheritance (C2's known gap), so a view's
-  text keeps the default white. The demo gives the Card and the dialog trigger a dark surface of
-  their own; shadcn's white card would be white-on-white until the text layer inherits color.
+- **Text color inheritance** is a compat pass (JG-156), not a core feature: a view's text takes the
+  nearest ancestor's color, the mount default otherwise. Inline styles and class variants on the text
+  itself still win (see 'Text color inheritance' under the utilities table).
 - **`hover:`** still maps to the press cue `active:`; there is no pointer.
 
 The demo needs `radix-ui`, `lucide-react` and `react-dom` as dev dependencies (the fixture only);
@@ -359,7 +361,7 @@ Every primitive is controlled or uncontrolled (`useControllableState`: a control
 - **No sub-menus** (F3). `DropdownMenu.Sub*` throw with a message naming the gap.
 - **Icons are text glyphs** (F1): `x + o v ^ >` in the build's ASCII font, until C7 draws real icons.
 - **The panel owns its surface** (F4): shadcn's `bg-*` tokens are dropped from the vendored classes;
-  the primitives paint a dark panel, because the core does not inherit text color.
+  the primitives paint a dark panel and set their own text color (`text-white`).
 - **Title and Description ignore size and leading tokens:** `leading-*` draws a 1px line here, and a
   large bold run has no baked font slot. The primitive sets its own size.
 - **The scrim is 60% slate-950** (`SCRIM_CLASS`, `bg-[#0f172a99]`): the app behind dims instead of going black.
