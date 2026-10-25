@@ -5,9 +5,13 @@ import { BTN, getFocused } from "@pocketjs/framework/input";
 import { mount, View } from "../src/index.ts";
 import { type NodeMirror, rootMirror } from "../src/internal/pocket.ts";
 import { measureBox } from "../src/primitives/anchor.ts";
-import { compileClasses } from "../src/internal/pocket-build.ts";
+import { compileClasses, FB_H, FB_W } from "../src/internal/pocket-build.ts";
 import { installBuildStyles } from "../src/style/build-styles.ts";
+import { build } from "../tools/build.ts";
+import { Demo } from "./fixtures/shadcn-vendor/app.tsx";
+import { Overlays } from "./fixtures/shadcn-vendor/overlays.tsx";
 import { bootCore, type Core } from "./harness.ts";
+import { encodePng } from "./png.ts";
 
 const COL = "flex flex-col gap-4 p-4 bg-white";
 const PLAIN_DARK = "flex w-[120px] h-[40px] bg-slate-900";
@@ -156,4 +160,108 @@ test("unfocused siblings keep their pixels and boxes when focus moves", async ()
   expect(boxPixels(c, nodes[0])).toEqual(idleFirst);
   expect(nodes.map((n) => JSON.stringify(measureBox(n)))).toEqual(boxesIdle);
   console.log("unfocused pixels identical");
+});
+
+// --- d-pad end to end on the built shadcn demo (JG-157 Step 7) -----------------------------
+const VENDOR = "test/fixtures/shadcn-vendor";
+const SHOTS = "/tmp/pocketjs-react-test/jg157";
+
+async function bootBuilt(entry: string, name: string, app: unknown): Promise<Core> {
+  const built = await build(entry, { outdir: SHOTS, name });
+  core = await bootCore({ classes: built.tokens, fontSlots: built.fontSlots });
+  installBuildStyles({}, compileClasses([]).bin, built.tokens);
+  mount(app as never, { compat: { classMiss: "drop" } });
+  core.step(0);
+  return core;
+}
+
+/** shadcn's transition-all animates the focus colour over frames: sample only after it lands. */
+function settle(c: Core): void {
+  for (let i = 0; i < 40; i++) c.step(0);
+  c.render();
+}
+
+/** Every focusable node under a root, in document order (the d-pad order). */
+function focusables(node: NodeMirror, out: NodeMirror[] = []): NodeMirror[] {
+  if (node.focusable) out.push(node);
+  for (const child of node.children) focusables(child, out);
+  return out;
+}
+
+test("d-pad moves focus through every mapped focusable, each showing the border", async () => {
+  const c = await bootBuilt(VENDOR + "/main.tsx", "jg157-demo", <Demo />);
+  const nodes = focusables(rootMirror);
+  expect(nodes.length).toBeGreaterThan(2);
+  const idle = nodes.map((n) => edge(c, n));
+  for (let i = 0; i < nodes.length; i++) {
+    focusOn(c, nodes[i]);
+    settle(c);
+    expect(edge(c, nodes[i])).toBe(BLUE);
+    nodes.forEach((n, j) => {
+      if (j !== i) expect(edge(c, n)).toBe(idle[j]);
+    });
+  }
+  console.log("d-pad: " + nodes.length + " focusables, each focused edge blue, unfocused unchanged");
+});
+
+// --- the four QA screenshots (Gemini gate is a handoff): idle, menu-open, select-open, focus-moved
+/** The label of the focused node's first text (same walk as the visual-fidelity shots). */
+function focusedLabel(): string | undefined {
+  const walk = (node: { text?: string; children: unknown[] }): string | undefined => {
+    if (node.text) return node.text;
+    for (const child of node.children as (typeof node)[]) {
+      const found = walk(child);
+      if (found) return found;
+    }
+    return undefined;
+  };
+  const node = getFocused();
+  return node ? walk(node as never) : undefined;
+}
+function focusOnLabel(c: Core, label: string): void {
+  for (let i = 0; i < 6 && focusedLabel() !== label; i++) c.press(BTN.DOWN, 4);
+  expect(focusedLabel()).toBe(label);
+}
+async function snapshot(c: Core, name: string): Promise<void> {
+  c.render();
+  const rgba = new Uint8Array(FB_W * FB_H * 4);
+  for (let y = 0; y < FB_H; y++)
+    for (let x = 0; x < FB_W; x++) {
+      const hex = c.pixel(x, y);
+      const i = (y * FB_W + x) * 4;
+      rgba[i] = parseInt(hex.slice(1, 3), 16);
+      rgba[i + 1] = parseInt(hex.slice(3, 5), 16);
+      rgba[i + 2] = parseInt(hex.slice(5, 7), 16);
+      rgba[i + 3] = 255;
+    }
+  await Bun.write(SHOTS + "/" + name + ".png", encodePng(rgba, FB_W, FB_H));
+}
+
+test("screenshot: idle", async () => {
+  const c = await bootBuilt(VENDOR + "/overlays-main.tsx", "jg157-overlays", <Overlays />);
+  await snapshot(c, "idle");
+});
+
+test("screenshot: menu-open", async () => {
+  const c = await bootBuilt(VENDOR + "/overlays-main.tsx", "jg157-overlays", <Overlays />);
+  focusOnLabel(c, "Menu");
+  c.press(BTN.CIRCLE, 4);
+  expect(c.texts().map((t) => t.text)).toContain("Edit");
+  await snapshot(c, "menu-open");
+});
+
+test("screenshot: select-open", async () => {
+  const c = await bootBuilt(VENDOR + "/overlays-main.tsx", "jg157-overlays", <Overlays />);
+  focusOnLabel(c, "Pick fruit");
+  c.press(BTN.CIRCLE, 4);
+  expect(c.texts().map((t) => t.text)).toContain("Apple");
+  await snapshot(c, "select-open");
+});
+
+test("screenshot: focus-moved", async () => {
+  const c = await bootBuilt(VENDOR + "/main.tsx", "jg157-demo", <Demo />);
+  c.press(BTN.DOWN, 4);
+  settle(c);
+  expect(edge(c, getFocused() as NodeMirror)).toBe(BLUE);
+  await snapshot(c, "focus-moved");
 });
