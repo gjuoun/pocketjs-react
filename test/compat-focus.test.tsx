@@ -5,6 +5,8 @@ import { BTN, getFocused } from "@pocketjs/framework/input";
 import { mount } from "../src/index.ts";
 import { type NodeMirror, rootMirror } from "../src/internal/pocket.ts";
 import { measureBox } from "../src/primitives/anchor.ts";
+import { compileClasses } from "../src/internal/pocket-build.ts";
+import { installBuildStyles } from "../src/style/build-styles.ts";
 import { bootCore, type Core } from "./harness.ts";
 
 const COL = "flex flex-col gap-4 p-4 bg-white";
@@ -23,6 +25,9 @@ const BOOT = [COL, PLAIN_DARK, PLAIN_LIGHT, AUTHOR_RED, "focus:border-blue-600",
 async function start(kids: Array<"dark" | "light" | "red">): Promise<{ c: Core; nodes: NodeMirror[] }> {
   core = await bootCore({ classes: BOOT });
   const cls = { dark: PLAIN_DARK, light: PLAIN_LIGHT, red: AUTHOR_RED };
+  // The build hands the runtime its token set (what the source scan found); a composed literal
+  // compiles from those tokens, as it does in the app.
+  installBuildStyles({}, compileClasses([]).bin, BOOT.join(" ").split(/\s+/));
   mount(
     <div className={COL}>
       {kids.map((k, i) => (

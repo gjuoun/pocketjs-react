@@ -15,6 +15,7 @@
 // because shadcn's {...props} pass-through must not crash. onClick is left to the binding:
 // pressing the field opens its keyboard and then calls the app's handler.
 import type { TextFieldInput } from "../input/text-field.ts";
+import { withDefaultFocus } from "./focus.ts";
 import { TEXT_ENTRY_TAGS } from "./tags.ts";
 import { countDroppedAttr, countMappedAttr, countUnknownAttr } from "./stats.ts";
 
@@ -214,7 +215,9 @@ export function compatProps(
   const focusable =
     props.focusable ??
     (interactive || text || "onClick" in props || "onPointerDown" in props);
-  if (focusable) out.focusable = true;
-  else if (props.focusable === false) out.focusable = false;
+  if (focusable) {
+    out.focusable = true;
+    out.className = withDefaultFocus(props.className as string | undefined, props.style);
+  } else if (props.focusable === false) out.focusable = false;
   return out;
 }

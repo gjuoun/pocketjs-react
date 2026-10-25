@@ -52,7 +52,8 @@ export function setHostCompat(next: HostCompat): void {
 export interface PropsTransform {
   /** Turn React props into native-tree props (children removed). */
   toHost(props: Props): Props;
-  /** Called after a node's host props were applied (create and update). */
+  /** Called after a node's host props were applied (create and update). Receives the props the
+   *  compat layer produced, so a className the compat layer rewrote (JG-157 default focus) is the one applied. */
   afterProps(node: NodeMirror, props: Props): void;
   /** Called once after every React commit (for example to load a grown style table). */
   afterCommit(): void;
@@ -102,8 +103,9 @@ const hostConfig = {
       throw new Error("pocketjs-react: unknown host element <" + type + ">");
     const node = createElement(hostType);
     if (hostType !== type) setDebugName(node, type);
-    applyProps(node, transform.toHost(compat.props(type, props, true)));
-    transform.afterProps(node, props);
+    const hostProps = compat.props(type, props, true);
+    applyProps(node, transform.toHost(hostProps));
+    transform.afterProps(node, hostProps);
     compat.bind?.(node, type, props, true);
     return node;
   },
@@ -152,12 +154,13 @@ const hostConfig = {
     oldProps: Props,
     newProps: Props,
   ) {
+    const hostProps = compat.props(type, newProps, false);
     applyProps(
       node,
-      transform.toHost(compat.props(type, newProps, false)),
+      transform.toHost(hostProps),
       transform.toHost(compat.props(type, oldProps, false)),
     );
-    transform.afterProps(node, newProps);
+    transform.afterProps(node, hostProps);
     compat.bind?.(node, type, newProps, false);
   },
   finalizeInitialChildren() {

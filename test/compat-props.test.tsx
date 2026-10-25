@@ -3,8 +3,14 @@
 // mount({ compat: { unknownProps: "drop" } }), and interactive tags come out focusable.
 import { afterEach, expect, test } from "bun:test";
 import { compatStats, mount, resetCompatStats } from "../src/index.ts";
+import { DEFAULT_FOCUS } from "../src/compat/focus.ts";
+import { compileClasses } from "../src/internal/pocket-build.ts";
+import { installBuildStyles } from "../src/style/build-styles.ts";
 import { rootMirror } from "../src/internal/pocket.ts";
 import { bootCore, type Core } from "./harness.ts";
+
+// The default focus border is a composed class: the runtime compiles it from the build table, as the app does.
+installBuildStyles({}, compileClasses([]).bin, DEFAULT_FOCUS.split(" "));
 
 let core: Core | undefined;
 afterEach(() => {
