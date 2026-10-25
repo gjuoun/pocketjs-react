@@ -13,7 +13,7 @@ const CLASSES = [
   TXT,
   "w-full h-full flex-col gap-1 p-2 bg-slate-900",
   "w-[30px] h-[10px] bg-blue-600",
-  "absolute inset-0 flex-col items-center justify-center bg-slate-950",
+  "absolute inset-0 flex-col items-center justify-center bg-[#0f172a99]",
   "flex-col gap-2 p-3 rounded-xl bg-white",
   "text-base text-slate-950",
 ];

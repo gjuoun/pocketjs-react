@@ -98,16 +98,14 @@ test("dark theme paints the page in the bg-slate-950 color", async () => {
     const light = core.pixel(470, 262);
     core.press(BTN.START);
     core.texts();
-    const scrim = core.pixel(2, 2); // the menu's bg-slate-950 backdrop, drawn by the same core
     core.press(BTN.CROSS);
     settings(core, 1); // Theme -> dark
     core.texts();
     const dark = core.pixel(470, 262);
-    console.log(
-      "background light=" + light + " dark=" + dark + " slate-950=" + scrim,
-    );
+    console.log("background light=" + light + " dark=" + dark);
+    // slate-950 as the core draws it (the menu's scrim is now translucent, so it is no reference).
     expect(light).toBe("#ffffff");
-    expect(dark).toBe(scrim);
+    expect(dark).toBe("#020617");
   } finally {
     core.dispose();
   }

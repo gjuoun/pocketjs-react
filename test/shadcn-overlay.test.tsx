@@ -188,3 +188,29 @@ test("strict: the vendored overlays open under classMiss=throw and tokenMap=fals
   expect(stats.classMiss).toEqual({ tokens: 0, literals: 0 });
   expect(stats.tokenMap).toEqual({ mapped: 0, dropped: 0 });
 });
+
+test("Dialog: the scrim dims the app behind it (slate-950 at 60%); the panel stays opaque", async () => {
+  const c = await boot();
+  c.render();
+  const base = c.pixel(2, 2); // the app's page, outside every panel
+  focusOn(c, "Open");
+  press(c, BTN.CIRCLE);
+  expect(visible(c)).toContain("Dialog title");
+  c.render();
+  const dimmed = c.pixel(2, 2);
+  const rgb = (hex: string) =>
+    [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const page = rgb(base);
+  const scrim = rgb("#0f172a");
+  const want = page.map((v, i) => 0.4 * v + 0.6 * scrim[i]);
+  // Darkened, not the opaque slate-950 the scrim used to paint, and within 3 levels of the blend.
+  expect(dimmed).not.toBe("#020617");
+  const got = rgb(dimmed);
+  got.forEach((v, i) => {
+    expect(v).toBeLessThan(page[i]);
+    expect(Math.abs(v - want[i])).toBeLessThanOrEqual(3);
+  });
+  // The panel is outside the scrim's blend: its surface is the primitive's slate-800.
+  const title = c.texts().find((r) => r.text === "Dialog title")!;
+  expect(c.pixel(title.x - 4, title.y + 2)).toBe("#1e293b");
+});

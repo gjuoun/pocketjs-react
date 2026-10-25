@@ -5,6 +5,7 @@
 import type { ReactNode } from "react";
 import { Text } from "../elements.ts";
 import { ModalLayer } from "../primitives/modal-layer.tsx";
+import { SCRIM_CLASS } from "../primitives/surface.ts";
 import { cn } from "../style/cn.ts";
 
 export interface DialogProps {
@@ -21,7 +22,7 @@ export function Dialog(props: DialogProps) {
     <ModalLayer
       open={props.open}
       onClose={props.onClose}
-      shellClassName={cn("bg-slate-950", props.className)}
+      shellClassName={cn(SCRIM_CLASS, props.className)}
       panelClassName={cn(
         "flex-col gap-2 p-3 rounded-xl bg-white",
         props.panelClassName,

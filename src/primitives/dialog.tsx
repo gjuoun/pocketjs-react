@@ -11,7 +11,7 @@ import { cn } from "../style/cn.ts";
 import { ModalLayer } from "./modal-layer.tsx";
 import { Pressable } from "./press.tsx";
 import { useControllableState } from "./state.ts";
-import { ownSurface, ownText } from "./surface.ts";
+import { ownSurface, ownText, SCRIM_CLASS } from "./surface.ts";
 
 interface DialogContextValue {
   open: boolean;
@@ -97,7 +97,7 @@ export function Overlay(_props: OverlayProps) {
   const ctx = useDialogContext("Dialog.Overlay");
   if (!ctx.open) return null;
   return reconciler.createPortal(
-    <View className="absolute inset-0 bg-slate-950" />,
+    <View className={SCRIM_CLASS} />,
     getOverlayLayer(),
     null,
   ) as ReactNode;

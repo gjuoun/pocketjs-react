@@ -358,6 +358,10 @@ Every primitive is controlled or uncontrolled (`useControllableState`: a control
   the primitives paint a dark panel, because the core does not inherit text color.
 - **Title and Description ignore size and leading tokens:** `leading-*` draws a 1px line here, and a
   large bold run has no baked font slot. The primitive sets its own size.
+- **The scrim is 60% slate-950** (`SCRIM_CLASS`, `bg-[#0f172a99]`): the app behind dims instead of going black.
+  The compiler has no alpha modifier, so `bg-slate-950/60`, `bg-black/50` and `rgba()` are unknown utilities
+  (the codemod drops them by name); the 8-digit hex is the spelling that compiles and blends. The gamepad
+  `Dialog` and `Menu` shell uses the same scrim; their panels stay opaque.
 - **The scrim is inert to taps** (F5 fell back to B, plan risk R-k): the pointer resolves only to
   focusables in the active focus scope, and the scrim sits outside it. CROSS closes the innermost layer.
 - **`sr-only` text still draws.** shadcn's `sr-only` becomes `hidden` (C3), and `hidden` hides only its

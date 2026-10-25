@@ -2,6 +2,13 @@
 // vendored content carries are dropped from the caller's classes, then the primitive's own panel
 // classes are merged in. A caller's explicit width still wins (cn keeps the last conflict).
 
+/**
+ * The scrim behind every native overlay: slate-950 at 60% (`#0f172a` with alpha `0x99`). The
+ * compiler has no alpha modifier (`bg-slate-950/60`) and no `rgba()`; an 8-digit hex is the one
+ * spelling it compiles, and the core blends it (probe: #00000099 over white draws #666666).
+ */
+export const SCRIM_CLASS = "absolute inset-0 bg-[#0f172a99]";
+
 export function ownSurface(className: string | undefined): string {
   return (className ?? "")
     .split(/\s+/)
