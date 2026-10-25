@@ -161,7 +161,7 @@ export function Trigger(props: TriggerProps) {
       asChild={props.asChild}
       disabled={props.disabled}
       className={cn(
-        "flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-slate-800 text-white",
+        "flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-slate-800 text-white active:bg-slate-700",
         ownSurface(props.className),
       )}
       onPress={() => {
@@ -251,7 +251,7 @@ export function Item(props: ItemProps) {
         nodeRef={ref}
         disabled={props.disabled}
         className={cn(
-          "flex items-center gap-2 px-2 py-1.5 text-sm text-white focus:bg-blue-600",
+          "flex items-center gap-2 px-2 py-1.5 text-sm text-white focus:bg-blue-600 active:bg-blue-500",
           ownItem(props.className),
         )}
         onPress={() => {

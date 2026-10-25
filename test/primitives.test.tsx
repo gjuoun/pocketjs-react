@@ -459,3 +459,38 @@ test("data-state: the sub-trigger colour follows its open state (slate-800 close
   const open = moreRowWhenUnfocused(c);
   expect([closed, open]).toEqual(["#1e293b", "#334155"]);
 });
+
+// C9 Step 8: active: is the press colour. A row that stays open shows it while CIRCLE is held.
+function keepMenu(): ReactNode {
+  return screen(
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger className="bg-slate-900 px-2 py-1 rounded-md">
+        Menu
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Content>
+        <DropdownMenu.Item onSelect={(event) => event.preventDefault()}>Keep</DropdownMenu.Item>
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>,
+  );
+}
+/** The colour at a text run's left padding (the row background), read as drawn. */
+function rowPaint(c: Core, label: string): string {
+  c.render();
+  const run = c.texts().find((r) => r.text === label)!;
+  return c.pixel(run.x - 3, run.y + 2);
+}
+
+test("active: a pressed row shows blue-500 while CIRCLE is held and returns to blue-600 once released", async () => {
+  const c = await start(keepMenu());
+  focusOn(c, "Menu");
+  press(c, BTN.CIRCLE);
+  expect(focused()).toBe("Keep");
+  expect(rowPaint(c, "Keep")).toBe("#2563eb");
+  c.step(BTN.CIRCLE);
+  c.step(BTN.CIRCLE);
+  expect(visible(c)).toContain("Keep");
+  expect(rowPaint(c, "Keep")).toBe("#3b82f6");
+  c.step(0);
+  c.step(0);
+  expect(rowPaint(c, "Keep")).toBe("#2563eb");
+});

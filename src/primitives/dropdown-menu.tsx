@@ -189,7 +189,7 @@ function ItemFrame(props: ItemProps & { checked?: boolean }) {
       <Pressable
         asChild={props.asChild}
         className={cn(
-          "flex items-center gap-2 px-2 py-1.5 text-sm text-white focus:bg-blue-600",
+          "flex items-center gap-2 px-2 py-1.5 text-sm text-white focus:bg-blue-600 active:bg-blue-500",
           ownItem(props.className),
         )}
         disabled={props.disabled}
@@ -383,7 +383,7 @@ export function SubTrigger(props: SubTriggerProps) {
       disabled={props.disabled}
       dataState={sub.open ? "open" : "closed"}
       className={cn(
-        "flex items-center justify-between gap-2 px-2 py-1.5 text-sm text-white focus:bg-blue-600 data-[state=open]:bg-slate-700",
+        "flex items-center justify-between gap-2 px-2 py-1.5 text-sm text-white focus:bg-blue-600 active:bg-blue-500 data-[state=open]:bg-slate-700",
         ownSubTrigger(props.className),
       )}
       onPress={() => {
