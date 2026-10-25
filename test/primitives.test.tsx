@@ -1,18 +1,14 @@
-// C5 primitives on the real wasm core, mounted in-process: the open-state contract (controlled,
-// uncontrolled, asChild) that every native primitive shares.
+// C5 primitives on the real wasm core, mounted in-process like the C3 demo. The class vocabulary
+// comes from building test/fixtures/primitives/all.tsx, so it is the one a built app gets.
 import { afterEach, expect, test } from "bun:test";
 import { BTN, getFocused } from "@pocketjs/framework/input";
-import { type ReactNode, useState } from "react";
-import { mount, resetCompatStats, View } from "../src/index.ts";
+import { type ReactNode } from "react";
+import { mount, resetCompatStats, Text, View } from "../src/index.ts";
+import { compileClasses } from "../src/internal/pocket-build.ts";
 import * as Dialog from "../src/primitives/dialog.tsx";
+import { installBuildStyles } from "../src/style/build-styles.ts";
+import { build } from "../tools/build.ts";
 import { bootCore, type Core } from "./harness.ts";
-
-const CLASSES = [
-  "w-full h-full flex-col gap-1 p-2 bg-slate-100",
-  "bg-slate-900 px-2 py-1 rounded-md",
-  "px-2 py-1 bg-slate-800 focus:bg-blue-600",
-  "text-sm text-white",
-];
 
 let core: Core | undefined;
 let unmount: (() => void) | undefined;
@@ -22,15 +18,22 @@ afterEach(() => {
   core?.dispose();
   core = undefined;
   resetCompatStats();
+  installBuildStyles({}, new Uint8Array(0), []);
 });
 
 async function start(element: ReactNode): Promise<Core> {
-  core = await bootCore({ classes: CLASSES });
+  const built = await build("test/fixtures/primitives/all.tsx", {
+    outdir: "/tmp/pocketjs-react-test/compat-c5-prim",
+    name: "primitives",
+  });
+  core = await bootCore({ classes: built.tokens });
+  installBuildStyles({}, compileClasses([]).bin, built.tokens);
   unmount = mount(element);
   core.step(0);
   return core;
 }
 const press = (c: Core, button: number) => c.press(button, 4);
+const visible = (c: Core): string[] => c.texts().map((r) => r.text);
 /** Text of the focused node's first text descendant. */
 function focused(): string | undefined {
   const walk = (node: { text?: string; children: unknown[] }): string | undefined => {
@@ -48,15 +51,18 @@ function focusOn(c: Core, label: string): void {
   for (let i = 0; i < 4 && focused() !== label; i++) press(c, BTN.DOWN);
   expect(focused()).toBe(label);
 }
+const screen = (children: ReactNode) => (
+  <View className="w-full h-full flex-col gap-1 p-2 bg-slate-100">{children}</View>
+);
 
 test("root: uncontrolled Trigger toggles and reports each change once", async () => {
   const calls: boolean[] = [];
   const c = await start(
-    <View className="w-full h-full flex-col gap-1 p-2 bg-slate-100">
+    screen(
       <Dialog.Root onOpenChange={(open) => calls.push(open)}>
         <Dialog.Trigger className="bg-slate-900 px-2 py-1 rounded-md">Open</Dialog.Trigger>
-      </Dialog.Root>
-    </View>,
+      </Dialog.Root>,
+    ),
   );
   focusOn(c, "Open");
   press(c, BTN.CIRCLE);
@@ -67,11 +73,11 @@ test("root: uncontrolled Trigger toggles and reports each change once", async ()
 test("root: controlled open ignores its own state and only reports the request", async () => {
   const calls: boolean[] = [];
   const c = await start(
-    <View className="w-full h-full flex-col gap-1 p-2 bg-slate-100">
+    screen(
       <Dialog.Root open={false} onOpenChange={(open) => calls.push(open)}>
         <Dialog.Trigger className="bg-slate-900 px-2 py-1 rounded-md">Open</Dialog.Trigger>
-      </Dialog.Root>
-    </View>,
+      </Dialog.Root>,
+    ),
   );
   focusOn(c, "Open");
   press(c, BTN.CIRCLE);
@@ -84,21 +90,68 @@ test("root: asChild merges the press onto the child and keeps the child's own on
   function Go(props: { className?: string; onClick?: () => void }) {
     return (
       <View className={props.className} focusable onPress={props.onClick}>
-        Go
+        <Text className="text-sm text-white">Go</Text>
       </View>
     );
   }
   const c = await start(
-    <View className="w-full h-full flex-col gap-1 p-2 bg-slate-100">
+    screen(
       <Dialog.Root onOpenChange={(open) => calls.push(open)}>
         <Dialog.Trigger asChild>
           <Go className="px-2 py-1 bg-slate-800 focus:bg-blue-600" onClick={() => childClicks.push(1)} />
         </Dialog.Trigger>
-      </Dialog.Root>
-    </View>,
+      </Dialog.Root>,
+    ),
   );
   focusOn(c, "Go");
   press(c, BTN.CIRCLE);
   expect(childClicks).toEqual([1]);
   expect(calls).toEqual([true]);
+});
+
+/** A dialog with the vendored parts' shape: trigger, overlay, content with title and body. */
+const dialogScreen = (onOpenChange?: (open: boolean) => void) =>
+  screen(
+    <Dialog.Root onOpenChange={onOpenChange}>
+      <Dialog.Trigger className="bg-slate-900 px-2 py-1 rounded-md">Open</Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Overlay />
+        <Dialog.Content>
+          <Dialog.Title>Dialog title</Dialog.Title>
+          <Dialog.Description>Dialog body</Dialog.Description>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>,
+  );
+
+test("dialog: content mounts into the overlay on open and is absent while closed", async () => {
+  const c = await start(dialogScreen());
+  expect(visible(c)).not.toContain("Dialog title");
+  focusOn(c, "Open");
+  press(c, BTN.CIRCLE);
+  expect(visible(c)).toContain("Dialog title");
+  expect(visible(c)).toContain("Dialog body");
+});
+
+test("dialog: CROSS closes the content and focus returns to the trigger", async () => {
+  const calls: boolean[] = [];
+  const c = await start(dialogScreen((open) => calls.push(open)));
+  focusOn(c, "Open");
+  press(c, BTN.CIRCLE);
+  expect(visible(c)).toContain("Dialog title");
+  press(c, BTN.CROSS);
+  expect(visible(c)).not.toContain("Dialog title");
+  expect(focused()).toBe("Open");
+  expect(calls).toEqual([true, false]);
+});
+
+test("dialog: the panel owns a dark surface (F4), not shadcn's white", async () => {
+  const c = await start(dialogScreen());
+  focusOn(c, "Open");
+  press(c, BTN.CIRCLE);
+  const title = c.texts().find((r) => r.text === "Dialog title")!;
+  // The title sits inside the panel's p-3 padding: a point just left of it is panel surface.
+  const surface = c.pixel(title.x - 4, title.y + 2);
+  const channels = [1, 3, 5].map((i) => parseInt(surface.slice(i, i + 2), 16));
+  expect(Math.max(...channels)).toBeLessThan(0x80);
 });
