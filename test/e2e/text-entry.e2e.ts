@@ -143,9 +143,9 @@ function path(from: OskPos, goal: OskPos): Dir[] {
 }
 
 // canvas-logical (x, y) of the first point the focusable field under it answers for
-// The field's centre, not its corner: a corner tap sits on the field's edge and sub-pixel rounding decides it (WebKit).
+// The centre of the part of the field that is on screen: a phone viewport is narrower than the 960 px canvas, and a point past its edge never reaches the canvas on WebKit.
 const FIND_FIELD =
-  "(() => { const hit = (x, y) => globalThis.__pocketTextHitAt(x, y); let x0 = -1, y0 = -1; outer: for (let y = 0; y < 272; y += 2) for (let x = 0; x < 480; x += 2) if (hit(x, y)) { x0 = x; y0 = y; break outer; } if (x0 < 0) return ''; let x1 = x0; while (x1 + 1 < 480 && hit(x1 + 1, y0)) x1++; let y1 = y0; while (y1 + 1 < 272 && hit(x0, y1 + 1)) y1++; return Math.floor((x0 + x1) / 2) + ',' + Math.floor((y0 + y1) / 2); })()";
+  "(() => { const c = document.getElementById('screen'); const r = c.getBoundingClientRect(); const maxX = Math.min(c.width - 1, Math.floor((innerWidth - r.left - 1) * c.width / r.width)); const maxY = Math.min(c.height - 1, Math.floor((innerHeight - r.top - 1) * c.height / r.height)); const hit = (x, y) => globalThis.__pocketTextHitAt(x, y); let x0 = -1, y0 = -1; outer: for (let y = 0; y <= maxY; y += 2) for (let x = 0; x <= maxX; x += 2) if (hit(x, y)) { x0 = x; y0 = y; break outer; } if (x0 < 0) return ''; let x1 = x0; while (x1 + 1 <= maxX && hit(x1 + 1, y0)) x1++; let y1 = y0; while (y1 + 1 <= maxY && hit(x0, y1 + 1)) y1++; return Math.floor((x0 + x1) / 2) + ',' + Math.floor((y0 + y1) / 2); })()";
 async function findField(page: Page): Promise<[number, number]> {
   const at = await page.evaluate<string>(FIND_FIELD);
   expect(at).not.toBe("");
