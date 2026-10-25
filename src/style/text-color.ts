@@ -31,6 +31,11 @@ export function setTextInheritance(defaultColor: string | null): void {
   fallback = defaultColor === null ? null : abgr(defaultColor);
 }
 
+/** The colour a node inherits when no ancestor sets one: the mount default, or the core default. */
+export function defaultTextColour(): number {
+  return fallback ?? CORE_DEFAULT;
+}
+
 /** A style write outside this pass replaced the node's textColor: forget the override it wrote. */
 export function forgetTextOverride(node: NodeMirror): void {
   written.delete(node);

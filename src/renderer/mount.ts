@@ -52,7 +52,8 @@ import {
   buildStyleTokens,
 } from "../style/build-styles.ts";
 import { initClassRuntime } from "../style/class-runtime.ts";
-import { installStyleLayer } from "../style/props.ts";
+import { installStyleLayer, syncIconColours } from "../style/props.ts";
+import { registerIconVariant } from "../style/icon-colour.ts";
 import { reconciler, withPriority } from "./host-config.ts";
 import { setOskTarget } from "./osk-target.ts";
 
@@ -68,7 +69,10 @@ function uploadPakImage(ops: HostOps, key: string): void {
     const dv = new DataView(blob.buffer, blob.byteOffset, blob.byteLength);
     handle = ops.uploadTexture(blob.subarray(8), dv.getUint16(0, true), dv.getUint16(2, true), blob[4]);
   }
-  if (handle >= 0) registerTexture(key.slice(PAK_IMAGE_PREFIX.length), handle);
+  if (handle < 0) return;
+  const name = key.slice(PAK_IMAGE_PREFIX.length);
+  registerTexture(name, handle);
+  if (name.startsWith("icon.")) registerIconVariant(name, handle);
 }
 
 export interface MountOptions {
@@ -211,6 +215,7 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
       if (pressed) for (const fn of [...frameListeners]) fn(pressed, buttons);
       handleFrame(buttons);
     });
+    syncIconColours();
     reconciler.flushSyncWork();
     runSweep();
   });

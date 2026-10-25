@@ -21,12 +21,19 @@ export interface CompatStats {
   classMiss: { tokens: number; literals: number };
   /** C2 token map activity: tokens moved to PocketJS vocabulary, tokens dropped on purpose. */
   tokenMap: { mapped: number; dropped: number };
+  /** Icon glyphs drawn as their placeholder character because the pak lacks the variant. */
+  iconMiss: number;
 }
 
 const mappedAttrs: Record<string, number> = {};
 const droppedAttrs: Record<string, number> = {};
 const unknownAttrs: Record<string, number> = {};
 let unknownTags = 0;
+let iconMisses = 0;
+
+export function countIconMiss(): void {
+  iconMisses++;
+}
 
 export function countMappedAttr(name: string): void {
   mappedAttrs[name] = (mappedAttrs[name] ?? 0) + 1;
@@ -62,6 +69,7 @@ export function compatStats(): CompatStats {
       mapped: classRuntimeStats.mappedTokens,
       dropped: classRuntimeStats.mapDroppedTokens,
     },
+    iconMiss: iconMisses,
   };
 }
 
@@ -70,5 +78,6 @@ export function resetCompatStats(): void {
   clear(droppedAttrs);
   clear(unknownAttrs);
   unknownTags = 0;
+  iconMisses = 0;
   resetClassMissStats();
 }

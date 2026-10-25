@@ -285,9 +285,19 @@ export function classBaseValue(
   node: NodeMirror,
   prop: PropName,
 ): number | undefined {
+  return classVariantValue(node, prop, "base");
+}
+
+/** The value the node's class record sets for `prop` in the base or the focus: variant, in setProp form. */
+export function classVariantValue(
+  node: NodeMirror,
+  prop: PropName,
+  variant: "base" | "focus",
+): number | undefined {
   const id = appliedId.get(node);
   if (id === undefined) return undefined;
-  const entry = records[id]?.base?.find((p) => PROP_NAMES[p.prop] === prop);
+  const list = variant === "base" ? records[id]?.base : records[id]?.focus;
+  const entry = list?.find((p) => PROP_NAMES[p.prop] === prop);
   if (!entry) return undefined;
   if (PROP_VALUE_KIND[prop] !== VALUE_KIND.f32) return entry.value;
   f32.setUint32(0, entry.value, true);

@@ -18,7 +18,8 @@ import {
   flushClassTable,
 } from "./class-runtime.ts";
 import { CORE_DEFAULTS, type CoreStyle, cssToCore } from "./css.ts";
-import { forgetTextOverride, sweepTextColor } from "./text-color.ts";
+import { sweepIconColour, syncIconColour } from "./icon-colour.ts";
+import { defaultTextColour, forgetTextOverride, sweepTextColor } from "./text-color.ts";
 
 type Props = Record<string, unknown>;
 const appliedStyle = new WeakMap<NodeMirror, CoreStyle>();
@@ -44,6 +45,17 @@ function applyStyle(node: NodeMirror, style: unknown): void {
   if (changed) setProp(node, "style", delta, {});
 }
 
+/** A node's inline textColor, if its style sets one. */
+function inlineTextColour(node: NodeMirror): string | undefined {
+  const colour = appliedStyle.get(node)?.textColor;
+  return typeof colour === "string" ? colour : undefined;
+}
+
+/** Re-point icons after a focus change, which happens between React commits. */
+export function syncIconColours(): void {
+  syncIconColour(rootMirror, inlineTextColour, defaultTextColour());
+}
+
 export function installStyleLayer(): void {
   setPropsTransform({
     toHost(props) {
@@ -60,10 +72,8 @@ export function installStyleLayer(): void {
     },
     afterCommit() {
       flushClassTable();
-      sweepTextColor(rootMirror, (node) => {
-        const colour = appliedStyle.get(node)?.textColor;
-        return typeof colour === "string" ? colour : undefined;
-      });
+      sweepTextColor(rootMirror, inlineTextColour);
+      sweepIconColour(rootMirror, inlineTextColour, defaultTextColour());
     },
   });
 }

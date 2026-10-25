@@ -5,6 +5,9 @@
 
 import { createRequire } from "node:module";
 import { Resvg, initWasm } from "@resvg/resvg-wasm";
+import { ICON_COLOUR_NAMES, ICON_COLOURS, type IconColour, iconName } from "../src/style/icon-names.ts";
+
+export { ICON_COLOURS, type IconColour, iconName } from "../src/style/icon-names.ts";
 import {
   type DecodedImage,
   encodeImageEntry,
@@ -12,14 +15,6 @@ import {
   PAK_DTYPE,
   type PakBlob,
 } from "../src/internal/pocket-build.ts";
-
-/** Colour variants: the three text colours the shadcn surfaces resolve to (src/compat/tokens.ts). */
-export const ICON_COLOURS = {
-  "slate-900": "#0f172a",
-  "slate-500": "#64748b",
-  white: "#ffffff",
-} as const;
-export type IconColour = keyof typeof ICON_COLOURS;
 
 /** The six icons the vendored shadcn sources import. `filled` mirrors `fill-current` (CircleIcon). */
 export const ICONS: { name: string; file: string; filled: boolean; sizes: number[] }[] = [
@@ -30,11 +25,6 @@ export const ICONS: { name: string; file: string; filled: boolean; sizes: number
   { name: "check", file: "check", filled: false, sizes: [16] },
   { name: "circle", file: "circle", filled: true, sizes: [8] },
 ];
-
-/** Name a baked variant: `icon.<name>.<px>.<colour>`. The pak key is `ui:img.` + this. */
-export function iconName(name: string, px: number, colour: IconColour): string {
-  return `icon.${name}.${px}.${colour}`;
-}
 
 export interface IconEntry {
   name: string;
@@ -103,7 +93,7 @@ export async function bakeIcons(): Promise<IconEntry[]> {
       __iconData: LucideData;
     };
     for (const px of icon.sizes)
-      for (const colour of Object.keys(ICON_COLOURS) as IconColour[]) {
+      for (const colour of ICON_COLOUR_NAMES) {
         const image = await rasterize(iconSvg(mod.__iconData, colour, icon.filled), px);
         out.push({ name: icon.name, px, colour, id: iconName(icon.name, px, colour), image });
       }

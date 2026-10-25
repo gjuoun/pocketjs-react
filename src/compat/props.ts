@@ -177,6 +177,11 @@ export function compatProps(
     )
       continue;
     if (text && key === "onClick") continue;
+    // A native image's texture key is the PocketJS surface (icons), not a DOM attribute.
+    if (tag === "image" && key === "src") {
+      out.src = props[key];
+      continue;
+    }
     const alias = ALIAS[key];
     if (alias !== undefined) {
       out[alias] = props[key];
