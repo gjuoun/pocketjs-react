@@ -114,6 +114,7 @@ interface Edit {
 }
 
 const CLASS_CALLEES = new Set(["cn", "clsx", "cva", "twMerge"]);
+const COMPARISON_OPS = new Set(["===", "!==", "==", "!=", "<", ">", "<=", ">=", "in", "instanceof"]);
 
 /** R6/R7: registry module specifier -> the PocketJS module that provides the same names. */
 const IMPORT_EDGE: Record<string, string> = {
@@ -266,13 +267,20 @@ function transformSource(source: string, name: string): CodemodFile {
   walk(ast, undefined);
 
   const contexts = classContexts(ast);
+  // A string is a class only when it reaches a class context through value positions
+  // (&& / || operands, ternary branches). A comparison operand or a ternary test is data:
+  // `position === "popper"` must keep its literal.
   const inClass = (node: Node): boolean => {
     if (contexts.has(node)) return true;
+    let child: Node = node;
     for (
       let p = parents.get(node), hops = 0;
       p && hops < 16;
-      p = parents.get(p), hops++
+      child = p, p = parents.get(p), hops++
     ) {
+      if (p.type === "BinaryExpression" && COMPARISON_OPS.has(p.operator))
+        return false;
+      if (p.type === "ConditionalExpression" && child === p.test) return false;
       if (contexts.has(p)) return true;
     }
     return false;

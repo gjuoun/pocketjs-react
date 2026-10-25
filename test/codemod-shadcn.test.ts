@@ -72,6 +72,24 @@ test("C3: the report names what it dropped, substituted and flattened", async ()
   expect(button.after).not.toContain("asChild");
 });
 
+test("C8: a comparison operand is data, not a class (position === \"popper\")", async () => {
+  const dir = TMP + "/operands";
+  const source = [
+    'import { cn } from "pocketjs-react"',
+    "export const a = cn(position === 'popper' && 'h-9 px-2')",
+    "export const b = cn(mode === 'x' ? 'p-4' : 'h-9')",
+    "",
+  ].join("\n");
+  await Bun.write(dir + "/operands.ts", source);
+  const report = await codemod(dir);
+  const after = report.files[0].after;
+  expect(after).toContain("position === 'popper'");
+  expect(after).toContain("mode === 'x'");
+  expect(after).not.toContain('position === ""');
+  expect(report.files[0].compilerDropped.popper).toBeUndefined();
+  expect(after).toContain("'h-9'");
+});
+
 test("C3: rules R0-R3 in isolation (rounded-full derivation, aliases, opacity, empty)", async () => {
   const dir = TMP + "/rules";
   const source = [

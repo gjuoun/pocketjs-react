@@ -62,7 +62,7 @@ function SelectContent({
         data-slot="select-content"
         className={cn(
           "relative z-50 overflow-hidden rounded-md border bg-white text-slate-900 shadow-md",
-          position === "" &&
+          position === "popper" &&
             "",
           className
         )}
@@ -74,7 +74,7 @@ function SelectContent({
         <SelectPrimitive.Viewport
           className={cn(
             "p-1",
-            position === "" &&
+            position === "popper" &&
               "w-full"
           )}
         >
