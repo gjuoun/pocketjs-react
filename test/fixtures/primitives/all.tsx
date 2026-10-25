@@ -2,6 +2,7 @@
 // token table, so in-process tests compile the same vocabulary a built app gets.
 import { View } from "../../../src/index.ts";
 export * as Dialog from "../../../src/primitives/dialog.tsx";
+export * as DropdownMenu from "../../../src/primitives/dropdown-menu.tsx";
 export { ModalLayer } from "../../../src/primitives/modal-layer.tsx";
 
 export function Samples() {

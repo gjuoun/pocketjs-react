@@ -3,3 +3,4 @@
 // native primitives under the same member names Radix uses.
 
 export * as Dialog from "./dialog.tsx";
+export * as DropdownMenu from "./dropdown-menu.tsx";

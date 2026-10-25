@@ -6,6 +6,7 @@ import { type ReactNode } from "react";
 import { mount, resetCompatStats, Text, View } from "../src/index.ts";
 import { compileClasses } from "../src/internal/pocket-build.ts";
 import * as Dialog from "../src/primitives/dialog.tsx";
+import * as DropdownMenu from "../src/primitives/dropdown-menu.tsx";
 import { installBuildStyles } from "../src/style/build-styles.ts";
 import { build } from "../tools/build.ts";
 import { bootCore, type Core } from "./harness.ts";
@@ -154,4 +155,63 @@ test("dialog: the panel owns a dark surface (F4), not shadcn's white", async () 
   const surface = c.pixel(title.x - 4, title.y + 2);
   const channels = [1, 3, 5].map((i) => parseInt(surface.slice(i, i + 2), 16));
   expect(Math.max(...channels)).toBeLessThan(0x80);
+});
+
+test("dropdown: the trigger opens the menu, the d-pad moves, CROSS closes it and focus returns", async () => {
+  const picks: string[] = [];
+  const c = await start(
+    screen(
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger className="bg-slate-900 px-2 py-1 rounded-md">Menu</DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content>
+            <DropdownMenu.Item onSelect={() => picks.push("Edit")}>Edit</DropdownMenu.Item>
+            <DropdownMenu.Item onSelect={() => picks.push("Delete")}>Delete</DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>,
+    ),
+  );
+  focusOn(c, "Menu");
+  press(c, BTN.CIRCLE);
+  expect(visible(c)).toContain("Edit");
+  expect(focused()).toBe("Edit");
+  press(c, BTN.DOWN);
+  expect(focused()).toBe("Delete");
+  press(c, BTN.CROSS);
+  expect(visible(c)).not.toContain("Edit");
+  expect(focused()).toBe("Menu");
+  expect(picks).toEqual([]);
+});
+
+test("dropdown: preventDefault in onSelect keeps the menu open; a plain select closes it", async () => {
+  const events: boolean[] = [];
+  const c = await start(
+    screen(
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger className="bg-slate-900 px-2 py-1 rounded-md">Menu</DropdownMenu.Trigger>
+        <DropdownMenu.Content>
+          <DropdownMenu.Item
+            onSelect={(event) => {
+              event.preventDefault();
+              events.push(true);
+            }}
+          >
+            Keep
+          </DropdownMenu.Item>
+          <DropdownMenu.Item onSelect={() => events.push(false)}>Close</DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>,
+    ),
+  );
+  focusOn(c, "Menu");
+  press(c, BTN.CIRCLE);
+  focusOn(c, "Keep");
+  press(c, BTN.CIRCLE);
+  expect(events).toEqual([true]);
+  expect(visible(c)).toContain("Keep");
+  focusOn(c, "Close");
+  press(c, BTN.CIRCLE);
+  expect(events).toEqual([true, false]);
+  expect(visible(c)).not.toContain("Keep");
 });

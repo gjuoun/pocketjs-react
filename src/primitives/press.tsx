@@ -10,6 +10,7 @@ import { cn } from "../style/cn.ts";
 interface PressableProps {
   asChild?: boolean;
   className?: string;
+  disabled?: boolean;
   onPress: () => void;
   children?: ReactNode;
 }
@@ -36,6 +37,7 @@ export function Pressable(props: PressableProps) {
     ) : (
       props.children
     );
+  if (props.disabled) return <View className={props.className}>{body}</View>;
   return (
     <View className={props.className} focusable onPress={props.onPress}>
       {body}

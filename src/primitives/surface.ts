@@ -22,3 +22,21 @@ export function ownText(className: string | undefined): string {
     .filter((token) => token !== "" && !token.startsWith("leading-") && !TEXT_SIZE.test(token))
     .join(" ");
 }
+
+/**
+ * Item classes the primitive owns: the focus colors are the primitive's (text does not inherit in
+ * the core, so a focused row's label color has to come from its own Text), and shadcn's bg-* and
+ * text-color tokens are dropped. Sizes, padding and layout stay the caller's.
+ */
+export function ownItem(className: string | undefined): string {
+  return (className ?? "")
+    .split(/\s+/)
+    .filter(
+      (token) =>
+        token !== "" &&
+        !token.startsWith("bg-") &&
+        !token.startsWith("focus:") &&
+        !/^text-(slate|white|black|muted|popover|primary|destructive|accent)/.test(token),
+    )
+    .join(" ");
+}

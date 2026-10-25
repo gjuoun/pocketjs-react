@@ -90,3 +90,19 @@ test("Dialog: CROSS closes it and focus returns to the trigger", async () => {
   expect(visible(c)).not.toContain("Dialog title");
   expect(focused()).toBe("Open");
 });
+
+test("DropdownMenu: the vendored menu opens, the d-pad moves, CIRCLE selects once and closes", async () => {
+  const c = await boot();
+  expect(visible(c)).toContain("Deletes 0");
+  focusOn(c, "Menu");
+  press(c, BTN.CIRCLE);
+  expect(visible(c)).toContain("Edit");
+  expect(visible(c)).toContain("Delete");
+  expect(focused()).toBe("Edit");
+  press(c, BTN.DOWN);
+  expect(focused()).toBe("Delete");
+  press(c, BTN.CIRCLE);
+  expect(visible(c)).toContain("Deletes 1");
+  expect(visible(c)).not.toContain("Edit");
+  expect(focused()).toBe("Menu");
+});
