@@ -9,6 +9,7 @@ import { compileClasses } from "../src/internal/pocket-build.ts";
 import { installBuildStyles } from "../src/style/build-styles.ts";
 import { build } from "../tools/build.ts";
 import { Overlays } from "./fixtures/shadcn-vendor/overlays.tsx";
+import { Submenu } from "./fixtures/shadcn-vendor/submenu.tsx";
 import { bootCore, type Core } from "./harness.ts";
 
 const VENDOR = "test/fixtures/shadcn-vendor";
@@ -214,4 +215,87 @@ test("Dialog: the scrim dims the app behind it (slate-950 at 60%); the panel sta
   // The panel is outside the scrim's blend: its surface is the primitive's slate-800.
   const title = c.texts().find((r) => r.text === "Dialog title")!;
   expect(c.pixel(title.x - 4, title.y + 2)).toBe("#1e293b");
+});
+
+// C9 sub-menus on the same overlay path. The menu opens Edit and More; More opens Copy and Paste.
+// Esc on the device is CROSS, so each CROSS closes one level.
+
+async function bootSub(): Promise<Core> {
+  const built = await build(`${VENDOR}/submenu-main.tsx`, {
+    outdir: OUT,
+    name: "shadcn-submenu",
+  });
+  core = await bootCore({ classes: built.tokens });
+  installBuildStyles({}, compileClasses([]).bin, built.tokens);
+  unmount = mount(<Submenu />, { compat: { classMiss: "drop" } });
+  core.step(0);
+  return core;
+}
+
+test("sub: the vendored menu opens its sub-menu trigger without throwing", async () => {
+  const c = await bootSub();
+  focusOn(c, "Menu");
+  press(c, BTN.CIRCLE);
+  expect(visible(c)).toContain("Edit");
+  expect(visible(c)).toContain("More");
+});
+
+test("sub: RIGHT enters the sub-menu on its first item and LEFT returns to More", async () => {
+  const c = await bootSub();
+  focusOn(c, "Menu");
+  press(c, BTN.CIRCLE);
+  focusOn(c, "More");
+  press(c, BTN.RIGHT);
+  expect(visible(c)).toContain("Paste");
+  expect(focused()).toBe("Copy");
+  press(c, BTN.LEFT);
+  expect(visible(c)).not.toContain("Paste");
+  expect(focused()).toBe("More");
+});
+
+test("nested: CROSS closes one level at a time and returns focus to each opener", async () => {
+  const c = await bootSub();
+  focusOn(c, "Menu");
+  press(c, BTN.CIRCLE);
+  focusOn(c, "More");
+  press(c, BTN.RIGHT);
+  expect(focused()).toBe("Copy");
+  press(c, BTN.CROSS);
+  expect(visible(c)).not.toContain("Paste");
+  expect(visible(c)).toContain("Edit");
+  expect(focused()).toBe("More");
+  press(c, BTN.CROSS);
+  expect(visible(c)).not.toContain("Edit");
+  expect(focused()).toBe("Menu");
+});
+
+test("nested: selecting a sub-item calls onSelect once and closes the whole tree", async () => {
+  const c = await bootSub();
+  focusOn(c, "Menu");
+  press(c, BTN.CIRCLE);
+  focusOn(c, "More");
+  press(c, BTN.RIGHT);
+  press(c, BTN.CIRCLE);
+  expect(visible(c)).toContain("Copies 1");
+  expect(visible(c)).not.toContain("Edit");
+  expect(visible(c)).not.toContain("Paste");
+  expect(focused()).toBe("Menu");
+});
+
+test("nested: while the sub-menu is open the d-pad cannot reach the app beneath", async () => {
+  const c = await bootSub();
+  focusOn(c, "Menu");
+  press(c, BTN.CIRCLE);
+  focusOn(c, "More");
+  press(c, BTN.RIGHT);
+  const seen = new Set<string | undefined>();
+  for (let i = 0; i < 4; i++) {
+    press(c, BTN.DOWN);
+    seen.add(focused());
+    press(c, BTN.UP);
+    seen.add(focused());
+  }
+  expect([...seen].every((label) => label === "Copy" || label === "Paste")).toBe(true);
+  expect(seen.has("Below")).toBe(false);
+  expect(seen.has("Menu")).toBe(false);
 });
