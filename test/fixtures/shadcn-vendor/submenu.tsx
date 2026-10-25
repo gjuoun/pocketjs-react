@@ -16,9 +16,11 @@ import {
 
 export function Submenu() {
   const [copies, setCopies] = useState(0);
+  const [keeps, setKeeps] = useState(0);
   return (
     <div className="w-full h-full flex-col items-start gap-1 p-2 bg-slate-100">
       <Text className="text-sm w-full">{`Copies ${copies}`}</Text>
+      <Text className="text-sm w-full">{`Keeps ${keeps}`}</Text>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button>Menu</Button>
@@ -32,6 +34,14 @@ export function Submenu() {
                 Copy
               </DropdownMenuItem>
               <DropdownMenuItem>Paste</DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={(event) => {
+                  event.preventDefault();
+                  setKeeps((n) => n + 1);
+                }}
+              >
+                Keep
+              </DropdownMenuItem>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
         </DropdownMenuContent>

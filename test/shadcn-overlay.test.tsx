@@ -295,7 +295,21 @@ test("nested: while the sub-menu is open the d-pad cannot reach the app beneath"
     press(c, BTN.UP);
     seen.add(focused());
   }
-  expect([...seen].every((label) => label === "Copy" || label === "Paste")).toBe(true);
+  expect([...seen].every((label) => label === "Copy" || label === "Paste" || label === "Keep")).toBe(true);
   expect(seen.has("Below")).toBe(false);
   expect(seen.has("Menu")).toBe(false);
+});
+
+test("nested: a sub-item that calls preventDefault keeps the whole tree open", async () => {
+  const c = await bootSub();
+  focusOn(c, "Menu");
+  press(c, BTN.CIRCLE);
+  focusOn(c, "More");
+  press(c, BTN.RIGHT);
+  focusOn(c, "Keep");
+  press(c, BTN.CIRCLE);
+  expect(visible(c)).toContain("Keeps 1");
+  expect(visible(c)).toContain("Paste");
+  expect(visible(c)).toContain("Edit");
+  expect(focused()).toBe("Keep");
 });
