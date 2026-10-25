@@ -90,3 +90,96 @@ export function measureBox(node: NodeMirror): Box | null {
   const bottom = past(sy, vp.h, (v) => inside(sx, v));
   return { x: left, y: top, w: right - left, h: bottom - top };
 }
+
+export type Side = "top" | "right" | "bottom" | "left";
+export type Align = "start" | "center" | "end";
+
+export interface PlaceInput {
+  anchor: Box;
+  panel: { w: number; h: number };
+  viewport: { w: number; h: number };
+  side?: Side;
+  align?: Align;
+  sideOffset?: number;
+  collisionPadding?: number;
+}
+
+export interface Placement {
+  x: number;
+  y: number;
+  side: Side;
+}
+
+const OPPOSITE: Record<Side, Side> = {
+  top: "bottom",
+  bottom: "top",
+  left: "right",
+  right: "left",
+};
+
+/**
+ * Where a panel goes next to its anchor. The requested side is kept unless it has no room and the
+ * opposite side has more; the panel then aligns on the cross axis and is clamped inside the viewport
+ * (inset by collisionPadding). Pure geometry: no core access.
+ */
+export function placePopper(input: PlaceInput): Placement {
+  const { anchor, panel, viewport } = input;
+  const requested = input.side ?? "bottom";
+  const align = input.align ?? "start";
+  const offset = input.sideOffset ?? 0;
+  const pad = input.collisionPadding ?? 0;
+
+  const room = (side: Side): number => {
+    switch (side) {
+      case "bottom":
+        return viewport.h - (anchor.y + anchor.h) - offset - pad;
+      case "top":
+        return anchor.y - offset - pad;
+      case "right":
+        return viewport.w - (anchor.x + anchor.w) - offset - pad;
+      case "left":
+        return anchor.x - offset - pad;
+    }
+  };
+  const need = (side: Side): number =>
+    side === "top" || side === "bottom" ? panel.h : panel.w;
+  const fits = (side: Side): boolean => room(side) >= need(side);
+  const side =
+    !fits(requested) && fits(OPPOSITE[requested])
+      ? OPPOSITE[requested]
+      : requested;
+
+  // Cross-axis start for the chosen alignment.
+  const cross = (
+    anchorStart: number,
+    anchorSize: number,
+    panelSize: number,
+  ): number => {
+    if (align === "center") return anchorStart + anchorSize / 2 - panelSize / 2;
+    if (align === "end") return anchorStart + anchorSize - panelSize;
+    return anchorStart;
+  };
+  let x: number;
+  let y: number;
+  if (side === "bottom") {
+    y = anchor.y + anchor.h + offset;
+    x = cross(anchor.x, anchor.w, panel.w);
+  } else if (side === "top") {
+    y = anchor.y - offset - panel.h;
+    x = cross(anchor.x, anchor.w, panel.w);
+  } else if (side === "right") {
+    x = anchor.x + anchor.w + offset;
+    y = cross(anchor.y, anchor.h, panel.h);
+  } else {
+    x = anchor.x - offset - panel.w;
+    y = cross(anchor.y, anchor.h, panel.h);
+  }
+
+  const clamp = (v: number, size: number, limit: number): number =>
+    Math.max(pad, Math.min(v, limit - size - pad));
+  return {
+    x: Math.round(clamp(x, panel.w, viewport.w)),
+    y: Math.round(clamp(y, panel.h, viewport.h)),
+    side,
+  };
+}
