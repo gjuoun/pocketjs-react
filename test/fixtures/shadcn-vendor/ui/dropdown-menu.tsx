@@ -41,7 +41,7 @@ function DropdownMenuContent({
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
         className={cn(
-          "z-50 overflow-hidden rounded-md border bg-white p-1 text-slate-900 shadow-md",
+          "z-50 min-w-[128px] overflow-hidden rounded-md border bg-white p-1 text-slate-900 shadow-md",
           className
         )}
         {...props}
@@ -73,7 +73,7 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm focus:bg-slate-200 focus:text-slate-900 data-[disabled]:opacity-50 data-[inset]:pl-8 data-[variant=destructive]:focus:bg-red-600 [&_svg:not([class*='text-'])]:text-slate-500",
+        "relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm focus:bg-slate-200 focus:text-slate-900 data-[disabled]:opacity-50 data-[inset]:pl-8 data-[variant=destructive]:text-red-600 data-[variant=destructive]:focus:bg-red-600 data-[variant=destructive]:focus:text-red-600 [&_svg:not([class*='text-'])]:text-slate-500",
         className
       )}
       {...props}
@@ -229,7 +229,7 @@ function DropdownMenuSubContent({
     <DropdownMenuPrimitive.SubContent
       data-slot="dropdown-menu-sub-content"
       className={cn(
-        "z-50 overflow-hidden rounded-md border bg-white p-1 text-slate-900 shadow-lg",
+        "z-50 min-w-[128px] overflow-hidden rounded-md border bg-white p-1 text-slate-900 shadow-lg",
         className
       )}
       {...props}

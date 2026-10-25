@@ -3,6 +3,8 @@
 // the known Dialog gap, and rewriting is idempotent and whitespace-normalizing.
 import { expect, test } from "bun:test";
 import {
+  type DropReason,
+  dropReason,
   rewrite,
   rewriteLiteral,
   rewriteToken,
@@ -88,8 +90,8 @@ test("the button base decomposes: 5 mapped + 14 dropped = 19 (focus ring border 
   // The cva literal the fixture renders: base 22 + default 3 + size-default 4 tokens.
   const full = [BUTTON_BASE, BUTTON_DEFAULT, BUTTON_SIZE].join(" ");
   expect(rewrite(full)).toEqual({
-    text: "flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-bold transition-all disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive bg-slate-900 text-white active:bg-slate-900 h-9 px-4 py-2 has-[>svg]:px-3",
-    mapped: 5,
+    text: "flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-bold transition-all disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-red-600 bg-slate-900 text-white active:bg-slate-900 h-9 px-4 py-2 has-[>svg]:px-3",
+    mapped: 6,
     dropped: 10,
   });
 });
@@ -137,4 +139,42 @@ test("rewriting is idempotent and normalizes whitespace", () => {
     "bg-slate-900 text-white",
   );
   expect(rewriteLiteral("")).toBe("");
+});
+
+
+// C8 Step 5/6: the reason every dropped token carries, and the low-cost mappings that replaced some drops.
+test("C8: each dropped family names its policy reason", () => {
+  const cases: [string, DropReason][] = [
+    ["dark:bg-input/30", "dark"],
+    ["sm:flex-row", "responsive"],
+    ["placeholder:text-muted-foreground", "pseudo"],
+    ["focus-visible:ring-[3px]", "focus-indicator"],
+    ["focus-visible:border-ring", "focus-indicator"],
+    ["data-[state=open]:animate-in", "animation"],
+    ["data-[state=closed]:zoom-out-95", "animation"],
+    ["cursor-default", "noop"],
+    ["[&_svg]:pointer-events-none", "noop"],
+    ["[&_svg]:size-4", "noop"],
+    ["outline-hidden", "noop"],
+    ["grid-cols-[1fr_auto]", "grid"],
+    ["col-start-2", "grid"],
+    ["overflow-y-auto", "scroll"],
+    ["max-h-(--radix-select-content-available-height)", "scroll"],
+    ["fixed", "owned-by-primitive"],
+    ["min-w-[var(--radix-select-trigger-width)]", "owned-by-primitive"],
+    ["max-w-[calc(100%-2rem)]", "no-core-feature"],
+    ["underline", "no-core-feature"],
+    ["-translate-x-1", "no-core-feature"],
+    ["*:[span]:last:flex", "no-core-feature"],
+    ["bg-bogus", "unmapped"],
+  ];
+  for (const [tok, reason] of cases)
+    expect({ tok, reason: dropReason(tok) }).toEqual({ tok, reason });
+});
+
+test("C8: the Step 6 mappings (shadow-sm, rem lengths, destructive colours)", () => {
+  expect(rewriteToken("shadow-sm")).toBe("shadow");
+  expect(rewriteToken("min-w-[8rem]")).toBe("min-w-[128px]");
+  expect(rewriteToken("text-destructive")).toBe("text-red-600");
+  expect(rewriteToken("border-destructive")).toBe("border-red-600");
 });
