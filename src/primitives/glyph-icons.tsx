@@ -1,52 +1,11 @@
-// Icon glyphs for lucide-react (codemod R7). The vendored shadcn sources import their
-// icons from here instead of lucide, whose <svg> the DOM compat layer does not map. Each icon draws
-// its baked texture variant (tools/icon-bake.ts, pak key ui:img.icon.*); a pak without the variant
-// falls back to the old one-character placeholder and counts an iconMiss.
+// Icon glyphs for lucide-react (codemod R7). The vendored shadcn sources import their icons from here
+// instead of lucide, whose <svg> the DOM compat layer does not map. The six named here are written out;
+// every other lucide export is generated into glyph-icons.gen.tsx (tools/gen-glyph-icons.ts) and
+// re-exported below. Each draws its baked texture variant (tools/icon-bake.ts, pak key ui:img.icon.*).
 
-import { countIconMiss } from "../compat/stats.ts";
-import { Image, Text, View } from "../elements.ts";
-import { cn } from "../style/cn.ts";
-import { iconVariantHandle } from "../style/icon-colour.ts";
-import { iconName } from "../style/icon-names.ts";
+import { GlyphIcon, type GlyphProps } from "./glyph-icon.tsx";
 
-export interface GlyphProps {
-  className?: string;
-}
-
-// JG-156: the glyph is a view that centres its character. A text run alone draws at the top-left of
-// its box, and a stretched box stretched the character. The colour is inherited from the surface
-// the icon sits on (trigger, item or panel), so a light surface gets a dark glyph. The pb-[3px] lifts the
-// character's ink 1.5px to the box centre (JG-156 R3b, placeholder polish; C7 replaces it).
-function Glyph(props: GlyphProps & { char: string }) {
-  return (
-    <View className={cn("flex items-center justify-center", props.className)}>
-      <Text className="text-sm pb-[3px]">{props.char}</Text>
-    </View>
-  );
-}
-
-export interface GlyphIconProps extends GlyphProps {
-  /** The lucide icon name, as baked (tools/icon-bake.ts ICONS). */
-  name: string;
-  /** Design size in px: 16 (size-4) or 8 (size-2). */
-  px: 8 | 16;
-  /** The placeholder character drawn when the pak does not carry the icon. */
-  char: string;
-}
-
-/** A baked icon. The Image draws the colour variant the compat colour pass picks for it. */
-export function GlyphIcon({ name, px, char, className }: GlyphIconProps) {
-  const src = iconName(name, px, "slate-900");
-  if (iconVariantHandle(src) === undefined) {
-    countIconMiss();
-    return <Glyph char={char} className={className} />;
-  }
-  return (
-    <View className={cn("flex items-center justify-center", className)}>
-      <Image src={src} className={px === 16 ? "size-4" : "size-2"} />
-    </View>
-  );
-}
+export { GlyphIcon, type GlyphIconProps, type GlyphProps } from "./glyph-icon.tsx";
 
 export function XIcon(props: GlyphProps) {
   return <GlyphIcon {...props} name="x" px={16} char="x" />;
@@ -66,3 +25,5 @@ export function ChevronUpIcon(props: GlyphProps) {
 export function ChevronRightIcon(props: GlyphProps) {
   return <GlyphIcon {...props} name="chevron-right" px={16} char=">" />;
 }
+
+export * from "./glyph-icons.gen.tsx";
