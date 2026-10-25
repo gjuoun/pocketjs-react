@@ -1,7 +1,8 @@
 // Mouse as a second layer, on the wasm core: a click focuses and presses through the same focus
 // system as the d-pad, respects an open layer's focus scope, and desktop svc lines are parsed. A tap
 // outside an open layer's panel closes the top layer and presses nothing behind it (C6).
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
+import { getFocused } from "@pocketjs/framework/input";
 import { useState } from "react";
 import { Text, View } from "../src/elements.ts";
 import { Dialog, mount } from "../src/index.ts";
@@ -33,6 +34,7 @@ const CLASSES = [
   "flex-col gap-2 p-3 rounded-xl bg-slate-800 text-white w-[300px]",
   "absolute inset-0 flex-col items-center justify-center",
   "absolute inset-0 bg-[#0f172a99]",
+  "absolute inset-0 active:bg-blue-600",
 ];
 let core: Core | undefined;
 let unmount: (() => void) | undefined;
@@ -133,7 +135,7 @@ test("desktop svc lines: the click is delivered and other lines stay readable", 
 });
 
 // Primitive layers (C5/C6): the same routing, through the DropdownMenu, Select and Dialog primitives.
-type Scene = "menu" | "select" | "dialog" | "nested";
+type Scene = "menu" | "select" | "dialog" | "nested" | "hover";
 let scene: Scene = "menu";
 const at = (x: number, y: number) => ({
   position: "absolute" as const,
@@ -143,7 +145,7 @@ const at = (x: number, y: number) => ({
 
 function Layers() {
   const behind =
-    scene === "menu" || scene === "select"
+    scene === "menu" || scene === "select" || scene === "hover"
       ? { x: 300, y: 150 }
       : { x: 20, y: 230 };
   return (
@@ -156,7 +158,7 @@ function Layers() {
       >
         <Text className={TXT}>Behind</Text>
       </View>
-      {scene === "menu" ? (
+      {scene === "menu" || scene === "hover" ? (
         <Menu.Root>
           <View style={at(40, 60)}>
             <Menu.Trigger className={TRIG}>
@@ -173,6 +175,11 @@ function Layers() {
                 <Text className={TXT}>{label}</Text>
               </Menu.Item>
             ))}
+            {scene === "hover" ? (
+              <Menu.Item disabled className={ITEM}>
+                <Text className={TXT}>Delta</Text>
+              </Menu.Item>
+            ) : null}
           </Menu.Content>
         </Menu.Root>
       ) : null}
@@ -311,4 +318,87 @@ test("Q1-A control: a Dialog's scrim dims the Behind row", async () => {
   click(dialog, open.x + 4, open.y + 4);
   expect(dialog.texts().map((r) => r.text)).toContain("Hello");
   expect(dialog.pixel(110, 245)).not.toBe(before);
+});
+
+// G4 hover (web host): a pointer over a Menu row paints its overlay; focus never moves.
+describe("hover: a pointer over a menu row paints it, and never moves focus", () => {
+  const BLUE = "#2563eb";
+  const BASE = "#1e293b";
+  const gate = globalThis as { __pocketHover?: boolean; __pocketPointer?: unknown[] };
+  const hoverOn = () => { gate.__pocketHover = true; };
+  afterEach(() => { delete gate.__pocketHover; });
+  const moveTo = (c: Core, x: number, y: number) => {
+    (gate.__pocketPointer ??= []).push({ x, y, move: true });
+    c.step(0);
+    c.step(0);
+  };
+  const leave = (c: Core) => {
+    (gate.__pocketPointer ??= []).push({ leave: true });
+    c.step(0);
+    c.step(0);
+  };
+  const paintOf = (c: Core, label: string) => {
+    const run = c.texts().find((r) => r.text === label)!;
+    return c.pixel(run.x - 3, run.y + 2);
+  };
+  const openMenu = async (c: Core) => {
+    const open = c.texts().find((r) => r.text === "Open")!;
+    click(c, open.x + 4, open.y + 4);
+    expect(c.texts().map((r) => r.text)).toContain("Gamma");
+  };
+  const at = (c: Core, label: string) => {
+    const run = c.texts().find((r) => r.text === label)!;
+    return { x: run.x + 4, y: run.y + 4 };
+  };
+
+  test("hovering an unfocused row paints it blue; its neighbours keep the panel colour", async () => {
+    hoverOn();
+    const c = await layers("hover");
+    await openMenu(c);
+    const g = at(c, "Gamma");
+    moveTo(c, g.x, g.y);
+    expect(paintOf(c, "Gamma")).toBe(BLUE);
+    expect(paintOf(c, "Beta")).toBe(BASE);
+  });
+
+  test("a hover never moves focus", async () => {
+    hoverOn();
+    const c = await layers("hover");
+    await openMenu(c);
+    const before = getFocused();
+    expect(before).not.toBeNull();
+    const g = at(c, "Gamma");
+    moveTo(c, g.x, g.y);
+    expect(getFocused()).toBe(before);
+  });
+
+  test("leaving the hovered row restores its panel colour", async () => {
+    hoverOn();
+    const c = await layers("hover");
+    await openMenu(c);
+    const g = at(c, "Gamma");
+    moveTo(c, g.x, g.y);
+    expect(paintOf(c, "Gamma")).toBe(BLUE);
+    leave(c);
+    expect(paintOf(c, "Gamma")).toBe(BASE);
+  });
+
+  test("with the gate off (native hosts), rows carry no overlay child and a hover paints nothing", async () => {
+    const c = await layers("hover");
+    await openMenu(c);
+    // The focused row's mirror: its only child is the authored Text (no hover overlay).
+    expect(getFocused()!.children.length).toBe(1);
+    const g = at(c, "Gamma");
+    moveTo(c, g.x, g.y);
+    expect(paintOf(c, "Gamma")).toBe(BASE);
+  });
+
+  test("a disabled row never lights on hover", async () => {
+    hoverOn();
+    const c = await layers("hover");
+    await openMenu(c);
+    const d = at(c, "Delta");
+    moveTo(c, d.x, d.y);
+    expect(paintOf(c, "Delta")).toBe(BASE);
+  });
 });
