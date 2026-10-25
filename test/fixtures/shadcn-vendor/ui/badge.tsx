@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "pocketjs-react"
 
 const badgeVariants = cva(
-  "flex shrink-0 items-center justify-center gap-1 overflow-hidden rounded-[10px] border border-transparent px-2 py-0.5 text-xs font-bold transition-colors focus:border-slate-900",
+  "flex shrink-0 items-center justify-center gap-1 overflow-hidden rounded-[10px] border border-transparent px-2 py-0.5 text-xs font-bold transition-colors",
   {
     variants: {
       variant: {

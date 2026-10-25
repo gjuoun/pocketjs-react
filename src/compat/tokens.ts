@@ -84,8 +84,13 @@ export interface RewriteResult {
   dropped: number;
 }
 
+/** shadcn's focus ring border (JG-157): dropped, because the compat default focus border is the
+ *  focus indicator. Mapped to focus:border-slate-900 it would be the button's own colour. */
+const FOCUS_RING_BORDER = "focus-visible:border-ring";
+
 /** One token -> its PocketJS form, or "" when the map drops it. Pass-through otherwise. */
 export function rewriteToken(tok: string): string {
+  if (tok === FOCUS_RING_BORDER) return "";
   const colon = tok.indexOf(":");
   if (colon > 0) {
     const variant = tok.slice(0, colon);

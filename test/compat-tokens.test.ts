@@ -66,7 +66,7 @@ test("token cases: semantic colors, aliases, variants, opacity and drops", () =>
     ["size-4", "w-4 h-4"],
     ["size-9", "w-9 h-9"],
     ["hover:bg-primary/90", "active:bg-slate-900"],
-    ["focus-visible:border-ring", "focus:border-slate-900"],
+    ["focus-visible:border-ring", ""],
     ["focus-visible:ring-ring/50", ""],
     ["dark:aria-invalid:ring-destructive/40", ""],
     ["disabled:opacity-50", ""],
@@ -82,13 +82,13 @@ test("token cases: semantic colors, aliases, variants, opacity and drops", () =>
     expect({ from, to: rewriteToken(from) }).toEqual({ from, to });
 });
 
-test("the button base decomposes the C1 baseline: 6 mapped + 13 dropped = 19", () => {
+test("the button base decomposes: 5 mapped + 14 dropped = 19 (focus ring border dropped, JG-157)", () => {
   // The cva literal the fixture renders: base 22 + default 3 + size-default 4 tokens.
   const full = [BUTTON_BASE, BUTTON_DEFAULT, BUTTON_SIZE].join(" ");
   expect(rewrite(full)).toEqual({
-    text: "flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-bold transition-all focus:border-slate-900 bg-slate-900 text-white active:bg-slate-900 h-9 px-4 py-2",
-    mapped: 6,
-    dropped: 13,
+    text: "flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-bold transition-all bg-slate-900 text-white active:bg-slate-900 h-9 px-4 py-2",
+    mapped: 5,
+    dropped: 14,
   });
 });
 
