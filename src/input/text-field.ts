@@ -398,3 +398,82 @@ export function moveLine(binding: TextFieldBinding, delta: -1 | 1): void {
   binding.caret = moveLineTo(valueOf(binding), binding.caret, delta);
   render(binding);
 }
+
+// ---------------------------------------------------------------------------
+// Caret placement by point (C4c round 4). The layout comes from the core's own text runs, read
+// with captureTexts scoped to the field's node, so a tap lands where the text is drawn.
+// ---------------------------------------------------------------------------
+
+/** `text-base` is 16 px regular: index 2 of the build's FONT_PX table (framework compiler tailwind). */
+export const FIELD_FONT_SLOT = 2;
+
+/** One drawn text run: its box in logical pixels and its text. */
+export interface TextRun {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  text: string;
+}
+
+/** Parse ui.capturedTexts(): "x,y,w,h<TAB>text" per line, top to bottom. */
+export function parseRuns(captured: string): TextRun[] {
+  const runs: TextRun[] = [];
+  for (const line of captured.split("\n")) {
+    const tab = line.indexOf("\t");
+    if (tab < 0) continue;
+    const [x, y, w, h] = line.slice(0, tab).split(",").map(Number);
+    runs.push({ x, y, w, h, text: line.slice(tab + 1) });
+  }
+  return runs;
+}
+
+/** A read is fresh only when the runs are exactly the lines the field draws now. */
+export function sameLines(runs: readonly TextRun[], lines: readonly string[]): boolean {
+  return runs.length === lines.length && runs.every((run, i) => run.text === lines[i]);
+}
+
+/**
+ * The caret index for a point x inside one line. offsets[i] is the drawn width of the first i
+ * characters. A character is passed once the point is past its middle, so a tap in the left half
+ * of a character puts the caret before it and a tap in the right half puts it after.
+ */
+export function caretFromOffsets(offsets: readonly number[], x: number): number {
+  let caret = 0;
+  for (let i = 0; i + 1 < offsets.length; i++) {
+    const middle = (offsets[i] + offsets[i + 1]) / 2;
+    if (middle < x) caret = i + 1;
+    else break;
+  }
+  return caret;
+}
+
+/**
+ * The caret index in `valueLines` (the shown text, split at newlines) for a point. The line is the
+ * last run whose top is at or above y, so a tap above the text takes the first line and a tap below
+ * it takes the last. `measure` is the field font's width of a string.
+ */
+export function caretAtPoint(
+  valueLines: readonly string[],
+  runs: readonly TextRun[],
+  x: number,
+  y: number,
+  measure: (text: string) => number,
+): number {
+  if (runs.length === 0 || valueLines.length === 0) return 0;
+  let line = 0;
+  for (let i = 1; i < runs.length; i++) if (runs[i].y <= y) line = i;
+  line = Math.min(line, valueLines.length - 1);
+  let start = 0;
+  for (let i = 0; i < line; i++) start += valueLines[i].length + 1;
+  const text = valueLines[line];
+  const offsets = [0];
+  for (let k = 1; k <= text.length; k++) offsets.push(measure(text.slice(0, k)));
+  return start + caretFromOffsets(offsets, x - runs[line].x);
+}
+
+/** Place the caret at an index (clamped to the value). */
+export function setCaret(binding: TextFieldBinding, caret: number): void {
+  binding.caret = Math.max(0, Math.min(caret, valueOf(binding).length));
+  render(binding);
+}

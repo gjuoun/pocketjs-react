@@ -5,6 +5,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { rmSync } from "node:fs";
 import { BTN } from "@pocketjs/framework/input";
 import { homePos, layoutRows, navigate, type OskPos, oskLayer } from "../src/input/osk-layout.ts";
+import { FIELD_FONT_SLOT, parseRuns } from "../src/input/text-field.ts";
 import { HeadlessChrome } from "../src/internal/pocket-build.ts";
 import { build } from "../tools/build.ts";
 import { type ReaderServer, serveReader } from "../tools/web/serve.ts";
@@ -293,4 +294,95 @@ test("the hidden native entry holds content after a tap, so a native Backspace r
   await frame(0);
   await frame(0);
   expect(await logOf("__a")).toEqual(["a", ""]);
+}, 30000);
+
+// ---- C4c round 4: a tap inside the focused field places the caret ----
+
+/**
+ * Let a caret placement land: the pointer drains in one frame, the read is armed, a render draws it
+ * (draw only: texts() would re-arm the core's single capture slot), then the read is applied.
+ */
+const settle = async (): Promise<void> => {
+  await frame(0);
+  await evaluate("window.__host.draw()");
+  await frame(0);
+  await frame(0);
+};
+/** The field's drawn run whose text starts with a prefix (its caret shows as "|" while open). */
+const fieldRun = async (prefix: string) =>
+  parseRuns(String(await evaluate("window.__host.texts()"))).find((r) => r.text.startsWith(prefix));
+/** The field font's width of a string, measured by the core. */
+const measureOn = (s: string): Promise<number> =>
+  evaluate("globalThis.ui.measureText(" + JSON.stringify(s) + ", " + FIELD_FONT_SLOT + ")");
+/** A canvas-logical point as client pixels, "cx,cy". */
+const clientOf = (x: number, y: number): Promise<string> =>
+  evaluate(
+    "(() => { const c = document.getElementById('screen'); const r = c.getBoundingClientRect(); " +
+      "return (r.left + " + x + " * r.width / c.width) + ',' + (r.top + " + y + " * r.height / c.height); })()",
+  );
+/** A trusted mouse click on the canvas (CDP): desktop path. */
+const clickAt = async (x: number, y: number): Promise<void> => {
+  const [cx, cy] = (await clientOf(x, y)).split(",").map(Number);
+  await chrome.send("Input.dispatchMouseEvent", { type: "mousePressed", x: cx, y: cy, button: "left", clickCount: 1 });
+  await chrome.send("Input.dispatchMouseEvent", { type: "mouseReleased", x: cx, y: cy, button: "left", clickCount: 1 });
+};
+/** A point just right of the middle of the 'c' in a run that starts with "abc": the caret goes after c. */
+const pastCOf = async (run: { x: number; y: number; h: number }): Promise<[number, number]> => {
+  const pw3 = await measureOn("abc");
+  const pw4 = await measureOn("abcd");
+  return [run.x + pw3 + 0.25 * (pw4 - pw3), run.y + run.h / 2];
+};
+
+test("a click inside the focused field places the caret where it lands; typing goes there", async () => {
+  await open("manual=1");
+  await frame(0);
+  await press(BTN.DOWN); // focus field A
+  for (const [ch, code] of [["a", "KeyA"], ["b", "KeyB"], ["c", "KeyC"], ["d", "KeyD"], ["e", "KeyE"], ["f", "KeyF"]]) await keyTap(ch, code);
+  const run = await fieldRun("abcdef");
+  expect(run).toBeDefined();
+  // the field's font is the one the core measures its run with
+  expect(await measureOn("abcdef|")).toBeCloseTo(run!.w, 0);
+  const [x, y] = await pastCOf(run!);
+  await clickAt(x, y);
+  await settle();
+  await keyTap("X", "KeyX");
+  await settle();
+  expect((await logOf("__a")).at(-1)).toBe("abcXdef");
+  expect(await keycapsDrawn()).toEqual([]); // a click on the focused field opens no panel
+}, 60000);
+
+test("on a touch host a tap inside the focused field places the caret; the native keys insert there", async () => {
+  await open("manual=1&touch=1");
+  await frame(0);
+  const at = String(await evaluate(FIND_FIELD)).split(",").map(Number);
+  await liftAt(at[0], at[1]);
+  await compatMouseAt(at[0], at[1]);
+  await settle();
+  for (const ch of "abcdef") {
+    await nativeInput("insertText", ch);
+    await settle();
+  }
+  const run = await fieldRun("abcdef");
+  expect(run).toBeDefined();
+  const [x, y] = await pastCOf(run!);
+  await liftAt(x, y);
+  await compatMouseAt(x, y);
+  await settle();
+  await nativeInput("insertText", "X");
+  await settle();
+  expect((await logOf("__a")).at(-1)).toBe("abcXdef");
+  expect(await keycapsDrawn()).toEqual([]);
+}, 60000);
+
+test("a touch tap outside the field lets the native keyboard go", async () => {
+  await open("manual=1&touch=1");
+  await frame(0);
+  const at = String(await evaluate(FIND_FIELD)).split(",").map(Number);
+  await liftAt(at[0], at[1]);
+  await compatMouseAt(at[0], at[1]);
+  await settle();
+  expect(await focusedId()).toBe("native-entry");
+  await liftAt(470, 262); // below both fields
+  await settle();
+  expect(await focusedId()).not.toBe("native-entry");
 }, 30000);
