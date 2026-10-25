@@ -179,11 +179,15 @@ test("C2: every Badge variant paints its mapped surface or border", async () => 
   expect(surface(c, runOf(c, "BSecondary"))).toBe("#e2e8f0");
   expect(surface(c, runOf(c, "BDestructive"))).toBe("#dc2626");
   // outline is transparent with border-slate-200; ghost/link are transparent and differ by text
-  // color (ghost keeps the core's default white, link maps text-primary -> slate-900).
+  // color. Ghost has no colour of its own, so its label takes the compat default text colour
+  // (slate-900, the shadcn foreground) through the inheritance pass; link maps text-primary -> slate-900.
   expect(hasColor(c, runOf(c, "BOutline"), "#e2e8f0")).toBe(true);
   expect(surface(c, runOf(c, "BGhost"))).toBe("#f1f5f9");
   expect(surface(c, runOf(c, "BLink"))).toBe("#f1f5f9");
-  expect(hasColor(c, runOf(c, "BGhost"), "#ffffff")).toBe(true);
+  // JG-156 Step 3: was "#ffffff" (the core default). The inheritance pass gives the ghost label the
+  // mount's slate-900 default, the colour shadcn's body text gives it.
+  expect(hasColor(c, runOf(c, "BGhost"), "#0f172a")).toBe(true);
+  expect(hasColor(c, runOf(c, "BGhost"), "#ffffff")).toBe(false);
   expect(hasColor(c, runOf(c, "BLink"), "#0f172a")).toBe(true);
 });
 
