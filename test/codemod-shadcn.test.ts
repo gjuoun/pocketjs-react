@@ -15,7 +15,9 @@ test("C3: the committed ui/ tree is exactly the codemod output", async () => {
     "button.tsx",
     "card.tsx",
     "dialog.tsx",
+    "dropdown-menu.tsx",
     "input.tsx",
+    "select.tsx",
   ]);
   for (const file of report.files) {
     const committed = await Bun.file(UI + "/" + file.name).text();
@@ -129,8 +131,9 @@ test("C5: R6/R7 move the radix-ui and lucide-react edges, and a second run chang
   expect(dialog.after).toContain('from "pocketjs-react/glyph-icons"');
   expect(dialog.after).not.toContain('from "radix-ui"');
   expect(dialog.after).not.toContain('from "lucide-react"');
-  expect(totals.substituted["import:radix-ui"]).toBe(1);
-  expect(totals.substituted["import:lucide-react"]).toBe(1);
+  // dialog, dropdown-menu and select each import both (button's Slot-only import is R4's).
+  expect(totals.substituted["import:radix-ui"]).toBe(3);
+  expect(totals.substituted["import:lucide-react"]).toBe(3);
   // R4 removes the Slot-only radix import whole; R6 must not also edit it.
   const button = files.find((f) => f.name === "button.tsx")!;
   expect(button.after).not.toContain("pocketjs-react/radix");
