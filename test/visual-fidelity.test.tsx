@@ -21,7 +21,7 @@ import { encodePng } from "./png.ts";
 
 const VENDOR = "test/fixtures/shadcn-vendor";
 const FIXTURES = "test/fixtures/visual-fidelity";
-const OUT = "/tmp/pocketjs-react-test/jg156";
+const OUT = "/tmp/pocketjs-react-test/visual-fidelity";
 let core: Core | undefined;
 let unmount: (() => void) | undefined;
 afterEach(() => {
@@ -48,9 +48,9 @@ async function bootBuilt(
   return core;
 }
 const bootOverlays = () =>
-  bootBuilt(VENDOR + "/overlays-main.tsx", "jg156-overlays", <Overlays />);
-const bootDemo = () => bootBuilt(VENDOR + "/main.tsx", "jg156-demo", <Demo />);
-const bootSheet = () => bootBuilt("test/fixtures/icons/sheet-main.tsx", "jg159-sheet", <IconSheet />);
+  bootBuilt(VENDOR + "/overlays-main.tsx", "visual-overlays", <Overlays />);
+const bootDemo = () => bootBuilt(VENDOR + "/main.tsx", "visual-demo", <Demo />);
+const bootSheet = () => bootBuilt("test/fixtures/icons/sheet-main.tsx", "visual-sheet", <IconSheet />);
 
 /** First text mirror whose content is exactly `text`, in tree order. */
 function textNode(text: string): NodeMirror | undefined {
@@ -140,7 +140,7 @@ void compatStats; // counters are read in the Step 9 screenshot run
 test("G1 inherit: a label under bg-white text-slate-900 takes the dark colour", async () => {
   const c = await bootBuilt(
     FIXTURES + "/inherit-main.tsx",
-    "jg156-inherit",
+    "visual-inherit",
     <Inherit />,
   );
   expect(ink(c, runOf(c, "Inherited"), "dark")).toBeGreaterThan(20);
@@ -149,7 +149,7 @@ test("G1 inherit: a label under bg-white text-slate-900 takes the dark colour", 
 test("G1 inherit: an explicit colour wins over the ancestor (white on slate-900 stays white)", async () => {
   const c = await bootBuilt(
     FIXTURES + "/inherit-main.tsx",
-    "jg156-inherit",
+    "visual-inherit",
     <Inherit />,
   );
   const r = runOf(c, "Explicit");
@@ -159,7 +159,7 @@ test("G1 inherit: an explicit colour wins over the ancestor (white on slate-900 
 test("G1 inherit: a focus-variant colour is not overridden (the label keeps the core default)", async () => {
   const c = await bootBuilt(
     FIXTURES + "/inherit-main.tsx",
-    "jg156-inherit",
+    "visual-inherit",
     <Inherit />,
   );
   const r = runOf(c, "Variant");
@@ -341,7 +341,7 @@ test("G5 Card title to description gap is gap-2 (8px) ±1 (guard)", async () => 
 });
 
 // --- Step 9: the three Gemini QA screenshots (idle, menu open, select open) -----------------------
-const SHOTS = "/tmp/pocketjs-react-test/jg156";
+const SHOTS = "/tmp/pocketjs-react-test/visual-fidelity";
 /** The label of the focused node's first text (a Button or Trigger shows its label). */
 function focusedLabel(): string | undefined {
   const walk = (node: {
@@ -400,7 +400,7 @@ test("screenshot: select open", async () => {
 });
 
 // --- Icon screenshots for the Gemini gate: the real icons on the demo and the icon sheet -------
-const ICON_SHOTS = "/tmp/pocketjs-react-test/jg161";
+const ICON_SHOTS = "/tmp/pocketjs-react-test/icons";
 
 test("screenshot: select chevron, idle", async () => {
   const c = await bootOverlays();
