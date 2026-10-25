@@ -19,7 +19,7 @@ export const serve = (): Promise<Server> => start(manifest);
 // Q3=A: the host page stays unchanged. On a mobile tier the test adds the viewport meta before the
 // page loads; without it WebKit lays the page out at 980 px and a tap hit-tests <body>.
 const VIEWPORT_META =
-  "(() => { const add = () => { if (document.querySelector('meta[name=viewport]')) return; const m = document.createElement('meta'); m.name = 'viewport'; m.content = 'width=device-width,initial-scale=1'; (document.head ?? document.documentElement).appendChild(m); }; add(); document.addEventListener('DOMContentLoaded', add); })()";
+  "(() => { const add = () => { const parent = document.head ?? document.documentElement; if (!parent || document.querySelector('meta[name=viewport]')) return; const m = document.createElement('meta'); m.name = 'viewport'; m.content = 'width=device-width,initial-scale=1'; parent.appendChild(m); }; document.addEventListener('DOMContentLoaded', add); add(); })()";
 
 /** Open a host-page URL and wait for the guest's __ready flag. */
 export async function openHost(
