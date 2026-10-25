@@ -16,6 +16,7 @@ import {
 import { Text, View } from "../elements.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
 import { cn } from "../style/cn.ts";
+import { type Box, measureFocused } from "./anchor.ts";
 import { ModalLayer } from "./modal-layer.tsx";
 import { Pressable } from "./press.tsx";
 import { useControllableState } from "./state.ts";
@@ -27,6 +28,8 @@ interface SelectContextValue {
   open: boolean;
   setOpen: (open: boolean) => void;
   labels: Map<string, string>;
+  /** The trigger's box, measured as the list opens (C6). Cleared on close. */
+  anchor: { current: Box | null };
 }
 
 const SelectContext = createContext<SelectContextValue | null>(null);
@@ -91,8 +94,22 @@ export function Root(props: SelectProps) {
   );
   const labels = new Map<string, string>();
   collectLabels(props.children, labels);
+  const anchor = useRef<Box | null>(null);
+  const setOpenAnchored = (next: boolean) => {
+    if (!next) anchor.current = null;
+    setOpen(next);
+  };
   return (
-    <SelectContext.Provider value={{ value, setValue, open, setOpen, labels }}>
+    <SelectContext.Provider
+      value={{
+        value,
+        setValue,
+        open,
+        setOpen: setOpenAnchored,
+        labels,
+        anchor,
+      }}
+    >
       {props.children}
     </SelectContext.Provider>
   );
@@ -147,7 +164,10 @@ export function Trigger(props: TriggerProps) {
         "flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-slate-800",
         ownSurface(props.className),
       )}
-      onPress={() => ctx.setOpen(!ctx.open)}
+      onPress={() => {
+        if (!ctx.open) ctx.anchor.current = measureFocused();
+        ctx.setOpen(!ctx.open);
+      }}
     >
       {props.children}
     </Pressable>
@@ -177,6 +197,12 @@ export function Content(props: ContentProps) {
     <ModalLayer
       open={ctx.open}
       onClose={() => ctx.setOpen(false)}
+      anchoring={{
+        anchor: ctx.anchor.current,
+        side: props.side,
+        align: props.align,
+        sideOffset: props.sideOffset,
+      }}
       panelClassName={cn(
         "flex-col p-1 rounded-md bg-slate-800 w-[220px]",
         ownSurface(props.className),

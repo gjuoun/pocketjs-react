@@ -2,6 +2,7 @@
 // the layout bounds hit test (op 42, hitTestBounds): a point inside the node seeds a binary search
 // per edge. Hit ids are native node ids, so 'inside the node' is a walk of its subtree.
 import { getOps, hostViewport } from "@pocketjs/framework/host";
+import { getFocused } from "@pocketjs/framework/input";
 import type { NodeMirror } from "../internal/pocket.ts";
 
 export interface Box {
@@ -182,4 +183,9 @@ export function placePopper(input: PlaceInput): Placement {
     y: Math.round(clamp(y, panel.h, viewport.h)),
     side,
   };
+}
+/** The border box of the focused node (the trigger a press just landed on), or null. */
+export function measureFocused(): Box | null {
+  const node = getFocused() as NodeMirror | null;
+  return node ? measureBox(node) : null;
 }
