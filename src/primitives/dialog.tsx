@@ -10,7 +10,7 @@ import { getOverlayLayer } from "../renderer/mount.ts";
 import { cn } from "../style/cn.ts";
 import { ModalLayer } from "./modal-layer.tsx";
 import { Pressable } from "./press.tsx";
-import { ownSurface } from "./surface.ts";
+import { ownSurface, ownText } from "./surface.ts";
 import { useControllableState } from "./state.ts";
 
 interface DialogContextValue {
@@ -132,12 +132,12 @@ export function Content(props: ContentProps) {
 
 export function Title(props: { className?: string; children?: ReactNode }) {
   return (
-    <Text className={cn("text-base text-white", props.className)}>{props.children}</Text>
+    <Text className={cn("text-base font-bold text-white", ownText(props.className))}>{props.children}</Text>
   );
 }
 
 export function Description(props: { className?: string; children?: ReactNode }) {
   return (
-    <Text className={cn("text-sm text-slate-300", props.className)}>{props.children}</Text>
+    <Text className={cn("text-sm text-slate-300", ownText(props.className))}>{props.children}</Text>
   );
 }

@@ -16,6 +16,8 @@
 //   R4  Slot/asChild flattening: `asChild ? Slot.Root : "tag"` becomes `"tag"`, the Slot import
 //       and asChild plumbing go away (C1 F1 policy; a real Slot belongs to C5)
 //   R5  a literal that maps to nothing stays as "" (cn("", className) is harmless)
+//   R6  the radix-ui import edge -> pocketjs-react/radix (native Dialog/DropdownMenu/Select, C5)
+//   R7  the lucide-react import edge -> pocketjs-react/glyph-icons (text glyph stubs until C7, C5)
 //
 // Only string spans are rewritten - the rest of the file stays byte-identical, which keeps the
 // diff reviewable and makes idempotency checkable. Regexes are not used on class strings; every
@@ -112,6 +114,12 @@ interface Edit {
 }
 
 const CLASS_CALLEES = new Set(["cn", "clsx", "cva", "twMerge"]);
+
+/** R6/R7: registry module specifier -> the PocketJS module that provides the same names. */
+const IMPORT_EDGE: Record<string, string> = {
+  "radix-ui": "pocketjs-react/radix",
+  "lucide-react": "pocketjs-react/glyph-icons",
+};
 
 type Node = Record<string, any>;
 
@@ -345,6 +353,20 @@ function transformSource(source: string, name: string): CodemodFile {
     }
   };
   visitAsChild(ast);
+
+  // R6/R7: only the module specifier moves; the JSX and the class strings stay byte-identical.
+  // A radix-ui declaration R4 removes whole (Slot only) is left to R4.
+  for (const stmt of ast.program?.body ?? []) {
+    if (stmt.type !== "ImportDeclaration") continue;
+    const to = IMPORT_EDGE[stmt.source?.value];
+    if (!to) continue;
+    const removedByR4 =
+      stmt.source.value === "radix-ui" &&
+      (stmt.specifiers ?? []).every((s: Node) => s.imported?.name === "Slot");
+    if (removedByR4) continue;
+    add(file.substituted, "import:" + stmt.source.value);
+    edits.push({ start: stmt.source.start, end: stmt.source.end, text: JSON.stringify(to) });
+  }
 
   const imports = (ast.program?.body ?? []).filter(
     (stmt: Node) =>

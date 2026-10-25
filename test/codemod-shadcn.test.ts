@@ -121,3 +121,23 @@ test("C3: --check is clean on ui/ and reports drift without writing", async () =
     "cn(buttonVariants({ variant, size, className }))",
   );
 });
+
+test("C5: R6/R7 move the radix-ui and lucide-react edges, and a second run changes nothing", async () => {
+  const { totals, files } = await codemod(UPSTREAM);
+  const dialog = files.find((f) => f.name === "dialog.tsx")!;
+  expect(dialog.after).toContain('from "pocketjs-react/radix"');
+  expect(dialog.after).toContain('from "pocketjs-react/glyph-icons"');
+  expect(dialog.after).not.toContain('from "radix-ui"');
+  expect(dialog.after).not.toContain('from "lucide-react"');
+  expect(totals.substituted["import:radix-ui"]).toBe(1);
+  expect(totals.substituted["import:lucide-react"]).toBe(1);
+  // R4 removes the Slot-only radix import whole; R6 must not also edit it.
+  const button = files.find((f) => f.name === "button.tsx")!;
+  expect(button.after).not.toContain("pocketjs-react/radix");
+  const dir = TMP + "/c5-edges";
+  for (const file of files) await Bun.write(dir + "/" + file.name, file.after);
+  const twice = await codemod(dir);
+  expect(twice.totals.changed).toBe(0);
+  expect(twice.totals.substituted["import:radix-ui"]).toBeUndefined();
+  expect(twice.totals.substituted["import:lucide-react"]).toBeUndefined();
+});

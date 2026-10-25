@@ -8,3 +8,17 @@ export function ownSurface(className: string | undefined): string {
     .filter((token) => token !== "" && !token.startsWith("bg-") && token !== "w-full")
     .join(" ");
 }
+
+const TEXT_SIZE = /^text-(2xs|xs|sm|base|lg|xl|2xl|3xl|4xl|5xl)$/;
+
+/**
+ * Text classes the core cannot honour, dropped from a title or description: `leading-*` (a
+ * line-height of none draws a 1px line), and the size tokens, because a large bold run has no
+ * baked font slot and draws nothing. The primitive's own size wins. C10 owns the real gaps.
+ */
+export function ownText(className: string | undefined): string {
+  return (className ?? "")
+    .split(/\s+/)
+    .filter((token) => token !== "" && !token.startsWith("leading-") && !TEXT_SIZE.test(token))
+    .join(" ");
+}

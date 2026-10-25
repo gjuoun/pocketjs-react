@@ -16,7 +16,9 @@
     "./tools/measure/web": "./tools/measure/web.ts",
     "./tools/measure/desktop": "./tools/measure/desktop.ts",
     "./test/harness": "./test/harness.ts",
-    "./pak-cook": "./src/pak-cook.ts"
+    "./pak-cook": "./src/pak-cook.ts",
+    "./radix": "./src/primitives/radix.ts",
+    "./glyph-icons": "./src/primitives/glyph-icons.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
