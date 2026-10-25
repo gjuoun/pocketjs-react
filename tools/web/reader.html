@@ -1,9 +1,11 @@
 <!doctype html>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>pocketjs-react reader</title>
 <style>
   body { background: #0f172a; color: #e2e8f0; font: 13px system-ui, sans-serif; margin: 16px; }
   canvas { width: 960px; height: 544px; image-rendering: pixelated; display: block; margin: 8px 0; }
+  @media (pointer: coarse) { canvas { width: 100%; max-width: 960px; height: auto; image-rendering: auto; } }
   #bar { display: flex; gap: 12px; align-items: center; }
 </style>
 <div id="bar">
