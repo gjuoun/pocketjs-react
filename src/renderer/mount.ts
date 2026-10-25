@@ -53,7 +53,7 @@ import {
 } from "../style/build-styles.ts";
 import { initClassRuntime } from "../style/class-runtime.ts";
 import { installStyleLayer, syncIconColours } from "../style/props.ts";
-import { registerIconVariant } from "../style/icon-colour.ts";
+import { forgetIconVariants, registerIconVariant } from "../style/icon-colour.ts";
 import { reconciler, withPriority } from "./host-config.ts";
 import { setOskTarget } from "./osk-target.ts";
 
@@ -128,6 +128,8 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
     throw new Error("pocketjs-react: mount() needs globalThis.ui or opts.ops");
   const host = detectHost(ops);
   installHost(host);
+  // Icon variant handles belong to the core that uploaded them; a new mount re-registers its own.
+  forgetIconVariants();
   setStyleResolver(resolveStyle);
   registerStyles(opts.styles ?? buildStyleIds());
   initClassRuntime(

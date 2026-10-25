@@ -26,7 +26,8 @@
 import { readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { parse } from "@babel/parser";
-import { rewriteToken } from "../../src/compat/tokens.ts";
+import { dropReason, rewriteToken } from "../../src/compat/tokens.ts";
+import { bodiesOnly, splitSelector } from "../../src/compat/selectors.ts";
 import { parseClassLiteral } from "../../src/internal/pocket.ts";
 import { unknownUtilities } from "../../src/internal/pocket-build.ts";
 
@@ -101,6 +102,8 @@ export interface CodemodReport {
     mapDropped: TokenCounts;
     compilerDropped: TokenCounts;
     substituted: TokenCounts;
+    /** Drops grouped by reason (mapDropped + compilerDropped, C8 Step 5). */
+    reasons: TokenCounts;
     asChildFlattened: number;
     emptied: number;
     skipped: number;
@@ -114,6 +117,7 @@ interface Edit {
 }
 
 const CLASS_CALLEES = new Set(["cn", "clsx", "cva", "twMerge"]);
+const COMPARISON_OPS = new Set(["===", "!==", "==", "!=", "<", ">", "<=", ">=", "in", "instanceof"]);
 
 /** R6/R7: registry module specifier -> the PocketJS module that provides the same names. */
 const IMPORT_EDGE: Record<string, string> = {
@@ -137,6 +141,14 @@ function keyName(property: Node): string {
 
 function add(counts: TokenCounts, token: string, n = 1): void {
   counts[token] = (counts[token] ?? 0) + n;
+}
+
+/** Every dropped token of a file, grouped by the reason it was dropped (C8 Step 5). */
+function reasonsOf(file: Pick<CodemodFile, "mapDropped" | "compilerDropped">): TokenCounts {
+  const out: TokenCounts = {};
+  for (const counts of [file.mapDropped, file.compilerDropped])
+    for (const [token, n] of Object.entries(counts)) add(out, dropReason(token), n);
+  return out;
 }
 
 /** One token string (which may expand to several) -> its PocketJS form, plus what happened. */
@@ -168,6 +180,13 @@ function rewriteOne(
     }
     if (DROP_PREFIX.some((prefix) => next.startsWith(prefix))) {
       add(file.substituted, next);
+      continue;
+    }
+    // C8: a selector stays when its body is a utility the compiler draws; the runtime resolves it.
+    const selector = splitSelector(next);
+    if (selector) {
+      if (unknownUtilities(selector.body).length > 0) add(file.compilerDropped, next);
+      else kept.push(next);
       continue;
     }
     if (unknownUtilities(next).length > 0) {
@@ -266,13 +285,20 @@ function transformSource(source: string, name: string): CodemodFile {
   walk(ast, undefined);
 
   const contexts = classContexts(ast);
+  // A string is a class only when it reaches a class context through value positions
+  // (&& / || operands, ternary branches). A comparison operand or a ternary test is data:
+  // `position === "popper"` must keep its literal.
   const inClass = (node: Node): boolean => {
     if (contexts.has(node)) return true;
+    let child: Node = node;
     for (
       let p = parents.get(node), hops = 0;
       p && hops < 16;
-      p = parents.get(p), hops++
+      child = p, p = parents.get(p), hops++
     ) {
+      if (p.type === "BinaryExpression" && COMPARISON_OPS.has(p.operator))
+        return false;
+      if (p.type === "ConditionalExpression" && child === p.test) return false;
       if (contexts.has(p)) return true;
     }
     return false;
@@ -446,7 +472,7 @@ function checkResidual(text: string, file: CodemodFile): void {
   if (text === "") return;
   let ok = false;
   try {
-    ok = parseClassLiteral(text) !== null;
+    ok = parseClassLiteral(bodiesOnly(text)) !== null;
   } catch {
     ok = false;
   }
@@ -487,11 +513,14 @@ export async function codemod(srcDir: string): Promise<CodemodReport> {
     mapDropped: {},
     compilerDropped: {},
     substituted: {},
+    reasons: {},
     asChildFlattened: 0,
     emptied: 0,
     skipped: 0,
   };
   for (const file of files) {
+    for (const [reason, n] of Object.entries(reasonsOf(file)))
+      add(totals.reasons, reason, n);
     totals.literals += file.literals;
     totals.changed += file.changed;
     totals.mapped += file.mapped;
@@ -626,6 +655,7 @@ export async function main(argv: string[]): Promise<number> {
     );
     printCounts("substituted", file.substituted);
     printCounts("compiler-dropped", file.compilerDropped);
+    printCounts("reasons", reasonsOf(file));
     if (file.residual.length)
       console.log("  RESIDUAL: " + JSON.stringify(file.residual));
   }
@@ -642,6 +672,7 @@ export async function main(argv: string[]): Promise<number> {
       report.files.reduce((n, f) => n + f.residual.length, 0) +
       " residual",
   );
+  printCounts("reasons", report.totals.reasons);
   return report.files.some((f) => f.residual.length > 0) ? 1 : 0;
 }
 

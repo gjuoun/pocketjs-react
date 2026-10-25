@@ -1,3 +1,5 @@
+import { splitSelector, splitVariants } from "./selectors.ts";
+
 // C2: the fixed shadcn vocabulary -> PocketJS vocabulary map (Jun ruling: fixed values from
 // the existing 19-color Tailwind v3 palette; no build-time theme table, no dark theme).
 //
@@ -37,6 +39,14 @@ export const TOKEN_MAP: Readonly<Record<string, string>> = {
   "border-border": "border-slate-200",
   "border-input": "border-slate-200",
   "bg-border": "bg-slate-200",
+  "text-destructive": "text-red-600",
+  "border-destructive": "border-red-600",
+  // C8 Step 8 (Q3=A): a header with a CardAction child lays out as a row, space between (the
+  // grid's [1fr_auto] columns, approximated). Both halves are selectors on the same child check.
+  "has-data-[slot=card-action]:grid-cols-[1fr_auto]":
+    "has-data-[slot=card-action]:flex-row has-data-[slot=card-action]:justify-between",
+  // C8 Step 6: a shadow-sm is the core's one soft shadow; rem lengths are px on a 16px root.
+  "shadow-sm": "shadow",
   "border-ring": "border-slate-900",
   // --- utility aliases ---------------------------------------------------------------
   "inline-flex": "flex",
@@ -75,6 +85,56 @@ const VARIANTS: Readonly<Record<string, string>> = {
   active: "active",
 };
 
+
+// C8 Step 5: every dropped token names why. The reasons are the policy, not the gap: a token in
+// "animation" is a deliberate omission (no transitions in scope), "dark" is the light-only
+// policy, "owned-by-primitive" is a layout the native primitive already performs, and the
+// `no-core-feature` / `scroll` / `grid` reasons are the core gaps C10 tracks.
+export const DROP_REASONS = [
+  "not-in-build",
+  "animation",
+  "noop",
+  "dark",
+  "responsive",
+  "pseudo",
+  "focus-indicator",
+  "owned-by-primitive",
+  "grid",
+  "scroll",
+  "no-core-feature",
+  "unmapped",
+] as const;
+export type DropReason = (typeof DROP_REASONS)[number];
+
+const VARIANT_STRUCTURE = /^(\*|\[|has-|last|first|nth-|group|peer)/;
+
+/** Why a token the map or the compiler could not keep was dropped (every drop has one). */
+export function dropReason(tok: string): DropReason {
+  const parts = splitVariants(tok);
+  const base = parts[parts.length - 1];
+  const variants = parts.slice(0, -1);
+  if (variants.some((v) => v === "dark")) return "dark";
+  if (variants.some((v) => v === "[&_svg]" || v === "[&>svg]" || v.startsWith("[&_svg:")))
+    return "noop";
+  if (variants.some((v) => /^(sm|md|lg|xl|2xl)$/.test(v))) return "responsive";
+  if (variants.some((v) => /^(placeholder|file|selection)$/.test(v))) return "pseudo";
+  if (/^ring(-|$)/.test(base) || base === "border-ring") return "focus-indicator";
+  if (variants.some((v) => VARIANT_STRUCTURE.test(v))) return "no-core-feature";
+  if (/^(outline|select-none|pointer-events|cursor-|fill-current|whitespace-nowrap|w-fit|@container|shrink)/.test(base))
+    return "noop";
+  if (/^(animate-|fade-|zoom-|slide-|origin-\(|duration-)/.test(base)) return "animation";
+  if (/^(grid$|grid-(cols|rows)-|auto-rows-|col-(start|span)-|row-(start|span)-|self-|justify-self-)/.test(base))
+    return "grid";
+  if (/^(overflow-y-|overflow-x-|max-h-\(|max-h-\[var|scroll-)/.test(base)) return "scroll";
+  if (/^(fixed$|top-\[50%\]|left-\[50%\]|translate-[xy]-\[-50%\]|h-\[var\(--radix|min-w-\[var\(--radix)/.test(base))
+    return "owned-by-primitive";
+  // rounded-full draws only with a pinned size in the same literal (the core's [R] rule).
+  if (base === "rounded-full") return "no-core-feature";
+  // Negative utilities (-translate-x-1) are arbitrary-form only in the core's subset.
+  if (/calc\(|^(underline|ml-auto)|^-/.test(base)) return "no-core-feature";
+  return "unmapped";
+}
+
 export interface RewriteResult {
   /** The rewritten literal (whitespace-normalized). */
   text: string;
@@ -82,6 +142,8 @@ export interface RewriteResult {
   mapped: number;
   /** Tokens with no equivalent (no-op utilities, unsupported state/variants, ring-*). */
   dropped: number;
+  /** The dropped tokens themselves, so the caller can count each by its reason (C8 Step 11). */
+  droppedTokens: string[];
 }
 
 /** shadcn's focus ring border (JG-157): dropped, because the compat default focus border is the
@@ -91,6 +153,17 @@ const FOCUS_RING_BORDER = "focus-visible:border-ring";
 /** One token -> its PocketJS form, or "" when the map drops it. Pass-through otherwise. */
 export function rewriteToken(tok: string): string {
   if (tok === FOCUS_RING_BORDER) return "";
+  // C8: a selector the compat layer resolves per node survives the map; its body is rewritten.
+  // A whole-token substitution that needs two utilities (see the has-data card header below).
+  if (TOKEN_MAP[tok] !== undefined) return TOKEN_MAP[tok];
+  const selector = splitSelector(tok);
+  if (selector) {
+    // Descendant rules keep only their icon colour: size and shrink are the icon default here,
+    // and pointer-events has no pointer (no-op), so they drop.
+    if (selector.selector.kind === "svg" && !selector.body.startsWith("text-")) return "";
+    const body = rewriteToken(selector.body);
+    return body === "" ? "" : selector.prefix + ":" + body;
+  }
   const colon = tok.indexOf(":");
   if (colon > 0) {
     const variant = tok.slice(0, colon);
@@ -107,6 +180,9 @@ export function rewriteToken(tok: string): string {
   // size-N is w-N h-N on a flexbox core.
   const size = /^size-(\d+(?:\.\d+)?)$/.exec(tok);
   if (size) return "w-" + size[1] + " h-" + size[1];
+  // C8 Step 6: rem arbitrary lengths are px (1rem = 16px, the core's root size).
+  const rem = /^(-?)([a-z-]+)-\[(\d+(?:\.\d+)?)rem\]$/.exec(tok);
+  if (rem) return rem[1] + rem[2] + "-[" + Math.round(Number(rem[3]) * 16) + "px]";
   // ring-* draws an outline the core does not have (C10); ring-offset-* likewise.
   if (tok === "ring" || tok.startsWith("ring-")) return "";
   if (NEEDS_SIZE.test(tok)) return "";
@@ -117,19 +193,20 @@ export function rewriteToken(tok: string): string {
 export function rewrite(cls: string): RewriteResult {
   const tokens = cls.trim().split(/\s+/).filter(Boolean);
   const out: string[] = [];
+  const droppedTokens: string[] = [];
   let mapped = 0;
-  let dropped = 0;
   for (const tok of tokens) {
     const next = rewriteToken(tok);
     if (next === "") {
-      dropped++;
+      droppedTokens.push(tok);
     } else {
       if (next !== tok) mapped++;
       out.push(next);
     }
   }
-  return { text: out.join(" "), mapped, dropped };
+  return { text: out.join(" "), mapped, dropped: droppedTokens.length, droppedTokens };
 }
+
 
 export function rewriteLiteral(cls: string): string {
   return rewrite(cls).text;

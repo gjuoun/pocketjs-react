@@ -253,6 +253,35 @@ Text color inheritance (JG-156): after each commit the compat layer gives every 
 
 Flex text tags (`span`/`p`/`label` with `flex`) are views, and a run under one is held by a text element that carries its size and weight. A run font is one baked slot per size x weight, so a combination compiles only when the build baked it (the build bakes the cross product of the source size and weight tokens).
 
+### Selectors, descendant rules and drop reasons (C8)
+
+Some shadcn variants are node state the core does not have, so the compat layer resolves them per node from the DOM props and children, before the class reaches the token map:
+
+- `disabled:`, `aria-invalid:`, `data-[k=v]:` and `data-[k]:` read the node's own props (`disabled`, `aria-invalid`, `data-*`).
+- `has-[>svg]:` matches a child that draws an icon; `has-data-[slot=v]:` matches a child whose `data-slot` (or component name in kebab-case, `CardAction` → `card-action`) is `v`.
+- `[&_svg]:` and `[&>svg]:` never style the node. Their text colour reaches the icons below, unless a nearer node sets its own colour; size and shrink rules drop, since icons draw at their design size.
+
+Every dropped token names its reason. `compatStats().unsupported` counts the runtime drops by reason, and `tools/codemod/shadcn.ts --report` counts them for the vendored source:
+
+| Reason | Meaning |
+| --- | --- |
+| `animation` | transitions and enter/exit motion (out of scope) |
+| `noop` | the core has no pointer, cursor, outline or icon-size control to honour it |
+| `dark` | the light-only policy: one palette, no second theme |
+| `responsive` | a fixed screen size: `sm:`/`md:` do not apply |
+| `pseudo` | `placeholder:`, `file:`, `selection:` have no core state |
+| `focus-indicator` | rings: the focus border stands in for them |
+| `owned-by-primitive` | the native primitive places the node (Dialog centre, popper anchor) |
+| `grid` / `scroll` / `no-core-feature` | core gaps tracked for C10 (grid, scrolling, calc, decoration, negative and structural selectors) |
+| `not-in-build` | a kept utility the build table does not hold (a strict host throws on it) |
+
+Known boundaries (C8):
+
+- `ring-*` draws as the 2px focus border, not shadcn's translucent halo.
+- A `CardHeader` with a `CardAction` lays out as a row with space between; the grid's column widths are not reproduced.
+- Radix's trigger height and minimum width bindings are not applied, so a Select list is not sized to its trigger.
+- Animation, `dark:`, responsive and pseudo variants are counted, not drawn.
+
 ## Vendor + codemod (C3)
 
 Real shadcn registry source can live in the app tree and render without a runtime shim: vendor the

@@ -10,9 +10,11 @@ import { NODE_TYPE, type NodeMirror, setProp } from "../internal/pocket.ts";
 import { setHostCompat } from "../renderer/host-config.ts";
 import {
   type ClassMissPolicy,
+  classStringValue,
   setClassMissPolicy,
   setTokenMapEnabled,
 } from "../style/class-runtime.ts";
+import { setIconRule } from "../style/icon-colour.ts";
 import { setTextInheritance } from "../style/text-color.ts";
 import {
   compatProps,
@@ -20,6 +22,7 @@ import {
   textFieldInput,
   type UnknownPropsPolicy,
 } from "./props.ts";
+import { iconTextRule } from "./selectors.ts";
 import { countUnknownTag } from "./stats.ts";
 import {
   hostTypeOf,
@@ -28,6 +31,7 @@ import {
   unknownTagMessage,
 } from "./tags.ts";
 import { heldBy, holdRun, markTextual } from "./text-wrap.ts";
+import { rewriteLiteral } from "./tokens.ts";
 
 /** DOM text tags that become views when they carry flex (JG-156). */
 const TEXTUAL_FLEX_TAGS = new Set(["span", "p", "label"]);
@@ -74,6 +78,14 @@ export function installCompat(opts: CompatOptions = {}): void {
     bind(node, tag, props, count) {
       if (TEXTUAL_FLEX_TAGS.has(tag) && node.type === NODE_TYPE.view)
         markTextual(node, props.className);
+      // C8: a [&_svg]:text-* rule colours the icons below this node (its own icons keep their own colour).
+      const iconClass = iconTextRule(props.className);
+      setIconRule(
+        node,
+        iconClass === undefined
+          ? undefined
+          : classStringValue(rewriteLiteral(iconClass), "textColor"),
+      );
       if (!TEXT_ENTRY_TAGS.has(tag)) return;
       const known = fieldFor(node) !== undefined;
       const binding = bindField(node, tag, textFieldInput(tag, props, count));

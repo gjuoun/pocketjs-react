@@ -55,7 +55,12 @@ test("C3: the report names what it dropped, substituted and flattened", async ()
     });
   // The compiler-only gaps C2 cannot see are dropped by name, not silently.
   expect(totals.compilerDropped.fixed).toBeGreaterThanOrEqual(1);
-  expect(totals.compilerDropped["shadow-sm"]).toBeGreaterThanOrEqual(1);
+  // C8 Step 6: shadow-sm is the core's soft shadow now, so it is mapped, not dropped.
+  expect(totals.mapDropped["shadow-sm"]).toBeUndefined();
+  expect(totals.compilerDropped["shadow-sm"]).toBeUndefined();
+  // C8 Step 5: every drop names its reason; nothing falls through to "unmapped".
+  expect(totals.reasons.unmapped).toBeUndefined();
+  expect(totals.reasons.animation).toBeGreaterThan(0);
   expect(totals.compilerDropped["col-start-2"]).toBeGreaterThanOrEqual(1);
   // "Equivalent subset" substitutions, plus the C2 mapping and the Slot/asChild flattening.
   expect(totals.substituted["rounded-full"]).toBe(1);
@@ -70,6 +75,24 @@ test("C3: the report names what it dropped, substituted and flattened", async ()
   // Slot left the vendored components: asChild is flattened to the base tag (C1 F1 policy).
   expect(button.after).not.toContain("Slot");
   expect(button.after).not.toContain("asChild");
+});
+
+test("C8: a comparison operand is data, not a class (position === \"popper\")", async () => {
+  const dir = TMP + "/operands";
+  const source = [
+    'import { cn } from "pocketjs-react"',
+    "export const a = cn(position === 'popper' && 'h-9 px-2')",
+    "export const b = cn(mode === 'x' ? 'p-4' : 'h-9')",
+    "",
+  ].join("\n");
+  await Bun.write(dir + "/operands.ts", source);
+  const report = await codemod(dir);
+  const after = report.files[0].after;
+  expect(after).toContain("position === 'popper'");
+  expect(after).toContain("mode === 'x'");
+  expect(after).not.toContain('position === ""');
+  expect(report.files[0].compilerDropped.popper).toBeUndefined();
+  expect(after).toContain("'h-9'");
 });
 
 test("C3: rules R0-R3 in isolation (rounded-full derivation, aliases, opacity, empty)", async () => {
@@ -89,7 +112,7 @@ test("C3: rules R0-R3 in isolation (rounded-full derivation, aliases, opacity, e
   expect(after).toContain('cn("h-9 rounded-[18px] px-2")');
   expect(after).toContain('cn("rounded-[10px] py-0.5 text-xs")');
   expect(after).toContain(
-    'cn("flex w-9 h-9 active:bg-slate-900 flex flex-col")',
+    'cn("flex w-9 h-9 active:bg-slate-900 shadow flex flex-col")',
   );
   expect(after).toContain('cn("hidden")');
   // A template literal with expressions is reported, not guessed at.
@@ -97,7 +120,8 @@ test("C3: rules R0-R3 in isolation (rounded-full derivation, aliases, opacity, e
   expect(report.files[0].after).toContain("p-${4} text-sm");
   expect(report.files[0].residual).toEqual([]);
   expect(report.files[0].mapDropped["shadow-sm"]).toBeUndefined();
-  expect(report.files[0].compilerDropped["shadow-sm"]).toBe(1);
+  expect(report.files[0].compilerDropped["shadow-sm"]).toBeUndefined();
+  expect(report.files[0].after).toContain("shadow flex flex-col");
 });
 
 test("C3: --check is clean on ui/ and reports drift without writing", async () => {

@@ -20,6 +20,7 @@
 // The build fails when any bundle input comes from PocketJS's Pocket3D-licensed paths.
 import { basename, dirname, join, resolve } from "node:path";
 import { rewriteLiteral } from "../src/compat/tokens.ts";
+import { bodiesOnly } from "../src/compat/selectors.ts";
 import {
   bakeAtlases,
   compileClasses,
@@ -137,7 +138,9 @@ export async function build(
   const scanned = await collect(entry, [join(ROOT, "src")]);
   // C2: rewrite shadcn vocabulary to PocketJS vocabulary before anything compiles or counts,
   // through the same fixed table the runtime uses, so a runtime rewrite is an exact table hit.
-  const literals = scanned.literals.map(rewriteLiteral);
+  // C8: a selector token (disabled:, data-[..]:) is resolved per node at runtime; the build
+  // compiles only its body, so the body is a normal token in the table.
+  const literals = scanned.literals.map(rewriteLiteral).map(bodiesOnly);
   const styles = compileClasses(literals);
   for (const lit of literals) {
     const bad = suspectClassLiteral(lit);
