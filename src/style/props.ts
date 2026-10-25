@@ -5,7 +5,12 @@
 //     clears an override, so a removed key is written back to the class's own value for it,
 //     or to the core default when the class does not set it.
 
-import { type NodeMirror, type PropName, setProp } from "../internal/pocket.ts";
+import {
+  type NodeMirror,
+  type PropName,
+  rootMirror,
+  setProp,
+} from "../internal/pocket.ts";
 import { setPropsTransform } from "../renderer/host-config.ts";
 import {
   applyClassName,
@@ -13,6 +18,7 @@ import {
   flushClassTable,
 } from "./class-runtime.ts";
 import { CORE_DEFAULTS, type CoreStyle, cssToCore } from "./css.ts";
+import { forgetTextOverride, sweepTextColor } from "./text-color.ts";
 
 type Props = Record<string, unknown>;
 const appliedStyle = new WeakMap<NodeMirror, CoreStyle>();
@@ -34,6 +40,7 @@ function applyStyle(node: NodeMirror, style: unknown): void {
     changed = true;
   }
   appliedStyle.set(node, next);
+  if ("textColor" in delta) forgetTextOverride(node);
   if (changed) setProp(node, "style", delta, {});
 }
 
@@ -53,6 +60,10 @@ export function installStyleLayer(): void {
     },
     afterCommit() {
       flushClassTable();
+      sweepTextColor(rootMirror, (node) => {
+        const colour = appliedStyle.get(node)?.textColor;
+        return typeof colour === "string" ? colour : undefined;
+      });
     },
   });
 }
