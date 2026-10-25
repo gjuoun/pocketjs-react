@@ -470,6 +470,40 @@ Bundle: 252,031 bytes minified (83,457 gzip). Pak (styles + font atlases): 117,3
 - **Upgrade risk and guards** — a PocketJS release can move them. The exact version pin and the tests turn that into an import or build error rather than a runtime surprise. Asking upstream to export a small renderer-author surface is the long-term fix.
 - **Desktop host** — comes from a sibling PocketJS checkout (see Quick start).
 
+## 验证协议
+
+Browser behaviour is checked by three gates. A change to input or touch paths passes every gate that applies before it is handed over.
+
+### Gates
+
+- **Matrix (Playwright)** — `bun run test:e2e`: prepares the fixtures with bun, then runs the three tiers below under node. Browsers come from the Playwright cache; nothing is downloaded.
+- **Grounding (opencli/CDP)** — `opencli browser <session> state|eval|find` to read focus and hit rects. Exploration only, not a gate.
+- **Simulator smoke** — `bash scripts/sim-smoke.sh`: boots the iOS Simulator, opens the demo, taps the field and asserts the soft keyboard in a screenshot.
+
+### Tiers
+
+| Tier | Engine | Device | Covers |
+|---|---|---|---|
+| `chromium` | Chromium | desktop 1280×800, mouse and keyboard | physical keys, d-pad, mouse clicks |
+| `chromium-iphone` | Chromium | iPhone 15 emulation, trusted touch | touch host paths |
+| `webkit` | real WebKit | iPhone 15 emulation, trusted touch | touch paths on the engine iOS uses |
+
+### Acceptance tags
+
+Cards name the gate their acceptance command runs through:
+
+- **untagged** — `bun run test:e2e`, all tiers.
+- **`[sim]`** — also `scripts/sim-smoke.sh` on the booted Simulator.
+- **`[sim+webkit]`** — the `webkit` tier and the Simulator gate.
+- **`[device]`** — a physical iPhone; Jun checks it by hand. Nothing else lands on his phone.
+
+### Notes
+
+- The touch tiers open pages with `touch=1`: WebKit's emulation reports `navigator.maxTouchPoints` 0, while an iPhone reports more.
+- The viewport meta is injected by the tests only; the host page is unchanged. Without it WebKit lays the page out at 980 px and maps taps about 2.5× off.
+- The reader canvas is 960 CSS px wide and overflows a 393 px phone viewport on WebKit. The overlay tests read points that fit the viewport.
+- The native-keyboard cases are touch-host only and skip on the `chromium` tier.
+
 ## Licensing
 
 pocketjs-react is MIT. See [LICENSE](./LICENSE).

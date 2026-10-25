@@ -23,6 +23,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "bun test",
+    "test:e2e": "bun tools/e2e/prepare.ts && node node_modules/.bin/playwright test -c test/e2e/playwright.config.ts",
     "build": "bun tools/build.ts",
     "measure:web": "bun tools/measure/web.ts",
     "measure:desktop": "bun tools/measure/desktop.ts",
@@ -47,6 +48,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.2",
+    "@playwright/test": "1.64.1",
     "@types/bun": "1.3.14",
     "@types/opentype.js": "1.3.10",
     "@types/react": "19.3.0",
@@ -54,6 +56,7 @@
     "@types/react-reconciler": "0.34.1",
     "class-variance-authority": "0.7.1",
     "lucide-react": "1.61.0",
+    "playwright": "1.64.1",
     "radix-ui": "1.8.1",
     "react-dom": "19.3.1",
     "tailwind-merge": "3.7.0",
