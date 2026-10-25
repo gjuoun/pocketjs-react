@@ -24,7 +24,7 @@ interface PressableProps {
   /** The node, for primitives that move focus to a specific row (Select's selected item). */
   nodeRef?: Ref<NodeMirror>;
   onPress: () => void;
-  /** A Menu or Select item row: on the web host it carries a hover overlay child (G4). */
+  /** A Menu or Select item row: on the web host it carries a hover overlay child. */
   hoverable?: boolean;
   children?: ReactNode;
 }

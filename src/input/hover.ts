@@ -1,4 +1,4 @@
-// G4 web hover (compat only). The web reader sets globalThis.__pocketHover before the app mounts;
+// Web hover (compat only). The web reader sets globalThis.__pocketHover before the app mounts;
 // native hosts never do, so with the gate off a Menu or Select row is exactly what it was before.
 // A hoverable row carries one transparent overlay child (absolute, inset-0, active:bg-blue-600) that
 // the core paints natively. The pump lights it on a pointer move with setActive, never by moving focus.

@@ -320,7 +320,7 @@ test("Q1-A control: a Dialog's scrim dims the Behind row", async () => {
   expect(dialog.pixel(110, 245)).not.toBe(before);
 });
 
-// G4 hover (web host): a pointer over a Menu row paints its overlay; focus never moves.
+// Hover (web host): a pointer over a Menu row paints its overlay; focus never moves.
 describe("hover: a pointer over a menu row paints it, and never moves focus", () => {
   const BLUE = "#2563eb";
   const BASE = "#1e293b";

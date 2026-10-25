@@ -26,7 +26,7 @@ export interface PointerEvent {
   x: number;
   y: number;
   down: boolean;
-  /** Web hover (G4): a pointer move over the canvas, or the pointer leaving it. */
+  /** Web hover: a pointer move over the canvas, or the pointer leaving it. */
   move?: boolean;
   leave?: boolean;
 }
@@ -95,7 +95,7 @@ export function installPointer(): () => void {
   let armedFocused = false;
   // A press that began outside the top layer's panel: its release outside closes that layer.
   let armedOutside: Layer | null = null;
-  // F2: a focus move the pump did not make (a d-pad move) clears the hover highlight.
+  // A focus move the pump did not make (a d-pad move) clears the hover highlight.
   let seenFocus: unknown = null;
   return addFramePump(() => {
     const focus = getFocused();
@@ -104,7 +104,7 @@ export function installPointer(): () => void {
       hoverClear();
     }
     for (const event of drain()) {
-      // Hover never touches `armed`, focus or presses: it only lights the row overlay (G4).
+      // Hover never touches `armed`, focus or presses: it only lights the row overlay.
       if (event.leave) {
         hoverClear();
         continue;
