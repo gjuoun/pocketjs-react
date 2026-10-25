@@ -7,6 +7,7 @@ import { mount, resetCompatStats, Text, View } from "../src/index.ts";
 import { compileClasses } from "../src/internal/pocket-build.ts";
 import * as Dialog from "../src/primitives/dialog.tsx";
 import * as DropdownMenu from "../src/primitives/dropdown-menu.tsx";
+import * as Select from "../src/primitives/select.tsx";
 import { installBuildStyles } from "../src/style/build-styles.ts";
 import { build } from "../tools/build.ts";
 import { bootCore, type Core } from "./harness.ts";
@@ -214,4 +215,37 @@ test("dropdown: preventDefault in onSelect keeps the menu open; a plain select c
   press(c, BTN.CIRCLE);
   expect(events).toEqual([true, false]);
   expect(visible(c)).not.toContain("Keep");
+});
+
+test("select: the trigger shows the placeholder, then the chosen label; onValueChange fires once", async () => {
+  const changes: string[] = [];
+  const c = await start(
+    screen(
+      <Select.Root onValueChange={(value) => changes.push(value)}>
+        <Select.Trigger className="bg-slate-900 px-2 py-1 rounded-md">
+          <Select.Value placeholder="Pick" />
+        </Select.Trigger>
+        <Select.Portal>
+          <Select.Content>
+            <Select.Item value="apple"><Select.ItemText>Apple</Select.ItemText></Select.Item>
+            <Select.Item value="banana"><Select.ItemText>Banana</Select.ItemText></Select.Item>
+          </Select.Content>
+        </Select.Portal>
+      </Select.Root>,
+    ),
+  );
+  expect(visible(c)).toContain("Pick");
+  focusOn(c, "Pick");
+  press(c, BTN.CIRCLE);
+  focusOn(c, "Banana");
+  press(c, BTN.CIRCLE);
+  expect(changes).toEqual(["banana"]);
+  expect(visible(c)).toContain("Banana");
+  expect(visible(c)).not.toContain("Apple");
+});
+
+test("select: an Item without a value is an error, not a silent empty choice", async () => {
+  await expect(
+    start(screen(<Select.Root><Select.Item value="">x</Select.Item></Select.Root>)),
+  ).rejects.toThrow("value");
 });

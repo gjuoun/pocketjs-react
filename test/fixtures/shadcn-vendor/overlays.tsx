@@ -16,9 +16,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu.tsx";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select.tsx";
 
 export function Overlays() {
   const [deletes, setDeletes] = useState(0);
+  const [fruit, setFruit] = useState("");
+  const [changes, setChanges] = useState(0);
   return (
     <div className="w-full h-full flex-col gap-1 p-2 bg-slate-100">
       <Button>Under</Button>
@@ -37,6 +46,22 @@ export function Overlays() {
         </DropdownMenuContent>
       </DropdownMenu>
       <Text className="text-sm text-white">{`Deletes ${deletes}`}</Text>
+      <Select
+        value={fruit}
+        onValueChange={(next) => {
+          setFruit(next);
+          setChanges((n) => n + 1);
+        }}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Pick fruit" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="apple">Apple</SelectItem>
+          <SelectItem value="banana">Banana</SelectItem>
+        </SelectContent>
+      </Select>
+      <Text className="text-sm text-white">{`Fruit changes ${changes}`}</Text>
     </div>
   );
 }

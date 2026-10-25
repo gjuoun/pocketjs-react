@@ -4,3 +4,4 @@
 
 export * as Dialog from "./dialog.tsx";
 export * as DropdownMenu from "./dropdown-menu.tsx";
+export * as Select from "./select.tsx";

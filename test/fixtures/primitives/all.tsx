@@ -3,6 +3,7 @@
 import { View } from "../../../src/index.ts";
 export * as Dialog from "../../../src/primitives/dialog.tsx";
 export * as DropdownMenu from "../../../src/primitives/dropdown-menu.tsx";
+export * as Select from "../../../src/primitives/select.tsx";
 export { ModalLayer } from "../../../src/primitives/modal-layer.tsx";
 
 export function Samples() {

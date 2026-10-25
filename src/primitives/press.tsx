@@ -3,14 +3,17 @@
 // the class and the press merge onto the child (Radix's Slot contract, without Slot), so
 // <Close asChild><Button/></Close> presses the Button.
 
-import { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
+import { cloneElement, isValidElement, type ReactElement, type ReactNode, type Ref } from "react";
 import { Text, View } from "../elements.ts";
+import type { NodeMirror } from "../internal/pocket.ts";
 import { cn } from "../style/cn.ts";
 
 interface PressableProps {
   asChild?: boolean;
   className?: string;
   disabled?: boolean;
+  /** The node, for primitives that move focus to a specific row (Select's selected item). */
+  nodeRef?: Ref<NodeMirror>;
   onPress: () => void;
   children?: ReactNode;
 }
@@ -39,7 +42,12 @@ export function Pressable(props: PressableProps) {
     );
   if (props.disabled) return <View className={props.className}>{body}</View>;
   return (
-    <View className={props.className} focusable onPress={props.onPress}>
+    <View
+      ref={props.nodeRef}
+      className={props.className}
+      focusable
+      onPress={props.onPress}
+    >
       {body}
     </View>
   );

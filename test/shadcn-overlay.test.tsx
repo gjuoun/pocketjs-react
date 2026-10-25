@@ -106,3 +106,26 @@ test("DropdownMenu: the vendored menu opens, the d-pad moves, CIRCLE selects onc
   expect(visible(c)).not.toContain("Edit");
   expect(focused()).toBe("Menu");
 });
+
+test("Select: the vendored select shows its placeholder, selects Banana once, and returns focus to the trigger", async () => {
+  const c = await boot();
+  expect(visible(c)).toContain("Pick fruit");
+  focusOn(c, "Pick fruit");
+  press(c, BTN.CIRCLE);
+  expect(visible(c)).toContain("Apple");
+  expect(visible(c)).toContain("Banana");
+  expect(focused()).toBe("Apple");
+  press(c, BTN.DOWN);
+  expect(focused()).toBe("Banana");
+  press(c, BTN.CIRCLE);
+  expect(visible(c)).toContain("Fruit changes 1");
+  expect(visible(c)).not.toContain("Apple");
+  expect(visible(c)).toContain("Banana");
+  expect(focused()).toBe("Banana");
+  // Reopened: focus moves from the trigger onto the selected row, whose first text is its check glyph.
+  press(c, BTN.CIRCLE);
+  expect(focused()).not.toBe("Banana");
+  expect(visible(c)).toContain("Apple");
+  press(c, BTN.CROSS);
+  expect(visible(c)).toContain("Fruit changes 1");
+});
