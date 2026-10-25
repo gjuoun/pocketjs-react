@@ -1,4 +1,4 @@
-// JG-157 focus indicator: a DOM-mapped focusable draws a default focus border with no explicit
+// Focus indicator: a DOM-mapped focusable draws a default focus border with no explicit
 // focus: border style; an author focus: border keeps its own colour. Real wasm core, pixel asserts.
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { BTN, getFocused } from "@pocketjs/framework/input";
@@ -165,7 +165,7 @@ test("unfocused siblings keep their pixels and boxes when focus moves", async ()
   console.log("unfocused pixels identical");
 });
 
-// --- d-pad end to end on the built shadcn demo (JG-157 Step 7) -----------------------------
+// --- d-pad end to end on the built shadcn demo (compat focus pass) -----------------------------
 const VENDOR = "test/fixtures/shadcn-vendor";
 const SHOTS = "/tmp/pocketjs-react-test/jg157";
 

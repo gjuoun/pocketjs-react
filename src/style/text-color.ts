@@ -1,4 +1,4 @@
-// JG-156 text-colour inheritance (compat only). The core carries a text colour from a `text`
+// Text-colour inheritance (compat only). The core carries a text colour from a `text`
 // element to its own text runs, but a `view` ancestor's colour never reaches a text run below it, so
 // a shadcn `bg-white text-slate-900` card paints its title white. After each React commit this pass
 // gives every top-most text run (a text node whose parent is not a text node) that sets no colour of

@@ -1,4 +1,4 @@
-// JG-155 e2e prepare (bun): builds the text-entry fixture, finds field A's canvas point once in
+// e2e prepare (bun): builds the text-entry fixture, finds field A's canvas point once in
 // headless Chrome, and writes dist/e2e/manifest.json. The node side (test/e2e) reads only the manifest.
 //   bun tools/e2e/prepare.ts
 import { mkdirSync, writeFileSync } from "node:fs";

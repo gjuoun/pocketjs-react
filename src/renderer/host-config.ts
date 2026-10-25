@@ -53,7 +53,7 @@ export interface PropsTransform {
   /** Turn React props into native-tree props (children removed). */
   toHost(props: Props): Props;
   /** Called after a node's host props were applied (create and update). Receives the props the
-   *  compat layer produced, so a className the compat layer rewrote (JG-157 default focus) is the one applied. */
+   *  compat layer produced, so a className the compat layer rewrote (default focus indicator) is the one applied. */
   afterProps(node: NodeMirror, props: Props): void;
   /** Called once after every React commit (for example to load a grown style table). */
   afterCommit(): void;

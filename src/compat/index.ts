@@ -33,7 +33,7 @@ import {
 import { heldBy, holdRun, markTextual } from "./text-wrap.ts";
 import { rewriteLiteral } from "./tokens.ts";
 
-/** DOM text tags that become views when they carry flex (JG-156). */
+/** DOM text tags that become views when they carry flex. */
 const TEXTUAL_FLEX_TAGS = new Set(["span", "p", "label"]);
 
 /** One press handler per text entry node: open its keyboard, then run the app's onClick. */
@@ -58,7 +58,7 @@ export function installCompat(opts: CompatOptions = {}): void {
   setTextInheritance(opts.textColor === undefined ? "#0f172a" : opts.textColor);
   setHostCompat({
     type(tag, props) {
-      // A DOM text tag with flex is a view: its layout (centring) is the point (JG-156).
+      // A DOM text tag with flex is a view: its layout (centring) is the point.
       if (
         TEXTUAL_FLEX_TAGS.has(tag) &&
         typeof props.className === "string" &&

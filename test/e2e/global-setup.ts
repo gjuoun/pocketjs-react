@@ -1,4 +1,4 @@
-// JG-155 guard: the matrix runs only on browsers already in the Playwright cache (no download).
+// Guard: the matrix runs only on browsers already in the Playwright cache (no download).
 import { existsSync } from "node:fs";
 import { chromium, webkit } from "@playwright/test";
 

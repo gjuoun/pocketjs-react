@@ -1,4 +1,4 @@
-// JG-155 e2e helpers: the manifest, the static server, and the host-page opener shared by all tiers.
+// e2e helpers: the manifest, the static server, and the host-page opener shared by all tiers.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";

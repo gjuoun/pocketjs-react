@@ -1,7 +1,7 @@
 // Verbatim shadcn ui.shadcn.com registry component (new-york-v4 badge), for the C1
 // acceptance probe. Zero JSX/logic edits vs the registry; the only deltas are two import
 // specifiers, documented here:
-//   - cn: "@/lib/utils" -> "pocketjs-react" (same normalization as the JG-145 audit probes)
+//   - cn: "@/lib/utils" -> "pocketjs-react" (same normalization as the audit probes)
 //   - Slot: "radix-ui" -> "./slot.ts" (local throwing placeholder, see slot.ts; fork F1=A)
 
 import { cva, type VariantProps } from "class-variance-authority";

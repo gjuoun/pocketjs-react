@@ -1,4 +1,4 @@
-// JG-156 visual fidelity, Step 1: the defects behind the Gemini FIX verdict, each as a pixel or tree
+// Visual fidelity: the defects behind the Gemini FIX verdict, each as a pixel or tree
 // assertion on the real wasm core. The group comment names the step that turns it green. Ink is
 // measured as the pixels that differ from the run's dominant surface colour, because a text run's
 // rect can be its whole host box (a stretched badge or glyph), where a rect centre proves nothing.

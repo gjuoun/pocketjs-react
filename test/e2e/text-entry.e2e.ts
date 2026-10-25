@@ -1,4 +1,4 @@
-// JG-155 step 5: the C4b/C4c text-entry browser suite (was test/text-entry-browser.test.ts: CDP over
+// Text-entry browser suite: the C4b/C4c text-entry browser suite (was test/text-entry-browser.test.ts: CDP over
 // Bun) on the Playwright matrix. Input is trusted: page.keyboard, page.mouse, page.touchscreen. The
 // synthetic events stay only where the seam needs a split a real tap cannot produce (a pointerup
 // without its compatibility mouse events). The native-keyboard cases are touch-host only (Risks).

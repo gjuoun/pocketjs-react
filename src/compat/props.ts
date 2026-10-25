@@ -241,7 +241,7 @@ export function compatProps(
     (interactive || text || "onClick" in props || "onPointerDown" in props);
   if (focusable) {
     out.focusable = true;
-    // Only DOM-mapped tags: a native View/Text keeps its own focus surface (JG-157 F3).
+    // Only DOM-mapped tags: a native View/Text keeps its own focus surface.
     if (isMapped(tag))
       out.className = withDefaultFocus(
         out.className as string | undefined,

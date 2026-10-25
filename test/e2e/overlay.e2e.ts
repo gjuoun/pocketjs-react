@@ -1,4 +1,4 @@
-// JG-155 step 6: the two C5 overlay lines (in-process only before this card) on the matrix. The
+// Overlay lines on the matrix: the two C5 overlay lines (in-process only before this card) on the matrix. The
 // scrim dims the page to slate-950 at 60% and the panel stays opaque; a tap on the scrim is inert.
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
 import { BTN } from "../../tools/web/text-entry-host.js";

@@ -249,7 +249,7 @@ Dropped on purpose (counted, not silently kept): `w-fit`, `whitespace-nowrap`, `
 
 `mount(el, { compat: { tokenMap: false } })` turns the runtime rewrite off; `compatStats().tokenMap` reports `{ mapped, dropped }` so nothing disappears silently.
 
-Text color inheritance (JG-156): after each commit the compat layer gives every top-most text run that sets no color of its own the nearest ancestor color, or the mount default `compat.textColor` (`#0f172a`, slate-900; `null` turns the pass off). A node with its own color, or a `focus:`/`active:` text variant, stays native. Fills are unaffected; the table above is the mapping.
+Text color inheritance: after each commit the compat layer gives every top-most text run that sets no color of its own the nearest ancestor color, or the mount default `compat.textColor` (`#0f172a`, slate-900; `null` turns the pass off). A node with its own color, or a `focus:`/`active:` text variant, stays native. Fills are unaffected; the table above is the mapping.
 
 Flex text tags (`span`/`p`/`label` with `flex`) are views, and a run under one is held by a text element that carries its size and weight. A run font is one baked slot per size x weight, so a combination compiles only when the build baked it (the build bakes the cross product of the source size and weight tokens).
 
@@ -345,7 +345,7 @@ by name.
   `ui:img.icon.*` pak entries, one per colour variant, because the core cannot tint a texture. Each icon
   takes the variant of the colour it inherits (`src/style/icon-colour.ts`); a pak without the variant falls
   back to the placeholder character and counts `iconMiss` in `compatStats()`.
-- **Text color inheritance** is a compat pass (JG-156), not a core feature: a view's text takes the
+- **Text color inheritance** is a compat pass, not a core feature: a view's text takes the
   nearest ancestor's color, the mount default otherwise. Inline styles and class variants on the text
   itself still win (see 'Text color inheritance' under the utilities table).
 - **`hover:`** still maps to the press cue `active:`; there is no pointer.
