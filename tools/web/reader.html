@@ -116,7 +116,12 @@
     const r = canvas.getBoundingClientRect();
     (globalThis.__pocketPointer ??= []).push({ x: ((event.clientX - r.left) / r.width) * canvas.width, y: ((event.clientY - r.top) / r.height) * canvas.height, down });
   };
-  canvas.addEventListener("mousedown", (e) => point(e, true));
+    // On a touch host the mouse events are the browser's echo of the tap. A mousedown on the
+  // non-focusable canvas would move focus and blur the native entry, so it keeps its focus.
+  canvas.addEventListener("mousedown", (e) => {
+    if (touchHost) e.preventDefault();
+    point(e, true);
+  });
   canvas.addEventListener("mouseup", (e) => point(e, false));
   // A finger lift decides inside the gesture whether the native keyboard comes up: a tap on an
   // editable field focuses the hidden textarea; a tap anywhere else lets it go.

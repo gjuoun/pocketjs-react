@@ -224,3 +224,31 @@ test("the native keyboard survives the frame before the guest sees the tap, and 
   for (let i = 0; i < 2; i++) await frame(0);
   expect(await focusedId()).not.toBe("native-entry");
 }, 30000);
+
+// iOS echo: after the tap focuses the native entry, the browser sends mousedown/mouseup on the
+// canvas. A mousedown on a non-focusable element moves focus (it blurs the textarea), so the
+// echo must not reach the default action. Trusted input (CDP) runs default actions; synthetic
+// MouseEvents do not, so this case uses CDP.
+const clientPointAt = (x: number, y: number): Promise<string> =>
+  evaluate(
+    "(() => { const c = document.getElementById('screen'); const r = c.getBoundingClientRect(); " +
+      "return (r.left + " + x + " * r.width / c.width) + ',' + (r.top + " + y + " * r.height / c.height); })()",
+  ) as Promise<string>;
+
+test("a trusted mouse echo after the tap does not take focus from the native entry", async () => {
+  await open("manual=1&touch=1");
+  await frame(0);
+  const at = String(await evaluate(FIND_FIELD)).split(",").map(Number);
+  await liftAt(at[0], at[1]);
+  expect(await focusedId()).toBe("native-entry");
+  const [cx, cy] = (await clientPointAt(at[0], at[1])).split(",").map(Number);
+  await chrome.send("Input.dispatchMouseEvent", { type: "mousePressed", x: cx, y: cy, button: "left", clickCount: 1 });
+  await chrome.send("Input.dispatchMouseEvent", { type: "mouseReleased", x: cx, y: cy, button: "left", clickCount: 1 });
+  for (let i = 0; i < 4; i++) await frame(0);
+  expect(await focusedId()).toBe("native-entry");
+  // the seam is still live: native text reaches the field after the echo
+  expect(await nativeInput("insertText", "q")).toBe(false);
+  await frame(0);
+  expect(await logOf("__a")).toEqual(["q"]);
+  expect(await keycapsDrawn()).toEqual([]);
+}, 30000);
