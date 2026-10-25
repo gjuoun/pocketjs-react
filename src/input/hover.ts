@@ -3,6 +3,7 @@
 // A hoverable row carries one transparent overlay child (absolute, inset-0, active:bg-blue-600) that
 // the core paints natively. The pump lights it on a pointer move with setActive, never by moving focus.
 import { getOps } from "@pocketjs/framework/host";
+import { getFocused } from "@pocketjs/framework/input";
 import type { NodeMirror } from "../internal/pocket.ts";
 
 const overlays = new WeakSet<NodeMirror>();
@@ -32,7 +33,8 @@ let lit: NodeMirror | null = null;
 function overlayAbove(target: NodeMirror | null): NodeMirror | null {
   for (let n = target; n; n = n.parent) {
     const overlay = hoverOverlayOf(n);
-    if (overlay) return overlay;
+    // The focused row already shows the focus blue, and its CIRCLE press blue-500: no overlay over it.
+    if (overlay) return n === getFocused() ? null : overlay;
   }
   return null;
 }

@@ -1,6 +1,7 @@
 // Web hover on the browser matrix. A mouse over a Menu row paints it with the focus blue, moving off
 // restores it, and focus never moves. On the touch tiers a tap opens the menu and lights no hover row.
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
+import { BTN } from "../../tools/web/text-entry-host.js";
 import { openHost, type Server, serveApp } from "./helpers.ts";
 
 const BLUE_600 = [0x25, 0x63, 0xeb]; // focus:bg-blue-600, the same blue as the hover overlay
@@ -18,6 +19,10 @@ const frame = (page: Page) => page.evaluate("window.__host.step(0)");
 const frames = async (page: Page, n: number) => {
   for (let i = 0; i < n; i++) await frame(page);
 };
+const press = (page: Page, bit: number) =>
+  page.evaluate(
+    "(() => { for (let i = 0; i < 3; i++) window.__host.step(" + bit + "); for (let i = 0; i < 3; i++) window.__host.step(0); })()",
+  );
 /** The framebuffer pixel at a logical point, after a draw: [r, g, b]. */
 const pixelAt = (page: Page, x: number, y: number) =>
   page.evaluate<number[]>(
@@ -97,4 +102,38 @@ test("touch tiers: a tap opens the menu and lights no hover row", async ({ page 
   await openMenu(page, testInfo);
   expect(await rowPaint(page, "Delete")).toEqual(PANEL);
   expect(await rowPaint(page, "Edit")).toEqual(BLUE_600);
+});
+
+test("desktop: a d-pad move clears the hover; the next mouse move lights the row again", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.use.hasTouch === true, "the mouse hover is the desktop chromium tier");
+  await openMenu(page, testInfo);
+  const del = await labelPoint(page, "Delete");
+  const [dx, dy] = await clientOf(page, del.x, del.y);
+  await page.mouse.move(dx, dy);
+  await frames(page, 4);
+  expect(await rowPaint(page, "Delete")).toEqual(BLUE_600);
+  await press(page, BTN.DOWN); // focus moves Edit -> Delete: Edit loses its focus
+  expect(await rowPaint(page, "Edit")).toEqual(PANEL);
+  await press(page, BTN.UP); // focus moves back to Edit: the hover on Delete was cleared by the focus move
+  expect(await rowPaint(page, "Edit")).toEqual(BLUE_600);
+  expect(await rowPaint(page, "Delete")).toEqual(PANEL);
+  await page.mouse.move(dx + 2, dy); // the next mouse move lights Delete again
+  await frames(page, 4);
+  expect(await rowPaint(page, "Delete")).toEqual(BLUE_600);
+});
+
+test("desktop: CIRCLE over the hovered, focused row presses it; the press closes the menu and no hover lingers", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.use.hasTouch === true, "the mouse hover is the desktop chromium tier");
+  await openMenu(page, testInfo);
+  const edit = await labelPoint(page, "Edit");
+  const [ex, ey] = await clientOf(page, edit.x, edit.y);
+  await page.mouse.move(ex, ey);
+  await frames(page, 4);
+  expect(await rowPaint(page, "Edit")).toEqual(BLUE_600); // focus: the hover adds no overlay over the focused row
+  // CIRCLE is held: the item presses on the press edge and closes, as the README records for closing rows.
+  for (let i = 0; i < 4; i++) await page.evaluate("window.__host.step(" + BTN.CIRCLE + ")");
+  await frames(page, 4);
+  const drawn = (await runs(page)).map((r) => r.text);
+  expect(drawn).not.toContain("Edit");
+  expect(drawn).not.toContain("Delete");
 });
