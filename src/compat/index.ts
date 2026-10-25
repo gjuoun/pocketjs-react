@@ -3,9 +3,9 @@
 // with an identity hook and behaves exactly as before. Everything silently accepted shows
 // up in compatStats().
 
-import { bindField, fieldFor, openField } from "../input/text-field.ts";
 import { pressingFromPointer } from "../input/pointer.ts";
 import { nativeKeyboard } from "../input/text-entry.ts";
+import { bindField, fieldFor, openField } from "../input/text-field.ts";
 import { type NodeMirror, setProp } from "../internal/pocket.ts";
 import { setHostCompat } from "../renderer/host-config.ts";
 import {
@@ -13,6 +13,7 @@ import {
   setClassMissPolicy,
   setTokenMapEnabled,
 } from "../style/class-runtime.ts";
+import { setTextInheritance } from "../style/text-color.ts";
 import {
   compatProps,
   setUnknownPropsPolicy,
@@ -37,12 +38,16 @@ export interface CompatOptions {
   classMiss?: ClassMissPolicy;
   /** Rewrite shadcn vocabulary through the fixed token map before resolving (default true). */
   tokenMap?: boolean;
+  /** Default text colour for text with no colour of its own (shadcn light foreground). Null turns
+   *  the inheritance pass off. Default "#0f172a" (slate-900). */
+  textColor?: string | null;
 }
 
 export function installCompat(opts: CompatOptions = {}): void {
   setUnknownPropsPolicy(opts.unknownProps ?? "throw");
   setClassMissPolicy(opts.classMiss ?? "throw");
   setTokenMapEnabled(opts.tokenMap ?? true);
+  setTextInheritance(opts.textColor === undefined ? "#0f172a" : opts.textColor);
   setHostCompat({
     type(tag) {
       const host = hostTypeOf(tag);
