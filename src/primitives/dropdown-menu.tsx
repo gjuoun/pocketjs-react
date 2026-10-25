@@ -13,6 +13,7 @@ import { Pressable } from "./press.tsx";
 import { useControllableState } from "./state.ts";
 import { ownItem, ownSurface, ownText } from "./surface.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
+import { addFramePump } from "../renderer/mount.ts";
 
 interface MenuContextValue {
   open: boolean;
@@ -153,6 +154,9 @@ export function Group(props: { className?: string; children?: ReactNode }) {
   );
 }
 
+/** Inside a sub-menu, selecting an item closes the whole tree (F2): the sub-menu first, then the menu. */
+const SubCloseContext = createContext<(() => void) | null>(null);
+
 interface ItemStateValue {
   checked: boolean;
 }
@@ -172,10 +176,13 @@ export interface ItemProps {
 /** Every row: a focusable press that runs onSelect, then closes unless prevented. */
 function ItemFrame(props: ItemProps & { checked?: boolean }) {
   const ctx = useMenu("DropdownMenu.Item");
+  const closeTree = useContext(SubCloseContext);
   const press = () => {
     const event = selectEvent();
     props.onSelect?.(event);
-    if (!event.defaultPrevented) ctx.setOpen(false);
+    if (event.defaultPrevented) return;
+    if (closeTree) closeTree();
+    else ctx.setOpen(false);
   };
   return (
     <ItemStateContext.Provider value={{ checked: props.checked ?? false }}>
@@ -407,6 +414,17 @@ export function SubContent(props: SubContentProps) {
   const sub = useSub("DropdownMenu.SubContent");
   const latest = useRef(sub);
   latest.current = sub;
+  const menu = useMenu("DropdownMenu.SubContent");
+  const menuLatest = useRef(menu);
+  menuLatest.current = menu;
+  const closeTree = () => {
+    latest.current.setOpen(false);
+    // Next frame, so the sub-menu's focus scope unwinds in its own commit before the menu's.
+    const dispose = addFramePump(() => {
+      dispose();
+      menuLatest.current.setOpen(false);
+    });
+  };
   return (
     <ModalLayer
       open={sub.open}
@@ -428,7 +446,7 @@ export function SubContent(props: SubContentProps) {
         ownSurface(props.className),
       )}
     >
-      {props.children}
+      <SubCloseContext.Provider value={closeTree}>{props.children}</SubCloseContext.Provider>
     </ModalLayer>
   );
 }
