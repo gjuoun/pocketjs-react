@@ -85,3 +85,21 @@ export function bridgeBeforeInput(state, e, emit) {
       return true; // other edits on the hidden field are not text: cancel them
   }
 }
+
+/**
+ * The native entry follows the guest's field focus by edges only. It leaves when the field loses
+ * focus (true -> false). It never leaves because the guest has not caught up yet: a tap focuses the
+ * entry on pointerup, but the guest sees the press a frame later, and a level check would blur it
+ * in that frame (the iOS keyboard flash).
+ */
+export function createFocusFollower() {
+  let was = false;
+  return {
+    /** @returns {boolean} true when the native entry should be let go now */
+    update(entry) {
+      const leave = was && !entry;
+      was = entry;
+      return leave;
+    },
+  };
+}

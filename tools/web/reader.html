@@ -24,7 +24,7 @@
   //   ?touch=1    a touch host (a tap on a field summons the native keyboard); touch screens are detected too
   import { create } from "/app-instance.js";
   import { createBrowserFs } from "/fs-shim.js";
-  import { BTN, KEYMAP, bridgeBeforeInput, bridgeCompositionEnd, bridgeCompositionStart, createBridgeState, routeKey } from "/text-entry-host.js";
+  import { BTN, KEYMAP, bridgeBeforeInput, bridgeCompositionEnd, bridgeCompositionStart, createBridgeState, createFocusFollower, routeKey } from "/text-entry-host.js";
 
   const params = new URLSearchParams(location.search);
   const runtimeGlyphs = params.get("glyphs") !== "0";
@@ -37,6 +37,7 @@
   const touchHost = params.get("touch") === "1" || navigator.maxTouchPoints > 0;
   globalThis.__pocketTextNative = touchHost;
   const bridge = createBridgeState();
+  const follow = createFocusFollower();
   const emitText = (event) => (globalThis.__pocketText ??= []).push(event);
   const ctx = canvas.getContext("2d");
   const image = ctx.createImageData(canvas.width, canvas.height);
@@ -59,8 +60,8 @@
       (window.__log ??= []).push("FRAME ERROR: " + (e && e.stack ? e.stack : e));
       inst = null;
     }
-    // The native keyboard follows focus: it goes when the guest field loses focus.
-    if (document.activeElement === nativeEntry && globalThis.__pocketTextEntry !== true) nativeEntry.blur();
+    // The native keyboard leaves only when the guest field loses focus (an edge, not a level: see createFocusFollower).
+    if (follow.update(globalThis.__pocketTextEntry === true) && document.activeElement === nativeEntry) nativeEntry.blur();
     return performance.now() - t;
   };
   const start = async () => {

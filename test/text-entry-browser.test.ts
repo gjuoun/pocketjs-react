@@ -191,3 +191,36 @@ test("without a touch host a tap falls back to the OSK, and the native entry sta
   expect(await evaluate("window.__nativeFocusCalls")).toBe(0);
   expect((await keycapsDrawn()).length).toBeGreaterThan(0);
 }, 30000);
+
+// iOS race: the tap focuses the native entry on pointerup, but the guest only sees the press a
+// frame later. The native keyboard must survive that frame, and leave when the field loses focus.
+const liftAt = (x: number, y: number): Promise<unknown> =>
+  evaluate(
+    "(() => { const c = document.getElementById('screen'); const r = c.getBoundingClientRect(); " +
+      "const o = { clientX: r.left + " + x + " * r.width / c.width, clientY: r.top + " + y + " * r.height / c.height, bubbles: true, pointerType: 'touch' }; " +
+      "c.dispatchEvent(new PointerEvent('pointerdown', o)); c.dispatchEvent(new PointerEvent('pointerup', o)); })()",
+  );
+const compatMouseAt = (x: number, y: number): Promise<unknown> =>
+  evaluate(
+    "(() => { const c = document.getElementById('screen'); const r = c.getBoundingClientRect(); " +
+      "const o = { clientX: r.left + " + x + " * r.width / c.width, clientY: r.top + " + y + " * r.height / c.height, bubbles: true }; " +
+      "c.dispatchEvent(new MouseEvent('mousedown', o)); c.dispatchEvent(new MouseEvent('mouseup', o)); })()",
+  );
+
+test("the native keyboard survives the frame before the guest sees the tap, and leaves when the field loses focus", async () => {
+  await open("manual=1&touch=1");
+  await frame(0);
+  const at = String(await evaluate(FIND_FIELD)).split(",").map(Number);
+  await liftAt(at[0], at[1]); // pointerup only: the focus lands now, the guest press comes later
+  expect(await focusedId()).toBe("native-entry");
+  await frame(0); // the guest frame in between: its flag is still false
+  expect(await focusedId()).toBe("native-entry");
+  await compatMouseAt(at[0], at[1]); // the compatibility mouse events reach the guest
+  for (let i = 0; i < 4; i++) await frame(0);
+  expect(await flag()).toBe(true);
+  expect(await focusedId()).toBe("native-entry");
+  // the field loses focus without a tap: CIRCLE opens the panel, focus moves to a key
+  await press(BTN.CIRCLE);
+  for (let i = 0; i < 2; i++) await frame(0);
+  expect(await focusedId()).not.toBe("native-entry");
+}, 30000);

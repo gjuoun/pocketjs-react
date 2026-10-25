@@ -6,6 +6,7 @@ import {
   bridgeCompositionEnd,
   bridgeCompositionStart,
   createBridgeState,
+  createFocusFollower,
 } from "../tools/web/text-entry-host.js";
 
 type Ev = { t: string; s?: string; k?: string };
@@ -77,4 +78,15 @@ test("a commit echoed as insertText (Safari order) is not typed a second time", 
   bridgeCompositionEnd(st, "你好", emit);
   expect(bridgeBeforeInput(st, input("insertText", "你好"), emit)).toBe(true);
   expect(out).toEqual([{ t: "ch", s: "你好" }]);
+});
+
+// The native entry follows the guest field by edges: it leaves when the field loses focus, never
+// because the guest has not caught up with a fresh tap yet (the iOS one-frame race).
+test("the native entry is not blurred in the frame before the guest catches up with a tap", () => {
+  const follow = createFocusFollower();
+  expect(follow.update(false)).toBe(false); // tap landed on the field; guest flag not set yet
+  expect(follow.update(false)).toBe(false); // still not set
+  expect(follow.update(true)).toBe(false);  // guest focused the field
+  expect(follow.update(false)).toBe(true);  // the field lost focus: leave
+  expect(follow.update(false)).toBe(false); // and only once
 });
