@@ -362,8 +362,9 @@ Every primitive is controlled or uncontrolled (`useControllableState`: a control
   a trigger partly covered by a higher layer measures its visible part.
 - **No scrolling.** Long lists overflow; the scroll buttons render nothing (C10).
 - **No sub-menus** (F3). `DropdownMenu.Sub*` throw with a message naming the gap.
-- **Icons are baked textures** (F1): the six lucide icons the vendored sources import, in three colours and
-  at 16 px (8 px for the filled circle). Any other lucide name falls back to the placeholder character.
+- **Icons are baked textures** (F1): every canonical lucide icon (1903 at lucide-react 1.61.0), in three colours
+  at 16 px, plus the filled 8 px circle. The pak carries 5712 PSM_4444 entries (about 3.4 MiB). Any lucide export
+  resolves through `pocketjs-react/glyph-icons`; a name outside the set falls back to the placeholder and counts `iconMiss`.
 - **The panel owns its surface** (F4): shadcn's `bg-*` tokens are dropped from the vendored classes;
   the primitives paint a dark panel and set their own text color (`text-white`).
 - **Title and Description ignore size and leading tokens:** `leading-*` draws a 1px line here, and a
