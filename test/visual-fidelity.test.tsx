@@ -247,6 +247,36 @@ test("G7 Dialog close X is a real icon: 16px square, ink centred", async () => {
   expect(centreOff(ink, box).dy).toBeLessThanOrEqual(1);
 });
 
+/** WCAG relative luminance and contrast ratio of two "#rrggbb" pixels. */
+function luminance(hex: string): number {
+  const lin = [1, 3, 5].map((i) => {
+    const v = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+}
+function contrast(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+// G7b: the Dialog close X is visible on the dark panel: at least 10 of its pixels reach WCAG's 3:1 non-text
+// contrast against the panel surface (the ink-centred check of G7 passes even at 1.2:1).
+test("G7b Dialog close X is visible on the dark panel (>=10 px at 3:1 contrast)", async () => {
+  const c = await bootOverlays();
+  focusOn(c, "Open");
+  c.press(BTN.CIRCLE, 4);
+  const x = iconImages().find((n) => iconVariantOf(n)?.startsWith("icon.x.16."));
+  expect(x).toBeDefined();
+  const box = measureBox(x!)!;
+  c.render();
+  const surface = c.pixel(box.x, box.y);
+  let visible = 0;
+  for (let y = box.y; y < box.y + box.h; y++)
+    for (let x0 = box.x; x0 < box.x + box.w; x0++) if (contrast(c.pixel(x0, y), surface) >= 3) visible++;
+  expect(visible).toBeGreaterThanOrEqual(10);
+});
+
 test("G8 Select check mark is a real icon once an item is selected", async () => {
   const c = await bootOverlays();
   focusOn(c, "Pick fruit");

@@ -125,7 +125,7 @@ export function Content(props: ContentProps) {
       open={ctx.open}
       onClose={() => ctx.setOpen(false)}
       panelClassName={cn(
-        "flex-col gap-2 p-3 rounded-xl bg-slate-800 w-[300px]",
+        "flex-col gap-2 p-3 rounded-xl bg-slate-800 text-white w-[300px]",
         ownSurface(props.className),
       )}
     >
