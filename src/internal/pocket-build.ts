@@ -9,6 +9,7 @@ export {
   encodeImageEntry,
   KEY_STYLES,
   keyFont,
+  keyImage,
   PAK_DTYPE,
   type PakBlob,
   pack,
