@@ -52,7 +52,7 @@ export function Overlays() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Text className="text-sm">{`Deletes ${deletes}`}</Text>
+      <Text className="text-sm w-full">{`Deletes ${deletes}`}</Text>
       <Select
         value={fruit}
         onValueChange={(next) => {
@@ -60,15 +60,15 @@ export function Overlays() {
           setChanges((n) => n + 1);
         }}
       >
-        <SelectTrigger>
+        <SelectTrigger className="w-[220px]">
           <SelectValue placeholder="Pick fruit" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent position="popper">
           <SelectItem value="apple">Apple</SelectItem>
           <SelectItem value="banana">Banana</SelectItem>
         </SelectContent>
       </Select>
-      <Text className="text-sm">{`Fruit changes ${changes}`}</Text>
+      <Text className="text-sm w-full">{`Fruit changes ${changes}`}</Text>
     </div>
   );
 }

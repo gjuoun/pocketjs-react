@@ -3,9 +3,10 @@
 // measured as the pixels that differ from the run's dominant surface colour, because a text run's
 // rect can be its whole host box (a stretched badge or glyph), where a rect centre proves nothing.
 import { afterEach, expect, test } from "bun:test";
+import { BTN, getFocused } from "@pocketjs/framework/input";
 import { compatStats, mount, resetCompatStats } from "../src/index.ts";
 import { type NodeMirror, rootMirror } from "../src/internal/pocket.ts";
-import { compileClasses } from "../src/internal/pocket-build.ts";
+import { compileClasses, FB_H, FB_W } from "../src/internal/pocket-build.ts";
 import { measureBox } from "../src/primitives/anchor.ts";
 import { installBuildStyles } from "../src/style/build-styles.ts";
 import { build } from "../tools/build.ts";
@@ -13,6 +14,7 @@ import { Demo } from "./fixtures/shadcn-vendor/app.tsx";
 import { Overlays } from "./fixtures/shadcn-vendor/overlays.tsx";
 import { Inherit } from "./fixtures/visual-fidelity/inherit.tsx";
 import { bootCore, type Core, type TextRun } from "./harness.ts";
+import { encodePng } from "./png.ts";
 
 const VENDOR = "test/fixtures/shadcn-vendor";
 const FIXTURES = "test/fixtures/visual-fidelity";
@@ -227,4 +229,62 @@ test("G5 Card title to description gap is gap-2 (8px) ±1 (guard)", async () => 
   const t = runOf(c, "Vendored card");
   const d = runOf(c, "codemod output");
   expect(Math.abs(d.y - (t.y + t.h) - 8)).toBeLessThanOrEqual(1);
+});
+
+// --- Step 9: the three Gemini QA screenshots (idle, menu open, select open) -----------------------
+const SHOTS = "/tmp/pocketjs-react-test/jg156";
+/** The label of the focused node's first text (a Button or Trigger shows its label). */
+function focusedLabel(): string | undefined {
+  const walk = (node: {
+    text?: string;
+    children: unknown[];
+  }): string | undefined => {
+    if (node.text) return node.text;
+    for (const child of node.children as (typeof node)[]) {
+      const found = walk(child);
+      if (found) return found;
+    }
+    return undefined;
+  };
+  const node = getFocused();
+  return node ? walk(node as never) : undefined;
+}
+function focusOn(c: Core, label: string): void {
+  for (let i = 0; i < 6 && focusedLabel() !== label; i++) c.press(BTN.DOWN, 4);
+  expect(focusedLabel()).toBe(label);
+}
+async function snapshot(c: Core, name: string): Promise<void> {
+  c.render();
+  const rgba = new Uint8Array(FB_W * FB_H * 4);
+  for (let y = 0; y < FB_H; y++)
+    for (let x = 0; x < FB_W; x++) {
+      const hex = c.pixel(x, y);
+      const i = (y * FB_W + x) * 4;
+      rgba[i] = parseInt(hex.slice(1, 3), 16);
+      rgba[i + 1] = parseInt(hex.slice(3, 5), 16);
+      rgba[i + 2] = parseInt(hex.slice(5, 7), 16);
+      rgba[i + 3] = 255;
+    }
+  await Bun.write(SHOTS + "/" + name + ".png", encodePng(rgba, FB_W, FB_H));
+}
+
+test("screenshot: idle overlays demo", async () => {
+  const c = await bootOverlays();
+  await snapshot(c, "idle");
+});
+
+test("screenshot: menu open", async () => {
+  const c = await bootOverlays();
+  focusOn(c, "Menu");
+  c.press(BTN.CIRCLE, 4);
+  expect(c.texts().map((t) => t.text)).toContain("Edit");
+  await snapshot(c, "menu-open");
+});
+
+test("screenshot: select open", async () => {
+  const c = await bootOverlays();
+  focusOn(c, "Pick fruit");
+  c.press(BTN.CIRCLE, 4);
+  expect(c.texts().map((t) => t.text)).toContain("Apple");
+  await snapshot(c, "select-open");
 });
