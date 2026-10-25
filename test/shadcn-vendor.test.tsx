@@ -101,9 +101,9 @@ test("C3: the codemod output mounts under the strict policies (classMiss=throw, 
   expect(core.texts().map((r) => r.text)).toContain("Vendored card");
 });
 
-// Radix Portal needs a document body, which the guest does not have: the trigger renders, the
-// content does not (audit p11). Recorded as the honest limit of C3 - the real fix is C5 (native
-// dialog primitives) and C10 (fixed/grid/calc in the core).
+// The demo's dialog is closed, so its content is not mounted - as it is not in any Radix dialog. The
+// C3 limit (Radix Portal returned null without a document body, audit p11) is gone since C5: opening
+// the vendored dialog mounts its content (test/shadcn-overlay.test.tsx). C10 still owns fixed/grid/calc.
 test("C3: the Radix dialog renders its trigger and keeps its content out (C5/C10)", async () => {
   const c = await bootBuilt();
   const texts = c.texts().map((r) => r.text);

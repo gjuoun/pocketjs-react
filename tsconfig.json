@@ -15,7 +15,9 @@
     "allowJs": true,
     "paths": {
       "@pocket-internal/*": ["./node_modules/@pocketjs/framework/*"],
-      "pocketjs-react": ["./src/index.ts"]
+      "pocketjs-react": ["./src/index.ts"],
+      "pocketjs-react/radix": ["./src/primitives/radix.ts"],
+      "pocketjs-react/glyph-icons": ["./src/primitives/glyph-icons.tsx"]
     }
   },
   "include": ["src", "test", "tools", "examples"]

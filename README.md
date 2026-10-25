@@ -307,9 +307,9 @@ by name.
 
 ### What it does not do
 
-- **Dialog content does not appear.** Radix's Portal needs a document body and the guest has none,
-  so the trigger renders while `DialogContent` stays out — the same result the JG-145 audit
-  measured. Native dialog primitives are C5; `fixed`/`grid`/`calc()`/percentage offsets are C10.
+- **Dialog content needs the native primitives.** Radix's Portal needs a document body the guest does
+  not have, so the vendored dialog, dropdown menu and select import from `pocketjs-react/radix` instead
+  (C5, see "Overlays (C5)"). `fixed`/`grid`/`calc()`/percentage offsets are C10.
 - **Icons.** `lucide-react`'s `<path d>` is still an unknown prop; icons are C7.
 - **Text color inheritance.** The core has no `text-*` inheritance (C2's known gap), so a view's
   text keeps the default white. The demo gives the Card and the dialog trigger a dark surface of
@@ -318,6 +318,56 @@ by name.
 
 The demo needs `radix-ui`, `lucide-react` and `react-dom` as dev dependencies (the fixture only);
 its bundle carries the Radix dialog even though the content never mounts.
+
+## Overlays (C5)
+
+The vendored shadcn `dialog`, `dropdown-menu` and `select` render their content through native
+primitives instead of Radix. The codemod rewrites only the import edge (rule R6):
+`from "radix-ui"` becomes `from "pocketjs-react/radix"`, which exports `Dialog`, `DropdownMenu` and
+`Select` under Radix's member names. The JSX, the props and the class strings are unchanged, so the
+vendored `ui/` files need no structural rewrite. Lucide icons take the same route (R7) to
+`pocketjs-react/glyph-icons`.
+
+Why not a Portal shim: Radix's `Portal` imports `react-dom` and returns null without `document.body`,
+and the content depends on `DismissableLayer`, `FocusScope`, `Presence`, `Popper` and Select's pointer
+and layout code, all of which read `document`. The primitives keep the same structure on the
+PocketJS side: `ModalLayer` (the shared core, from `Dialog`) portals a full-screen shell into the
+overlay layer, traps d-pad focus with `FocusScope`, closes on CROSS and gives focus back to its opener.
+
+### Primitives
+
+- **Dialog** — `Root`, `Trigger`, `Close`, `Portal`, `Overlay` (inert scrim), `Content`, `Title`, `Description`.
+- **DropdownMenu** — `Root`, `Trigger`, `Portal`, `Content`, `Group`, `Item`, `CheckboxItem`, `RadioGroup`,
+  `RadioItem`, `ItemIndicator`, `Label`, `Separator`. `Sub`, `SubTrigger`, `SubContent` throw when rendered.
+- **Select** — `Root`, `Trigger`, `Value`, `Portal`, `Content`, `Viewport`, `Group`, `Item`, `ItemText`,
+  `ItemIndicator`, `Label`, `Separator`, `Icon`, `ScrollUpButton`, `ScrollDownButton`.
+
+Every primitive is controlled or uncontrolled (`useControllableState`: a controlled prop wins, and
+`onChange` fires only on a real change). `asChild` merges the press and the class onto the child
+(`Pressable`), so `<DialogClose asChild><Button/></DialogClose>` presses the Button. An Item's
+`onSelect` gets an event: `preventDefault()` keeps a menu open; otherwise the menu closes.
+
+### Known boundaries (C5)
+
+- **Position is not implemented.** `side`, `align`, `sideOffset` and the rest are accepted and ignored;
+  every panel is centred on the overlay layer until C6 anchors it.
+- **No scrolling.** Long lists overflow; the scroll buttons render nothing (C10).
+- **No sub-menus** (F3). `DropdownMenu.Sub*` throw with a message naming the gap.
+- **Icons are text glyphs** (F1): `x + o v ^ >` in the build's ASCII font, until C7 draws real icons.
+- **The panel owns its surface** (F4): shadcn's `bg-*` tokens are dropped from the vendored classes;
+  the primitives paint a dark panel, because the core does not inherit text color.
+- **Title and Description ignore size and leading tokens:** `leading-*` draws a 1px line here, and a
+  large bold run has no baked font slot. The primitive sets its own size.
+- **The scrim is 60% slate-950** (`SCRIM_CLASS`, `bg-[#0f172a99]`): the app behind dims instead of going black.
+  The compiler has no alpha modifier, so `bg-slate-950/60`, `bg-black/50` and `rgba()` are unknown utilities
+  (the codemod drops them by name); the 8-digit hex is the spelling that compiles and blends. The gamepad
+  `Dialog` and `Menu` shell uses the same scrim; their panels stay opaque.
+- **The scrim is inert to taps** (F5 fell back to B, plan risk R-k): the pointer resolves only to
+  focusables in the active focus scope, and the scrim sits outside it. CROSS closes the innermost layer.
+- **`sr-only` text still draws.** shadcn's `sr-only` becomes `hidden` (C3), and `hidden` hides only its
+  own text node, not the text inside the span. The dialog's close button therefore shows the word "Close"
+  next to the X. Fixing it needs a compat cascade for `hidden` (a C10 core/compat gap).
+- **No Escape key.** The guest has no keyboard; CROSS is the back button.
 
 ## Text input (C4, C4b)
 

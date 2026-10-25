@@ -15,7 +15,9 @@ test("C3: the committed ui/ tree is exactly the codemod output", async () => {
     "button.tsx",
     "card.tsx",
     "dialog.tsx",
+    "dropdown-menu.tsx",
     "input.tsx",
+    "select.tsx",
   ]);
   for (const file of report.files) {
     const committed = await Bun.file(UI + "/" + file.name).text();
@@ -120,4 +122,25 @@ test("C3: --check is clean on ui/ and reports drift without writing", async () =
   expect(await Bun.file(drift + "/button.tsx").text()).toContain(
     "cn(buttonVariants({ variant, size, className }))",
   );
+});
+
+test("C5: R6/R7 move the radix-ui and lucide-react edges, and a second run changes nothing", async () => {
+  const { totals, files } = await codemod(UPSTREAM);
+  const dialog = files.find((f) => f.name === "dialog.tsx")!;
+  expect(dialog.after).toContain('from "pocketjs-react/radix"');
+  expect(dialog.after).toContain('from "pocketjs-react/glyph-icons"');
+  expect(dialog.after).not.toContain('from "radix-ui"');
+  expect(dialog.after).not.toContain('from "lucide-react"');
+  // dialog, dropdown-menu and select each import both (button's Slot-only import is R4's).
+  expect(totals.substituted["import:radix-ui"]).toBe(3);
+  expect(totals.substituted["import:lucide-react"]).toBe(3);
+  // R4 removes the Slot-only radix import whole; R6 must not also edit it.
+  const button = files.find((f) => f.name === "button.tsx")!;
+  expect(button.after).not.toContain("pocketjs-react/radix");
+  const dir = TMP + "/c5-edges";
+  for (const file of files) await Bun.write(dir + "/" + file.name, file.after);
+  const twice = await codemod(dir);
+  expect(twice.totals.changed).toBe(0);
+  expect(twice.totals.substituted["import:radix-ui"]).toBeUndefined();
+  expect(twice.totals.substituted["import:lucide-react"]).toBeUndefined();
 });

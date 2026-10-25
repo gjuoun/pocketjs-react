@@ -2,8 +2,8 @@
 
 import * as React from "react"
 import { cn } from "pocketjs-react"
-import { XIcon } from "lucide-react"
-import { Dialog as DialogPrimitive } from "radix-ui"
+import { XIcon } from "pocketjs-react/glyph-icons"
+import { Dialog as DialogPrimitive } from "pocketjs-react/radix"
 
 import { Button } from "./button.tsx"
 
