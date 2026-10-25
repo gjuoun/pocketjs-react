@@ -2,12 +2,16 @@
 // their node. An icon with its own text- class keeps it; with no rule, the default colour stays.
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mount, resetCompatStats } from "../src/index.ts";
-import { NODE_TYPE, type NodeMirror, rootMirror } from "../src/internal/pocket.ts";
+import {
+  NODE_TYPE,
+  type NodeMirror,
+  rootMirror,
+} from "../src/internal/pocket.ts";
+import { unpack } from "../src/internal/pocket-build.ts";
+import { ChevronDownIcon } from "../src/primitives/glyph-icons.tsx";
 import { installBuildStyles } from "../src/style/build-styles.ts";
 import { iconVariantOf } from "../src/style/icon-colour.ts";
-import { ChevronDownIcon } from "../src/primitives/glyph-icons.tsx";
 import { build } from "../tools/build.ts";
-import { unpack } from "../src/internal/pocket-build.ts";
 import { bootCore, type Core } from "./harness.ts";
 
 const OUT = "/tmp/pocketjs-react-test/compat-c8-descendant";
@@ -22,7 +26,9 @@ beforeEach(async () => {
     const built = await build("test/fixtures/icons/main.tsx", { outdir: OUT });
     pak = await Bun.file(built.pak).arrayBuffer();
     builtTokens = built.tokens;
-    styleBin = unpack(new Uint8Array(pak)).find((b) => b.key === "ui:styles")!.data;
+    styleBin = unpack(new Uint8Array(pak)).find(
+      (b) => b.key === "ui:styles",
+    )!.data;
   }
   installBuildStyles({}, styleBin, builtTokens);
   resetCompatStats();
@@ -59,7 +65,9 @@ test("a [&_svg:not([class*='text-'])]:text-slate-500 rule colours an icon with n
       <ChevronDownIcon />
     </div>,
   );
-  expect(icons().map(iconVariantOf)).toEqual(["icon.chevron-down.16.slate-500"]);
+  expect(icons().map(iconVariantOf)).toEqual([
+    "icon.chevron-down.16.slate-500",
+  ]);
 });
 
 test("the rule does not reach an icon that carries its own text colour", async () => {
@@ -77,7 +85,9 @@ test("[&_svg]: is a descendant rule: it colours the icon and never the node itse
       <ChevronDownIcon />
     </div>,
   );
-  expect(icons().map(iconVariantOf)).toEqual(["icon.chevron-down.16.slate-500"]);
+  expect(icons().map(iconVariantOf)).toEqual([
+    "icon.chevron-down.16.slate-500",
+  ]);
 });
 
 test("a node with no descendant rule leaves its icon on the default colour", async () => {
@@ -86,5 +96,7 @@ test("a node with no descendant rule leaves its icon on the default colour", asy
       <ChevronDownIcon />
     </div>,
   );
-  expect(icons().map(iconVariantOf)).toEqual(["icon.chevron-down.16.slate-900"]);
+  expect(icons().map(iconVariantOf)).toEqual([
+    "icon.chevron-down.16.slate-900",
+  ]);
 });

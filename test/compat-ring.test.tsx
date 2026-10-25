@@ -23,7 +23,10 @@ afterEach(() => {
 });
 
 async function boot(): Promise<Core> {
-  const built = await build(VENDOR + "/main.tsx", { outdir: "/tmp/pocketjs-react-test/compat-c8-ring", name: "shadcn-vendor" });
+  const built = await build(VENDOR + "/main.tsx", {
+    outdir: "/tmp/pocketjs-react-test/compat-c8-ring",
+    name: "shadcn-vendor",
+  });
   core = await bootCore({ classes: built.tokens });
   installBuildStyles({}, compileClasses([]).bin, built.tokens);
   mount(<Demo />, { compat: { classMiss: "drop" } });
@@ -47,7 +50,11 @@ function byTag(tag: string): NodeMirror | undefined {
 /** The text-bearing button labelled `label` (the Button element itself, not its text run). */
 function buttonLabelled(label: string): NodeMirror | undefined {
   const walk = (node: NodeMirror): NodeMirror | undefined => {
-    if (node.debugName === "button" && (node.children as NodeMirror[]).some((c) => c.text === label)) return node;
+    if (
+      node.debugName === "button" &&
+      (node.children as NodeMirror[]).some((c) => c.text === label)
+    )
+      return node;
     for (const child of node.children as NodeMirror[]) {
       const hit = walk(child);
       if (hit) return hit;

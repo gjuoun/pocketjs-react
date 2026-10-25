@@ -49,7 +49,11 @@ function selectorOf(prefix: string): Selector | null {
   if (prefix === "has-[>svg]") return { kind: "has-svg" };
   const slot = /^has-data-\[slot=([\w-]+)\]$/.exec(prefix);
   if (slot) return { kind: "has-data", value: slot[1] };
-  if (prefix === "[&_svg]" || prefix === "[&>svg]" || prefix === "[&_svg:not([class*='text-'])]")
+  if (
+    prefix === "[&_svg]" ||
+    prefix === "[&>svg]" ||
+    prefix === "[&_svg:not([class*='text-'])]"
+  )
     return { kind: "svg" };
   const m = DATA_SELECTOR.exec(prefix);
   if (m) return { kind: "data", name: m[1], value: m[2] };
@@ -88,8 +92,12 @@ function children(value: unknown): unknown[] {
 
 /** A child's slot: its data-slot prop, else its component name in kebab-case (CardAction -> card-action). */
 function slotOf(child: unknown): string | undefined {
-  if (!child || typeof child !== "object" || !("type" in child)) return undefined;
-  const { type, props } = child as { type: unknown; props?: Record<string, unknown> };
+  if (!child || typeof child !== "object" || !("type" in child))
+    return undefined;
+  const { type, props } = child as {
+    type: unknown;
+    props?: Record<string, unknown>;
+  };
   const slot = props?.["data-slot"];
   if (typeof slot === "string") return slot;
   if (typeof type === "function" && type.name !== "")
@@ -105,7 +113,8 @@ export function holds(sel: Selector, node: SelectorNode): boolean {
       return truthy(node.props["aria-invalid"]);
     case "data": {
       const v = node.props["data-" + sel.name];
-      if (sel.value === undefined) return v !== undefined && v !== null && v !== false;
+      if (sel.value === undefined)
+        return v !== undefined && v !== null && v !== false;
       return v !== undefined && String(v) === sel.value;
     }
     case "svg":
@@ -119,7 +128,10 @@ export function holds(sel: Selector, node: SelectorNode): boolean {
 }
 
 /** Resolve every selector token of a class string against one node; plain tokens pass through. */
-export function resolveSelectors(className: string, node: SelectorNode): string {
+export function resolveSelectors(
+  className: string,
+  node: SelectorNode,
+): string {
   if (!className.includes(":")) return className;
   const out: string[] = [];
   const visit = (tok: string): void => {
@@ -141,7 +153,8 @@ export function iconTextRule(className: unknown): string | undefined {
   if (typeof className !== "string") return undefined;
   for (const tok of className.split(/\s+/)) {
     const split = splitSelector(tok);
-    if (split?.selector.kind === "svg" && split.body.startsWith("text-")) return split.body;
+    if (split?.selector.kind === "svg" && split.body.startsWith("text-"))
+      return split.body;
   }
   return undefined;
 }

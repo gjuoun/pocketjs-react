@@ -16,9 +16,13 @@
 // pressing the field opens its keyboard and then calls the app's handler.
 import type { TextFieldInput } from "../input/text-field.ts";
 import { withDefaultFocus } from "./focus.ts";
-import { isMapped, TEXT_ENTRY_TAGS } from "./tags.ts";
-import { countDroppedAttr, countMappedAttr, countUnknownAttr } from "./stats.ts";
 import { resolveSelectors, selectorInputs } from "./selectors.ts";
+import {
+  countDroppedAttr,
+  countMappedAttr,
+  countUnknownAttr,
+} from "./stats.ts";
+import { isMapped, TEXT_ENTRY_TAGS } from "./tags.ts";
 
 const ALIAS: Record<string, string> = { onClick: "onPress" };
 
@@ -152,7 +156,8 @@ export function textFieldInput(
     value: text(props.value),
     defaultValue: text(props.defaultValue),
     placeholder: text(props.placeholder),
-    maxLength: typeof props.maxLength === "number" ? props.maxLength : undefined,
+    maxLength:
+      typeof props.maxLength === "number" ? props.maxLength : undefined,
     masked,
     multiline: tag === "textarea",
     name: text(props.name),
@@ -185,7 +190,8 @@ export function compatProps(
     }
     if (
       text &&
-      (TEXT_FIELD_ATTRS.has(key) || (key === "type" && props.type === "password"))
+      (TEXT_FIELD_ATTRS.has(key) ||
+        (key === "type" && props.type === "password"))
     )
       continue;
     if (text && key === "onClick") continue;
@@ -236,7 +242,11 @@ export function compatProps(
   if (focusable) {
     out.focusable = true;
     // Only DOM-mapped tags: a native View/Text keeps its own focus surface (JG-157 F3).
-    if (isMapped(tag)) out.className = withDefaultFocus(out.className as string | undefined, props.style);
+    if (isMapped(tag))
+      out.className = withDefaultFocus(
+        out.className as string | undefined,
+        props.style,
+      );
   } else if (props.focusable === false) out.focusable = false;
   return out;
 }

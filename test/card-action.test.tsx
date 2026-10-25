@@ -12,10 +12,13 @@ afterEach(() => {
 });
 
 test("the header's title and CardAction share a row, the action at the right edge", async () => {
-  const built = await build("test/fixtures/shadcn-vendor/card-action-main.tsx", {
-    outdir: "/tmp/pocketjs-react-test/compat-c8-card-action",
-    name: "card-action",
-  });
+  const built = await build(
+    "test/fixtures/shadcn-vendor/card-action-main.tsx",
+    {
+      outdir: "/tmp/pocketjs-react-test/compat-c8-card-action",
+      name: "card-action",
+    },
+  );
   core = await bootApp(built);
   core.step(0);
   core.render();
