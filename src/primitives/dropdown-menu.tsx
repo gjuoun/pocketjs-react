@@ -1,9 +1,10 @@
 // Native DropdownMenu primitive (C5), shaped like Radix's DropdownMenu namespace so the vendored
 // shadcn dropdown-menu imports it unchanged. Root holds the open state. Content is a ModalLayer
 // and is placed beside its trigger (C6). Item runs onSelect and closes the menu unless the handler
-// calls preventDefault(). Sub-menus are not supported (F3=A): they throw when rendered.
+// calls preventDefault(). Sub-menus (C9) open by RIGHT or CIRCLE and close one level per CROSS or LEFT.
 
-import { createContext, type ReactNode, useContext, useRef } from "react";
+import { pushFocusController } from "@pocketjs/framework/input";
+import { createContext, type ReactNode, useContext, useEffect, useRef } from "react";
 import { Text, View } from "../elements.ts";
 import { cn } from "../style/cn.ts";
 import { type Box, measureFocused } from "./anchor.ts";
@@ -11,6 +12,8 @@ import { ModalLayer } from "./modal-layer.tsx";
 import { Pressable } from "./press.tsx";
 import { useControllableState } from "./state.ts";
 import { ownItem, ownSurface, ownText } from "./surface.ts";
+import type { NodeMirror } from "../internal/pocket.ts";
+import { addFramePump } from "../renderer/mount.ts";
 
 interface MenuContextValue {
   open: boolean;
@@ -106,7 +109,7 @@ export function Portal(props: { children?: ReactNode }) {
 export interface ContentProps {
   className?: string;
   children?: ReactNode;
-  /** Positioning (side, align, sideOffset, collisionPadding) places the panel (C6); focus hooks: not implemented (C9). */
+  /** Positioning (side, align, sideOffset, collisionPadding) places the panel (C6); the Radix focus hooks are classified in the README (C9). */
   side?: "top" | "right" | "bottom" | "left";
   align?: "start" | "center" | "end";
   sideOffset?: number;
@@ -151,6 +154,9 @@ export function Group(props: { className?: string; children?: ReactNode }) {
   );
 }
 
+/** Inside a sub-menu, selecting an item closes the whole tree (F2): the sub-menu first, then the menu. */
+const SubCloseContext = createContext<(() => void) | null>(null);
+
 interface ItemStateValue {
   checked: boolean;
 }
@@ -170,17 +176,20 @@ export interface ItemProps {
 /** Every row: a focusable press that runs onSelect, then closes unless prevented. */
 function ItemFrame(props: ItemProps & { checked?: boolean }) {
   const ctx = useMenu("DropdownMenu.Item");
+  const closeTree = useContext(SubCloseContext);
   const press = () => {
     const event = selectEvent();
     props.onSelect?.(event);
-    if (!event.defaultPrevented) ctx.setOpen(false);
+    if (event.defaultPrevented) return;
+    if (closeTree) closeTree();
+    else ctx.setOpen(false);
   };
   return (
     <ItemStateContext.Provider value={{ checked: props.checked ?? false }}>
       <Pressable
         asChild={props.asChild}
         className={cn(
-          "flex items-center gap-2 px-2 py-1.5 text-sm text-white focus:bg-blue-600",
+          "flex items-center gap-2 px-2 py-1.5 text-sm text-white focus:bg-blue-600 active:bg-blue-500",
           ownItem(props.className),
         )}
         disabled={props.disabled}
@@ -286,25 +295,158 @@ export function Separator(props: { className?: string }) {
   );
 }
 
-/** Sub-menus are not supported yet (C5 F3=A): rendering one says so instead of guessing. */
-type Loose = {
-  [key: string]: unknown;
+/** A sub-menu: its own open state under the menu, reached by RIGHT or CIRCLE from its trigger. */
+interface SubContextValue {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  /** The sub-trigger box, measured as the sub-menu opens (C6). Cleared on close. */
+  anchor: { current: Box | null };
+}
+
+const SubContext = createContext<SubContextValue | null>(null);
+
+function useSub(part: string): SubContextValue {
+  const ctx = useContext(SubContext);
+  if (!ctx) throw new Error(`pocketjs-react: ${part} must be used inside <DropdownMenu.Sub>`);
+  return ctx;
+}
+
+export interface SubProps {
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
   children?: ReactNode;
-  className?: string;
-};
-function unsupportedError(name: string): Error {
-  return new Error(
-    "pocketjs-react: DropdownMenu." +
-      name +
-      " (sub-menus) is not supported yet (C5 F3)",
+}
+
+export function Sub(props: SubProps) {
+  const [open, setOpen] = useControllableState(props.open, props.defaultOpen ?? false, props.onOpenChange);
+  const anchor = useRef<Box | null>(null);
+  const setOpenAnchored = (next: boolean) => {
+    if (!next) anchor.current = null;
+    setOpen(next);
+  };
+  return (
+    <SubContext.Provider value={{ open, setOpen: setOpenAnchored, anchor }}>
+      {props.children}
+    </SubContext.Provider>
   );
 }
-export function Sub(_props: Loose): never {
-  throw unsupportedError("Sub");
+
+/** The sub-trigger keeps the caller's size and layout; its own surface and state colours are the primitive's. */
+function ownSubTrigger(className: string | undefined): string {
+  return ownItem(className)
+    .split(" ")
+    .filter((token) => token !== "" && !token.startsWith("data-[state="))
+    .join(" ");
 }
-export function SubTrigger(_props: Loose): never {
-  throw unsupportedError("SubTrigger");
+
+/** Text children become labels; the chevron (an icon child) stays as it is. */
+function labelled(children: ReactNode): ReactNode {
+  const list = Array.isArray(children) ? children : [children];
+  return list.map((child, i) =>
+    typeof child === "string" || typeof child === "number" ? (
+      <Text key={i} className="text-sm text-white">{child}</Text>
+    ) : (
+      child
+    ),
+  );
 }
-export function SubContent(_props: Loose): never {
-  throw unsupportedError("SubContent");
+
+export interface SubTriggerProps {
+  className?: string;
+  disabled?: boolean;
+  inset?: boolean;
+  children?: ReactNode;
+}
+
+/** The row that opens its sub-menu. RIGHT (the d-pad) and CIRCLE open it; the chevron is the caller's child. */
+export function SubTrigger(props: SubTriggerProps) {
+  const sub = useSub("DropdownMenu.SubTrigger");
+  const ref = useRef<NodeMirror | null>(null);
+  const latest = useRef(sub);
+  latest.current = sub;
+  const show = () => {
+    if (!latest.current.open) latest.current.anchor.current = measureFocused();
+    latest.current.setOpen(true);
+  };
+  useEffect(() => {
+    if (props.disabled || !ref.current) return;
+    return pushFocusController(ref.current as never, (direction) => {
+      if (direction !== "right") return false;
+      show();
+      return true;
+    });
+  }, [props.disabled]);
+  return (
+    <Pressable
+      nodeRef={ref}
+      disabled={props.disabled}
+      dataState={sub.open ? "open" : "closed"}
+      className={cn(
+        "flex items-center justify-between gap-2 px-2 py-1.5 text-sm text-white focus:bg-blue-600 active:bg-blue-500 data-[state=open]:bg-slate-700",
+        ownSubTrigger(props.className),
+      )}
+      onPress={() => {
+        if (latest.current.open) latest.current.setOpen(false);
+        else show();
+      }}
+    >
+      {labelled(props.children)}
+    </Pressable>
+  );
+}
+
+export interface SubContentProps {
+  className?: string;
+  children?: ReactNode;
+  side?: "top" | "right" | "bottom" | "left";
+  align?: "start" | "center" | "end";
+  sideOffset?: number;
+  alignOffset?: number;
+  avoidCollisions?: boolean;
+  collisionPadding?: number;
+  loop?: boolean;
+  forceMount?: true;
+}
+
+/** The sub-menu panel: a nested ModalLayer beside its trigger. LEFT and CROSS close it one level. */
+export function SubContent(props: SubContentProps) {
+  const sub = useSub("DropdownMenu.SubContent");
+  const latest = useRef(sub);
+  latest.current = sub;
+  const menu = useMenu("DropdownMenu.SubContent");
+  const menuLatest = useRef(menu);
+  menuLatest.current = menu;
+  const closeTree = () => {
+    latest.current.setOpen(false);
+    // Next frame, so the sub-menu's focus scope unwinds in its own commit before the menu's.
+    const dispose = addFramePump(() => {
+      dispose();
+      menuLatest.current.setOpen(false);
+    });
+  };
+  return (
+    <ModalLayer
+      open={sub.open}
+      onClose={() => latest.current.setOpen(false)}
+      onDirection={(direction) => {
+        if (direction !== "left") return false;
+        latest.current.setOpen(false);
+        return true;
+      }}
+      anchoring={{
+        anchor: sub.anchor.current,
+        side: props.side ?? "right",
+        align: props.align,
+        sideOffset: props.sideOffset,
+        collisionPadding: props.collisionPadding,
+      }}
+      panelClassName={cn(
+        "flex-col p-1 rounded-md bg-slate-800 text-white w-[220px]",
+        ownSurface(props.className),
+      )}
+    >
+      <SubCloseContext.Provider value={closeTree}>{props.children}</SubCloseContext.Provider>
+    </ModalLayer>
+  );
 }

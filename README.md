@@ -372,7 +372,7 @@ overlay layer, traps d-pad focus with `FocusScope`, closes on CROSS and gives fo
 
 - **Dialog** — `Root`, `Trigger`, `Close`, `Portal`, `Overlay` (scrim; a tap on it closes the dialog), `Content`, `Title`, `Description`.
 - **DropdownMenu** — `Root`, `Trigger`, `Portal`, `Content`, `Group`, `Item`, `CheckboxItem`, `RadioGroup`,
-  `RadioItem`, `ItemIndicator`, `Label`, `Separator`. `Sub`, `SubTrigger`, `SubContent` throw when rendered.
+  `RadioItem`, `ItemIndicator`, `Label`, `Separator`, `Sub`, `SubTrigger`, `SubContent` (C9).
 - **Select** — `Root`, `Trigger`, `Value`, `Portal`, `Content`, `Viewport`, `Group`, `Item`, `ItemText`,
   `ItemIndicator`, `Label`, `Separator`, `Icon`, `ScrollUpButton`, `ScrollDownButton`.
 
@@ -390,7 +390,7 @@ Every primitive is controlled or uncontrolled (`useControllableState`: a control
   Boundaries: `item-aligned` is treated as popper; no arrow; no collision avoidance beyond flip and clamp;
   a trigger partly covered by a higher layer measures its visible part.
 - **No scrolling.** Long lists overflow; the scroll buttons render nothing (C10).
-- **No sub-menus** (F3). `DropdownMenu.Sub*` throw with a message naming the gap.
+- **Sub-menus open by RIGHT or CIRCLE, not hover** (C9): there is no pointer, so nothing opens on hover. Select has no sub-menus.
 - **Icons are baked textures** (F1): every canonical lucide icon (1903 at lucide-react 1.61.0), in three colours
   at 16 px, plus the filled 8 px circle. The pak carries 5712 PSM_4444 entries (about 3.4 MiB). Any lucide export
   resolves through `pocketjs-react/glyph-icons`; a name outside the set falls back to the placeholder and counts `iconMiss`.
@@ -409,7 +409,33 @@ Every primitive is controlled or uncontrolled (`useControllableState`: a control
 - **`sr-only` text still draws.** shadcn's `sr-only` becomes `hidden` (C3), and `hidden` hides only its
   own text node, not the text inside the span. The dialog's close button therefore shows the word "Close"
   next to the X. Fixing it needs a compat cascade for `hidden` (a C10 core/compat gap).
-- **No Escape key.** The guest has no keyboard; CROSS is the back button.
+- **No Escape key.** The guest has no keyboard; CROSS is the back button, and it closes one sub-menu level at a time.
+
+### Interaction semantics (C9)
+
+- **Sub-menus.** `DropdownMenu.Sub` holds its own open state. `SubTrigger` opens on RIGHT or CIRCLE; the sub-menu
+  panel is a nested `ModalLayer` beside the trigger, and its focus scope takes the d-pad. LEFT or CROSS closes one
+  level, and focus returns to the opener. Selecting an item closes the whole menu (the sub-menu first, then the menu,
+  one frame apart so each focus scope restores in its own commit). `preventDefault()` keeps the tree open.
+- **Press colour (`active:`).** Menu and sub-menu rows and the Select trigger carry `active:` classes, applied by the
+  core while CIRCLE (or a touch) is held. A row that stays open shows blue-500 while held; a row that closes on press
+  unmounts on the press edge, so its press colour is not visible. The Select trigger opens on the press edge too, so its
+  press colour shows only on a touch that is held down.
+- **Focus hooks.** Radix's DropdownMenu hooks, sorted by what the compat layer can approximate and what needs core
+  signals. Approximable hooks are not wired yet (they are report-only in C9); the core-signal rows go to C10.
+
+| Radix hook | On DropdownMenu Content | Verdict | Why |
+|---|---|---|---|
+| `onOpenAutoFocus` | yes | approximable | FocusScope autoFocus lands the first item; `preventDefault` needs a compat switch |
+| `onEntryFocus` | no (Radix omits it) | n/a | not a consumer hook |
+| `onCloseAutoFocus` | yes | approximable | the scope restores focus to the opener; `preventDefault` needs the layer to own the restore |
+| `onEscapeKeyDown` | yes | approximable | would run before CROSS closes the layer (no Escape key) |
+| `onPointerDownOutside`, `onInteractOutside` | yes | approximable | the layer stack already closes on an outside tap; the callbacks are not wired |
+| `loop` | yes | approximable | `pushFocusController` can wrap; not wired |
+| `onFocusOutside` | yes | needs core (C10) | no focus-change event reaches JS |
+| focus entry from traversal (event) | internal | needs core (C10) | traversal does not notify JS |
+| press on release, not on the edge | n/a | needs core (C10) | the framework fires presses on the edge |
+| hover opens a sub-menu | n/a | out of scope (C10) | no pointer; hover exists only in cursor mode |
 
 ## Text input (C4, C4b)
 
@@ -458,7 +484,7 @@ Typing `quick brown fox` from the home key takes 54 d-pad moves on this layout (
 - No CJK input (the framework's IME needs an offload session this repo does not have).
 - Touch uses the native keyboard; the panel's phone layout and hold rules are not ported. Native IME is verified with simulated composition events only, not on a device (iOS focus-in-gesture is unverified).
 - Keycaps are ASCII (`DEL ENT OK HIDE < > 1# ABC abc`); the framework's arrow glyphs are not guaranteed in the atlas.
-- No `disabled`, `autoFocus`, `onFocus/onBlur/onKeyDown` (C9). `type` other than `password` is dropped and counted.
+- No `disabled`, `autoFocus`, `onFocus/onBlur/onKeyDown` (C10: they need core focus events). `type` other than `password` is dropped and counted.
 - The browser cannot tell a keyboard from a pad: on the web host, any letter key types while a field has focus.
 - Direct typing has no panel, so a `CROSS` press on a letter types it; use Escape or Enter to leave a direct field.
 - Physical keys reach only the web host page; native hosts have no text seam yet.

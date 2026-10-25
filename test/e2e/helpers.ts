@@ -6,7 +6,7 @@ import type { Page, TestInfo } from "@playwright/test";
 import { start } from "./server.mjs";
 
 export const ROOT = fileURLToPath(new URL("../..", import.meta.url));
-export type AppName = "text-entry" | "overlays";
+export type AppName = "text-entry" | "overlays" | "submenu";
 export const manifest = JSON.parse(
   readFileSync(join(ROOT, "dist/e2e/manifest.json"), "utf8"),
 ) as {

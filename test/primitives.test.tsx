@@ -399,3 +399,98 @@ test("nested: while the Select is open the d-pad never reaches the Dialog behind
   expect(seen.has("Dialog title")).toBe(false);
   expect(seen.has(undefined)).toBe(false);
 });
+
+// C9 Step 3: the sub-trigger opens its sub-menu on CIRCLE or RIGHT. Its open colour shows only on an
+// unfocused row (focus:bg-blue-600 wins while the row has focus), so the probe moves focus up to Edit.
+function subMenu(): ReactNode {
+  return screen(
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger className="bg-slate-900 px-2 py-1 rounded-md">
+        Menu
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Content>
+        <DropdownMenu.Item>Edit</DropdownMenu.Item>
+        <DropdownMenu.Sub>
+          <DropdownMenu.SubTrigger>More</DropdownMenu.SubTrigger>
+        </DropdownMenu.Sub>
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>,
+  );
+}
+/** The More row colour at its left padding, read while Edit (not More) has focus. */
+function moreRowWhenUnfocused(c: Core): string {
+  press(c, BTN.UP);
+  expect(focused()).toBe("Edit");
+  c.render();
+  const run = c.texts().find((r) => r.text === "More")!;
+  return c.pixel(run.x - 3, run.y + 2);
+}
+
+test("sub trigger: CIRCLE opens the sub-menu and a second CIRCLE closes it", async () => {
+  const c = await start(subMenu());
+  focusOn(c, "Menu");
+  press(c, BTN.CIRCLE);
+  focusOn(c, "More");
+  press(c, BTN.CIRCLE);
+  expect(moreRowWhenUnfocused(c)).toBe("#334155");
+  press(c, BTN.DOWN);
+  press(c, BTN.CIRCLE);
+  expect(moreRowWhenUnfocused(c)).toBe("#1e293b");
+});
+
+test("sub trigger: RIGHT opens the sub-menu and focus stays on the row", async () => {
+  const c = await start(subMenu());
+  focusOn(c, "Menu");
+  press(c, BTN.CIRCLE);
+  focusOn(c, "More");
+  press(c, BTN.RIGHT);
+  expect(focused()).toBe("More");
+  expect(moreRowWhenUnfocused(c)).toBe("#334155");
+});
+
+test("data-state: the sub-trigger colour follows its open state (slate-800 closed, slate-700 open)", async () => {
+  const c = await start(subMenu());
+  focusOn(c, "Menu");
+  press(c, BTN.CIRCLE);
+  focusOn(c, "More");
+  const closed = moreRowWhenUnfocused(c);
+  press(c, BTN.DOWN);
+  press(c, BTN.RIGHT);
+  const open = moreRowWhenUnfocused(c);
+  expect([closed, open]).toEqual(["#1e293b", "#334155"]);
+});
+
+// C9 Step 8: active: is the press colour. A row that stays open shows it while CIRCLE is held.
+function keepMenu(): ReactNode {
+  return screen(
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger className="bg-slate-900 px-2 py-1 rounded-md">
+        Menu
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Content>
+        <DropdownMenu.Item onSelect={(event) => event.preventDefault()}>Keep</DropdownMenu.Item>
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>,
+  );
+}
+/** The colour at a text run's left padding (the row background), read as drawn. */
+function rowPaint(c: Core, label: string): string {
+  c.render();
+  const run = c.texts().find((r) => r.text === label)!;
+  return c.pixel(run.x - 3, run.y + 2);
+}
+
+test("active: a pressed row shows blue-500 while CIRCLE is held and returns to blue-600 once released", async () => {
+  const c = await start(keepMenu());
+  focusOn(c, "Menu");
+  press(c, BTN.CIRCLE);
+  expect(focused()).toBe("Keep");
+  expect(rowPaint(c, "Keep")).toBe("#2563eb");
+  c.step(BTN.CIRCLE);
+  c.step(BTN.CIRCLE);
+  expect(visible(c)).toContain("Keep");
+  expect(rowPaint(c, "Keep")).toBe("#3b82f6");
+  c.step(0);
+  c.step(0);
+  expect(rowPaint(c, "Keep")).toBe("#2563eb");
+});

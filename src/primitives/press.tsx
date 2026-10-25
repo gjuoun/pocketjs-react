@@ -18,6 +18,8 @@ interface PressableProps {
   asChild?: boolean;
   className?: string;
   disabled?: boolean;
+  /** data-state for the node's own selectors (data-[state=open]:, D5). Forwarded to the View only. */
+  dataState?: "open" | "closed";
   /** The node, for primitives that move focus to a specific row (Select's selected item). */
   nodeRef?: Ref<NodeMirror>;
   onPress: () => void;
@@ -53,6 +55,7 @@ export function Pressable(props: PressableProps) {
       className={props.className}
       focusable
       onPress={props.onPress}
+      {...(props.dataState !== undefined ? { "data-state": props.dataState } : {})}
     >
       {body}
     </View>

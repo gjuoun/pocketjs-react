@@ -9,7 +9,7 @@
 // Without an anchor the panel stays centred.
 
 import { getOps, hostViewport } from "@pocketjs/framework/host";
-import { BTN } from "@pocketjs/framework/input";
+import { BTN, type FocusDirection, pushFocusController } from "@pocketjs/framework/input";
 import { type ReactNode, type Ref, useEffect, useRef, useState } from "react";
 import { View } from "../elements.ts";
 import { FocusScope } from "../focus/FocusScope.tsx";
@@ -46,6 +46,8 @@ export interface ModalLayerProps {
   panelClassName?: string;
   /** Trigger box and placement: the panel anchors beside it, else it is centred. */
   anchoring?: Anchoring;
+  /** The panel's own d-pad hook (C9 sub-menus): return true to take the direction, false to fall through. */
+  onDirection?: (direction: FocusDirection) => boolean;
   children?: ReactNode;
 }
 
@@ -63,6 +65,7 @@ export function ModalLayer(props: ModalLayerProps) {
         className={props.panelClassName}
         anchoring={props.anchoring}
         onClose={props.onClose}
+        onDirection={props.onDirection}
       >
         {props.children}
       </Panel>
@@ -77,9 +80,21 @@ function Panel(props: {
   className?: string;
   anchoring?: Anchoring;
   onClose: () => void;
+  onDirection?: (direction: FocusDirection) => boolean;
   children?: ReactNode;
 }) {
   const node = useRef<NodeMirror | null>(null);
+  // The panel's d-pad hook is registered once per open; the hook it calls is always the latest prop.
+  const onDirection = useRef(props.onDirection);
+  onDirection.current = props.onDirection;
+  // Only a panel that declares a hook registers one: the focus manager takes the topmost matching
+  // controller, so a no-op registration from an enclosing panel would shadow an inner sub-menu's.
+  useEffect(() => {
+    if (!props.onDirection || !node.current) return;
+    return pushFocusController(node.current as never, (direction) =>
+      onDirection.current ? onDirection.current(direction) : false,
+    );
+  }, []);
   // The layer registers once per open; the close it calls is always the latest prop.
   const onClose = useRef(props.onClose);
   onClose.current = props.onClose;
