@@ -104,7 +104,7 @@ test("the scrim dims the app behind it (slate-950 at 60%); the panel stays opaqu
   expect(await pixelAt(page, title!.x - 4, title!.y + 2)).toEqual(PANEL);
 });
 
-test("a tap on the scrim does not close the dialog; a tap on the panel keeps it open", async ({
+test("a tap on the scrim closes the dialog; a tap on the panel keeps it open", async ({
   page,
 }, testInfo) => {
   await openDialog(page, testInfo);
@@ -112,10 +112,7 @@ test("a tap on the scrim does not close the dialog; a tap on the panel keeps it 
   await tapAt(page, testInfo, title.x + 2, title.y + 2); // the panel
   await frames(page, 4);
   expect(await titleRun(page)).toBeDefined();
-  await tapAt(page, testInfo, 2, 2); // the scrim: inert to taps
+  await tapAt(page, testInfo, 2, 2); // the scrim: closes the top layer (tap-outside close)
   await frames(page, 4);
-  expect(await titleRun(page)).toBeDefined();
-  await press(page, BTN.CROSS);
-  await frames(page, 2);
   expect(await titleRun(page)).toBeUndefined();
 });
