@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto";
 import { expect, test } from "bun:test";
 import { type IconEntry, ICON_COLOURS, bakeIcons, iconBlobs, lucideIcons } from "../tools/icon-bake.ts";
+import { PSM } from "../src/internal/pocket-build.ts";
 import { ICON_COLOUR_NAMES } from "../src/style/icon-names.ts";
 
 /** The five demo icons the vendored sources draw: their centring is held to the box centre. */
@@ -45,15 +46,30 @@ test("every variant draws some ink", async () => {
   }
 });
 
-test("every entry is a pow2 PSM_8888 IMG blob with straight-alpha pixels", async () => {
+test("every entry is a pow2 PSM_4444 IMG blob with straight-alpha pixels", async () => {
   for (const blob of iconBlobs(await baked())) {
     const dv = new DataView(blob.data.buffer, blob.data.byteOffset, blob.data.byteLength);
     const w = dv.getUint16(0, true), h = dv.getUint16(2, true);
     expect(blob.key.startsWith("ui:img.icon.")).toBe(true);
     expect(w & (w - 1)).toBe(0);
     expect(h).toBe(w);
-    expect(blob.data[4]).toBe(3); // PSM_8888
-    expect(blob.data.length).toBe(8 + w * h * 4);
+    expect(blob.data[4]).toBe(PSM.PSM_4444);
+    expect(blob.data.length).toBe(8 + w * h * 2);
+  }
+});
+
+test("a PSM_4444 entry decodes to its source within 8 of 255 per channel", async () => {
+  const sources = new Map((await baked()).map((e) => [e.id, e.image.rgba]));
+  for (const blob of iconBlobs(await baked())) {
+    const dv = new DataView(blob.data.buffer, blob.data.byteOffset, blob.data.byteLength);
+    const w = dv.getUint16(0, true), h = dv.getUint16(2, true);
+    const src = sources.get(blob.key.slice("ui:img.".length))!;
+    for (let p = 0; p < w * h; p++) {
+      // pak.ts 4444 layout: (a << 12) | (b << 8) | (g << 4) | r, little-endian.
+      const v = dv.getUint16(8 + p * 2, true);
+      const got = [v & 15, (v >> 4) & 15, (v >> 8) & 15, (v >> 12) & 15].map((n) => n * 17);
+      for (let c = 0; c < 4; c++) expect(Math.abs(got[c] - src[p * 4 + c])).toBeLessThanOrEqual(8);
+    }
   }
 });
 

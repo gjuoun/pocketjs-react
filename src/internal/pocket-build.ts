@@ -3,6 +3,7 @@
 // pinned @pocketjs/framework package. Never imported by guest (runtime) code.
 
 export { bakeAtlases } from "@pocket-internal/framework/compiler/bake-font.ts";
+export { PSM } from "@pocket-internal/contracts/spec/spec.ts";
 export {
   type DecodedImage,
   decodePng,

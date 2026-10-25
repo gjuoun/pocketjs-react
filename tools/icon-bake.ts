@@ -1,4 +1,4 @@
-// Build-time icon baker: lucide-react icon art -> resvg-wasm rasterizer -> PSM_8888
+// Build-time icon baker: lucide-react icon art -> resvg-wasm rasterizer -> PSM_4444
 // IMG entries for the pak. One entry per (icon, pixel size, colour): the core cannot tint a texture
 // at runtime (TEX_QUAD modulate is fixed at white x opacity), so each colour is its own variant.
 // Build-time only: guest code never imports this module.
@@ -16,6 +16,7 @@ import {
   keyImage,
   PAK_DTYPE,
   type PakBlob,
+  PSM,
 } from "../src/internal/pocket-build.ts";
 
 /** Filled variants beyond the 16 px stroke: CircleIcon is `fill-current` (a solid 8 px disc) in shadcn. */
@@ -125,11 +126,19 @@ export async function bakeIcons(): Promise<IconEntry[]> {
   return out;
 }
 
-/** Pak blobs for the baked icons: one `ui:img.icon.*` IMG entry each (PSM_8888, nearest sampling). */
+/** Round every channel to the nearest 4-bit step (x17). The PSM_4444 encoder truncates to 4 bits, so after this
+ *  the encoding is exact and each channel is at most 8 of 255 from its source. */
+export function quantise4444(img: DecodedImage): DecodedImage {
+  const rgba = new Uint8Array(img.rgba.length);
+  for (let i = 0; i < rgba.length; i++) rgba[i] = Math.min(255, Math.round(img.rgba[i] / 17) * 17);
+  return { width: img.width, height: img.height, rgba };
+}
+
+/** Pak blobs for the baked icons: one `ui:img.icon.*` IMG entry each (PSM_4444, nearest sampling). */
 export function iconBlobs(entries: IconEntry[]): PakBlob[] {
   return entries.map((e) => ({
     key: keyImage(e.id),
     dtype: PAK_DTYPE.u8,
-    data: encodeImageEntry(e.image),
+    data: encodeImageEntry(quantise4444(e.image), PSM.PSM_4444),
   }));
 }
