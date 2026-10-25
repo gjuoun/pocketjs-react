@@ -133,3 +133,27 @@ test("a native focusable View gets no default border (native surface is untouche
   focusOn(core, node);
   expect(edge(core, node)).toBe(interior(core, node));
 });
+
+/** Every pixel inside a node's border box, row-major. */
+function boxPixels(c: Core, node: NodeMirror): string[] {
+  const r = measureBox(node)!;
+  c.render();
+  const out: string[] = [];
+  for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) out.push(c.pixel(x, y));
+  return out;
+}
+
+test("unfocused siblings keep their pixels and boxes when focus moves", async () => {
+  const { c, nodes } = await start(["dark", "light", "dark"]);
+  const boxesIdle = nodes.map((n) => JSON.stringify(measureBox(n)));
+  const idleFirst = boxPixels(c, nodes[0]);
+  const idleLast = boxPixels(c, nodes[2]);
+  focusOn(c, nodes[1]);
+  expect(nodes.map((n) => JSON.stringify(measureBox(n)))).toEqual(boxesIdle);
+  expect(boxPixels(c, nodes[0])).toEqual(idleFirst);
+  expect(boxPixels(c, nodes[2])).toEqual(idleLast);
+  focusOn(c, nodes[2]);
+  expect(boxPixels(c, nodes[0])).toEqual(idleFirst);
+  expect(nodes.map((n) => JSON.stringify(measureBox(n)))).toEqual(boxesIdle);
+  console.log("unfocused pixels identical");
+});
