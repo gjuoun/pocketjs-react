@@ -89,9 +89,8 @@ export interface OverlayProps {
 }
 
 /**
- * Full-screen scrim above the app, below the panel. It is inert to taps: the pointer resolves to
- * focusables inside the active focus scope only, so a scrim tap cannot close the dialog (C5 F5
- * fell back to B, plan risk R-k). CROSS closes the dialog.
+ * Full-screen scrim above the app, below the panel. A tap on it, outside the panel, closes the
+ * dialog (C6, the pointer layer routes it); CROSS closes it too.
  */
 export function Overlay(_props: OverlayProps) {
   const ctx = useDialogContext("Dialog.Overlay");
@@ -106,7 +105,7 @@ export function Overlay(_props: OverlayProps) {
 export interface ContentProps {
   className?: string;
   children?: ReactNode;
-  /** Radix positioning and focus hooks: accepted for the vendored types, not implemented (C6, C9). */
+  /** Positioning is not used: a Dialog is centred (C6 anchors Menu and Select). Focus hooks: not implemented (C9). */
   side?: "top" | "right" | "bottom" | "left";
   align?: "start" | "center" | "end";
   sideOffset?: number;

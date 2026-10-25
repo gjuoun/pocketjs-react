@@ -249,7 +249,9 @@ Dropped on purpose (counted, not silently kept): `w-fit`, `whitespace-nowrap`, `
 
 `mount(el, { compat: { tokenMap: false } })` turns the runtime rewrite off; `compatStats().tokenMap` reports `{ mapped, dropped }` so nothing disappears silently.
 
-Known gap: the core has no text-color inheritance. A `text-*` color applies to a text host (`span`/`p`/`label`/…), so a Badge label takes its mapped color while a Button label — a `view` with a text child — keeps the default white. Fills are correct either way; inheritance belongs to the text layer, not this table.
+Text color inheritance (JG-156): after each commit the compat layer gives every top-most text run that sets no color of its own the nearest ancestor color, or the mount default `compat.textColor` (`#0f172a`, slate-900; `null` turns the pass off). A node with its own color, or a `focus:`/`active:` text variant, stays native. Fills are unaffected; the table above is the mapping.
+
+Flex text tags (`span`/`p`/`label` with `flex`) are views, and a run under one is held by a text element that carries its size and weight. A run font is one baked slot per size x weight, so a combination compiles only when the build baked it (the build bakes the cross product of the source size and weight tokens).
 
 ## Vendor + codemod (C3)
 
@@ -311,9 +313,9 @@ by name.
   not have, so the vendored dialog, dropdown menu and select import from `pocketjs-react/radix` instead
   (C5, see "Overlays (C5)"). `fixed`/`grid`/`calc()`/percentage offsets are C10.
 - **Icons.** `lucide-react`'s `<path d>` is still an unknown prop; icons are C7.
-- **Text color inheritance.** The core has no `text-*` inheritance (C2's known gap), so a view's
-  text keeps the default white. The demo gives the Card and the dialog trigger a dark surface of
-  their own; shadcn's white card would be white-on-white until the text layer inherits color.
+- **Text color inheritance** is a compat pass (JG-156), not a core feature: a view's text takes the
+  nearest ancestor's color, the mount default otherwise. Inline styles and class variants on the text
+  itself still win (see 'Text color inheritance' under the utilities table).
 - **`hover:`** still maps to the press cue `active:`; there is no pointer.
 
 The demo needs `radix-ui`, `lucide-react` and `react-dom` as dev dependencies (the fixture only);
@@ -336,7 +338,7 @@ overlay layer, traps d-pad focus with `FocusScope`, closes on CROSS and gives fo
 
 ### Primitives
 
-- **Dialog** — `Root`, `Trigger`, `Close`, `Portal`, `Overlay` (inert scrim), `Content`, `Title`, `Description`.
+- **Dialog** — `Root`, `Trigger`, `Close`, `Portal`, `Overlay` (scrim; a tap on it closes the dialog), `Content`, `Title`, `Description`.
 - **DropdownMenu** — `Root`, `Trigger`, `Portal`, `Content`, `Group`, `Item`, `CheckboxItem`, `RadioGroup`,
   `RadioItem`, `ItemIndicator`, `Label`, `Separator`. `Sub`, `SubTrigger`, `SubContent` throw when rendered.
 - **Select** — `Root`, `Trigger`, `Value`, `Portal`, `Content`, `Viewport`, `Group`, `Item`, `ItemText`,
@@ -347,23 +349,29 @@ Every primitive is controlled or uncontrolled (`useControllableState`: a control
 (`Pressable`), so `<DialogClose asChild><Button/></DialogClose>` presses the Button. An Item's
 `onSelect` gets an event: `preventDefault()` keeps a menu open; otherwise the menu closes.
 
-### Known boundaries (C5)
+### Known boundaries (C5, C6)
 
-- **Position is not implemented.** `side`, `align`, `sideOffset` and the rest are accepted and ignored;
-  every panel is centred on the overlay layer until C6 anchors it.
+- **Position is anchored (C6).** Menu and Select panels sit beside their trigger: below it by default, flipped
+  above when the bottom has no room, aligned by `align`, and clamped inside the viewport (`collisionPadding`
+  insets). The Dialog stays centred. The trigger box comes from a layout bounds hit test (no node-rect query);
+  the panel mounts invisibly at the top-left once so the core lays it out and it can be measured.
+  Boundaries: `item-aligned` is treated as popper; no arrow; no collision avoidance beyond flip and clamp;
+  a trigger partly covered by a higher layer measures its visible part.
 - **No scrolling.** Long lists overflow; the scroll buttons render nothing (C10).
 - **No sub-menus** (F3). `DropdownMenu.Sub*` throw with a message naming the gap.
 - **Icons are text glyphs** (F1): `x + o v ^ >` in the build's ASCII font, until C7 draws real icons.
 - **The panel owns its surface** (F4): shadcn's `bg-*` tokens are dropped from the vendored classes;
-  the primitives paint a dark panel, because the core does not inherit text color.
+  the primitives paint a dark panel and set their own text color (`text-white`).
 - **Title and Description ignore size and leading tokens:** `leading-*` draws a 1px line here, and a
   large bold run has no baked font slot. The primitive sets its own size.
 - **The scrim is 60% slate-950** (`SCRIM_CLASS`, `bg-[#0f172a99]`): the app behind dims instead of going black.
   The compiler has no alpha modifier, so `bg-slate-950/60`, `bg-black/50` and `rgba()` are unknown utilities
   (the codemod drops them by name); the 8-digit hex is the spelling that compiles and blends. The gamepad
   `Dialog` and `Menu` shell uses the same scrim; their panels stay opaque.
-- **The scrim is inert to taps** (F5 fell back to B, plan risk R-k): the pointer resolves only to
-  focusables in the active focus scope, and the scrim sits outside it. CROSS closes the innermost layer.
+- **A tap outside a layer closes it (C6).** A press that starts and ends outside the top layer's panel closes
+  that layer (Dialog, Menu, Select, and the gamepad Dialog and Menu) and does not reach the app behind it.
+  Nested layers close innermost first; CROSS still closes the innermost layer too. The Menu and Select shells
+  are transparent (no dim); the Dialog scrim dims.
 - **`sr-only` text still draws.** shadcn's `sr-only` becomes `hidden` (C3), and `hidden` hides only its
   own text node, not the text inside the span. The dialog's close button therefore shows the word "Close"
   next to the X. Fixing it needs a compat cascade for `hidden` (a C10 core/compat gap).

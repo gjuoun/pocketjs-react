@@ -30,11 +30,13 @@ export function Overlays() {
   const [fruit, setFruit] = useState("");
   const [changes, setChanges] = useState(0);
   return (
-    <div className="w-full h-full flex-col gap-1 p-2 bg-slate-100">
+    <div className="w-full h-full flex-col items-start gap-1 p-2 bg-slate-100">
+      <Text className="text-sm w-full">{`Fruit changes ${changes}`}</Text>
+      <Text className="text-sm w-full">{`Deletes ${deletes}`}</Text>
       <Button>Under</Button>
       <Dialog>
-        <DialogTrigger className="bg-slate-900 px-2 py-1 rounded-md">
-          Open
+        <DialogTrigger asChild>
+          <Button>Open</Button>
         </DialogTrigger>
         <DialogContent>
           <DialogTitle>Dialog title</DialogTitle>
@@ -42,8 +44,8 @@ export function Overlays() {
         </DialogContent>
       </Dialog>
       <DropdownMenu>
-        <DropdownMenuTrigger className="bg-slate-900 px-2 py-1 rounded-md">
-          Menu
+        <DropdownMenuTrigger asChild>
+          <Button>Menu</Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuItem>Edit</DropdownMenuItem>
@@ -52,7 +54,6 @@ export function Overlays() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Text className="text-sm text-white">{`Deletes ${deletes}`}</Text>
       <Select
         value={fruit}
         onValueChange={(next) => {
@@ -60,15 +61,14 @@ export function Overlays() {
           setChanges((n) => n + 1);
         }}
       >
-        <SelectTrigger>
+        <SelectTrigger className="w-[220px]">
           <SelectValue placeholder="Pick fruit" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent position="popper">
           <SelectItem value="apple">Apple</SelectItem>
           <SelectItem value="banana">Banana</SelectItem>
         </SelectContent>
       </Select>
-      <Text className="text-sm text-white">{`Fruit changes ${changes}`}</Text>
     </div>
   );
 }

@@ -269,6 +269,17 @@ const PROP_NAMES: Record<number, PropName> = Object.fromEntries(
 );
 const f32 = new DataView(new ArrayBuffer(4));
 
+/** True when the node's class sets `prop` in a focus: or active: variant (the core applies those natively). */
+export function classVariantOwns(node: NodeMirror, prop: PropName): boolean {
+  const id = appliedId.get(node);
+  const record = id === undefined ? undefined : records[id];
+  if (!record) return false;
+  const want = PROP[prop];
+  return [record.focus, record.active].some(
+    (v) => v?.some((p) => p.prop === want) === true,
+  );
+}
+
 /** The base-variant value the node's current class record sets for `prop`, in setProp form. */
 export function classBaseValue(
   node: NodeMirror,

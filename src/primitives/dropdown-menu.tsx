@@ -1,11 +1,12 @@
 // Native DropdownMenu primitive (C5), shaped like Radix's DropdownMenu namespace so the vendored
 // shadcn dropdown-menu imports it unchanged. Root holds the open state. Content is a ModalLayer
-// and is centred until C6 anchors it. Item runs onSelect and closes the menu unless the handler
+// and is placed beside its trigger (C6). Item runs onSelect and closes the menu unless the handler
 // calls preventDefault(). Sub-menus are not supported (F3=A): they throw when rendered.
 
-import { createContext, type ReactNode, useContext } from "react";
+import { createContext, type ReactNode, useContext, useRef } from "react";
 import { Text, View } from "../elements.ts";
 import { cn } from "../style/cn.ts";
+import { type Box, measureFocused } from "./anchor.ts";
 import { ModalLayer } from "./modal-layer.tsx";
 import { Pressable } from "./press.tsx";
 import { useControllableState } from "./state.ts";
@@ -14,6 +15,8 @@ import { ownItem, ownSurface, ownText } from "./surface.ts";
 interface MenuContextValue {
   open: boolean;
   setOpen: (open: boolean) => void;
+  /** The trigger's box, measured as the menu opens (C6). Cleared on close. */
+  anchor: { current: Box | null };
 }
 
 const MenuContext = createContext<MenuContextValue | null>(null);
@@ -59,8 +62,13 @@ export function Root(props: DropdownMenuProps) {
     props.defaultOpen ?? false,
     props.onOpenChange,
   );
+  const anchor = useRef<Box | null>(null);
+  const setOpenAnchored = (next: boolean) => {
+    if (!next) anchor.current = null;
+    setOpen(next);
+  };
   return (
-    <MenuContext.Provider value={{ open, setOpen }}>
+    <MenuContext.Provider value={{ open, setOpen: setOpenAnchored, anchor }}>
       {props.children}
     </MenuContext.Provider>
   );
@@ -80,7 +88,10 @@ export function Trigger(props: TriggerProps) {
       asChild={props.asChild}
       className={props.className}
       disabled={props.disabled}
-      onPress={() => ctx.setOpen(!ctx.open)}
+      onPress={() => {
+        if (!ctx.open) ctx.anchor.current = measureFocused();
+        ctx.setOpen(!ctx.open);
+      }}
     >
       {props.children}
     </Pressable>
@@ -95,7 +106,7 @@ export function Portal(props: { children?: ReactNode }) {
 export interface ContentProps {
   className?: string;
   children?: ReactNode;
-  /** Positioning and focus hooks: accepted for the vendored types, not implemented (C6, C9). */
+  /** Positioning (side, align, sideOffset, collisionPadding) places the panel (C6); focus hooks: not implemented (C9). */
   side?: "top" | "right" | "bottom" | "left";
   align?: "start" | "center" | "end";
   sideOffset?: number;
@@ -117,6 +128,13 @@ export function Content(props: ContentProps) {
     <ModalLayer
       open={ctx.open}
       onClose={() => ctx.setOpen(false)}
+      anchoring={{
+        anchor: ctx.anchor.current,
+        side: props.side,
+        align: props.align,
+        sideOffset: props.sideOffset,
+        collisionPadding: props.collisionPadding,
+      }}
       panelClassName={cn(
         "flex-col p-1 rounded-md bg-slate-800 w-[220px]",
         ownSurface(props.className),

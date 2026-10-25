@@ -2,15 +2,23 @@
 // events are drained from the host and a click (press and release over the same focusable)
 // focuses and presses that node, exactly like moving focus there and pressing CIRCLE. The
 // framework's hitFocusable() resolves a point to the nearest focusable inside the active
-// focus scope, so an open dialog keeps clicks behind it inert.
+// focus scope, so an open dialog keeps clicks behind it inert. A press that starts and ends outside
+// the top layer's panel closes that layer (C6), and does not reach the app behind it.
 //
 // Sources:
 //   - desktop host: `ui.svcPoll()` lines {"t":"mouse","x","y","d"} in logical pixels. Other
 //     lines (for example {"t":"load"} from --file) are kept for takeHostMessages();
 //   - a host page (browser): it pushes {x, y, down} into `globalThis.__pocketPointer`.
 import { getOps } from "@pocketjs/framework/host";
-import { focusNode, getFocused, hitFocusable, pressNode } from "@pocketjs/framework/input";
+import {
+  focusNode,
+  getFocused,
+  hitFocusable,
+  pressNode,
+} from "@pocketjs/framework/input";
 import type { NodeMirror } from "../internal/pocket.ts";
+import { hitsWithin } from "../primitives/anchor.ts";
+import { type Layer, topLayer } from "../primitives/layer-stack.ts";
 import { addFramePump } from "../renderer/mount.ts";
 
 export interface PointerEvent {
@@ -66,24 +74,47 @@ export function pressingFromPointer(): boolean {
  * click in a field). The text field takes it as a caret placement and returns true, so the press
  * is not sent. Set by the text entry (installTextEntry); null otherwise.
  */
-let focusedPress: ((node: NodeMirror, x: number, y: number) => boolean) | null = null;
+let focusedPress: ((node: NodeMirror, x: number, y: number) => boolean) | null =
+  null;
 export function setFocusedPress(fn: typeof focusedPress): void {
   focusedPress = fn;
+}
+
+/** A point outside a layer's panel: the topmost hit there is not the panel or a node inside it. */
+function outsideLayer(layer: Layer, x: number, y: number): boolean {
+  const panel = layer.panel();
+  return panel !== null && !hitsWithin(panel, x, y);
 }
 
 export function installPointer(): () => void {
   let armed: unknown = null;
   let armedFocused = false;
+  // A press that began outside the top layer's panel: its release outside closes that layer.
+  let armedOutside: Layer | null = null;
   return addFramePump(() => {
     for (const event of drain()) {
-      const target = hitFocusable(event.x, event.y);
       if (event.down) {
+        const top = topLayer();
+        armed = null;
+        armedFocused = false;
+        armedOutside = top && outsideLayer(top, event.x, event.y) ? top : null;
+        if (armedOutside) continue;
+        const target = hitFocusable(event.x, event.y);
         armed = target;
         armedFocused = target !== null && getFocused() === target;
         if (target) focusNode(target);
+      } else if (armedOutside) {
+        const layer = armedOutside;
+        armedOutside = null;
+        if (topLayer() === layer && outsideLayer(layer, event.x, event.y))
+          layer.close();
       } else {
+        const target = hitFocusable(event.x, event.y);
         if (target && target === armed) {
-          const placed = armedFocused && focusedPress !== null && focusedPress(target, event.x, event.y);
+          const placed =
+            armedFocused &&
+            focusedPress !== null &&
+            focusedPress(target, event.x, event.y);
           if (!placed) {
             pressing = true;
             try {

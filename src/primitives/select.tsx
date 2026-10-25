@@ -1,6 +1,6 @@
 // Native Select primitive (C5), shaped like Radix's Select namespace so the vendored shadcn select
-// imports it unchanged. Root holds the value and the open state. Content is a ModalLayer, centred
-// until C6 anchors it; opening focuses the selected row (else the first). Item selects and closes.
+// imports it unchanged. Root holds the value and the open state. Content is a ModalLayer, placed
+// beside its trigger (C6); opening focuses the selected row (else the first). Item selects and closes.
 // The trigger's label comes from the Items in the tree, read before they mount, so a closed Select
 // can show its selected label. Scrolling is not implemented: the scroll buttons render nothing.
 
@@ -16,6 +16,7 @@ import {
 import { Text, View } from "../elements.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
 import { cn } from "../style/cn.ts";
+import { type Box, measureFocused } from "./anchor.ts";
 import { ModalLayer } from "./modal-layer.tsx";
 import { Pressable } from "./press.tsx";
 import { useControllableState } from "./state.ts";
@@ -27,6 +28,8 @@ interface SelectContextValue {
   open: boolean;
   setOpen: (open: boolean) => void;
   labels: Map<string, string>;
+  /** The trigger's box, measured as the list opens (C6). Cleared on close. */
+  anchor: { current: Box | null };
 }
 
 const SelectContext = createContext<SelectContextValue | null>(null);
@@ -91,8 +94,22 @@ export function Root(props: SelectProps) {
   );
   const labels = new Map<string, string>();
   collectLabels(props.children, labels);
+  const anchor = useRef<Box | null>(null);
+  const setOpenAnchored = (next: boolean) => {
+    if (!next) anchor.current = null;
+    setOpen(next);
+  };
   return (
-    <SelectContext.Provider value={{ value, setValue, open, setOpen, labels }}>
+    <SelectContext.Provider
+      value={{
+        value,
+        setValue,
+        open,
+        setOpen: setOpenAnchored,
+        labels,
+        anchor,
+      }}
+    >
       {props.children}
     </SelectContext.Provider>
   );
@@ -144,10 +161,13 @@ export function Trigger(props: TriggerProps) {
       asChild={props.asChild}
       disabled={props.disabled}
       className={cn(
-        "flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-slate-800",
+        "flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-slate-800 text-white",
         ownSurface(props.className),
       )}
-      onPress={() => ctx.setOpen(!ctx.open)}
+      onPress={() => {
+        if (!ctx.open) ctx.anchor.current = measureFocused();
+        ctx.setOpen(!ctx.open);
+      }}
     >
       {props.children}
     </Pressable>
@@ -162,7 +182,7 @@ export function Portal(props: { children?: ReactNode }) {
 export interface ContentProps {
   className?: string;
   children?: ReactNode;
-  /** Positioning hooks: accepted for the vendored types, not implemented (C6). */
+  /** Positioning: side, align and sideOffset place the list beside its trigger (C6). */
   position?: "item-aligned" | "popper" | "";
   align?: "start" | "center" | "end";
   side?: "top" | "right" | "bottom" | "left";
@@ -177,6 +197,12 @@ export function Content(props: ContentProps) {
     <ModalLayer
       open={ctx.open}
       onClose={() => ctx.setOpen(false)}
+      anchoring={{
+        anchor: ctx.anchor.current,
+        side: props.side,
+        align: props.align,
+        sideOffset: props.sideOffset,
+      }}
       panelClassName={cn(
         "flex-col p-1 rounded-md bg-slate-800 w-[220px]",
         ownSurface(props.className),

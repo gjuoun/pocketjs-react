@@ -42,7 +42,7 @@ async function wasm(): Promise<ArrayBuffer> {
  * slots they use are baked, so raw native-tree nodes can be styled and drawn.
  */
 export async function bootCore(
-  opts: { pak?: ArrayBuffer; classes?: string[] } = {},
+  opts: { pak?: ArrayBuffer; classes?: string[]; fontSlots?: number[] } = {},
 ) {
   const core = await createWasmUi(await wasm());
   const ops = core.ops as Record<string, any>;
@@ -57,7 +57,11 @@ export async function bootCore(
     delete g.__pak;
     const styles = compileClasses(opts.classes ?? []);
     ops.loadStyles(styles.bin);
-    for (const slot of styles.usedFontSlots) {
+    // fontSlots: the slots a build baked for its whole source (the product pak carries them all).
+    for (const slot of new Set([
+      ...styles.usedFontSlots,
+      ...(opts.fontSlots ?? []),
+    ])) {
       if (!fontCache.has(slot)) {
         const [atlas] = await bakeAtlases({
           codepoints: new Set<number>(),
