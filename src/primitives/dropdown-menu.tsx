@@ -193,6 +193,7 @@ function ItemFrame(props: ItemProps & { checked?: boolean }) {
           ownItem(props.className),
         )}
         disabled={props.disabled}
+        hoverable
         onPress={press}
       >
         {props.children}

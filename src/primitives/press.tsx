@@ -12,6 +12,7 @@ import {
 } from "react";
 import { Text, View } from "../elements.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
+import { isHoverEnabled, markHoverOverlay, markSuppressOverlay } from "../input/hover.ts";
 import { cn } from "../style/cn.ts";
 
 interface PressableProps {
@@ -23,6 +24,8 @@ interface PressableProps {
   /** The node, for primitives that move focus to a specific row (Select's selected item). */
   nodeRef?: Ref<NodeMirror>;
   onPress: () => void;
+  /** A Menu or Select item row: on the web host it carries a hover overlay child. */
+  hoverable?: boolean;
   children?: ReactNode;
 }
 
@@ -57,6 +60,12 @@ export function Pressable(props: PressableProps) {
       onPress={props.onPress}
       {...(props.dataState !== undefined ? { "data-state": props.dataState } : {})}
     >
+      {props.hoverable && isHoverEnabled() ? (
+        <>
+          <View ref={markSuppressOverlay} className="absolute inset-0 active:bg-slate-800" />
+          <View ref={markHoverOverlay} className="absolute inset-0 active:bg-blue-600" />
+        </>
+      ) : null}
       {body}
     </View>
   );

@@ -20,11 +20,15 @@ import type { NodeMirror } from "../internal/pocket.ts";
 import { hitsWithin } from "../primitives/anchor.ts";
 import { type Layer, topLayer } from "../primitives/layer-stack.ts";
 import { addFramePump } from "../renderer/mount.ts";
+import { hoverClear, hoverMove } from "./hover.ts";
 
 export interface PointerEvent {
   x: number;
   y: number;
   down: boolean;
+  /** Web hover: a pointer move over the canvas, or the pointer leaving it. */
+  move?: boolean;
+  leave?: boolean;
 }
 
 const hostMessages: Record<string, unknown>[] = [];
@@ -91,9 +95,26 @@ export function installPointer(): () => void {
   let armedFocused = false;
   // A press that began outside the top layer's panel: its release outside closes that layer.
   let armedOutside: Layer | null = null;
+  // A focus move the pump did not make (a d-pad move) clears the hover highlight.
+  let seenFocus: unknown = null;
   return addFramePump(() => {
+    const focus = getFocused();
+    if (focus !== seenFocus) {
+      seenFocus = focus;
+      hoverClear();
+    }
     for (const event of drain()) {
+      // Hover never touches `armed`, focus or presses: it only lights the row overlay.
+      if (event.leave) {
+        hoverClear();
+        continue;
+      }
+      if (event.move) {
+        hoverMove(hitFocusable(event.x, event.y), armed !== null);
+        continue;
+      }
       if (event.down) {
+        hoverClear();
         const top = topLayer();
         armed = null;
         armedFocused = false;
