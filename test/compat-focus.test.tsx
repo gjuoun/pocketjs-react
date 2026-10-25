@@ -1,8 +1,8 @@
 // JG-157 focus indicator: a DOM-mapped focusable draws a default focus border with no explicit
 // focus: border style; an author focus: border keeps its own colour. Real wasm core, pixel asserts.
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, test } from "bun:test";
 import { BTN, getFocused } from "@pocketjs/framework/input";
-import { mount, View } from "../src/index.ts";
+import { mount, resetCompatStats, View } from "../src/index.ts";
 import { type NodeMirror, rootMirror } from "../src/internal/pocket.ts";
 import { measureBox } from "../src/primitives/anchor.ts";
 import { compileClasses, FB_H, FB_W } from "../src/internal/pocket-build.ts";
@@ -25,17 +25,22 @@ const BG_FOCUS = "flex w-[120px] h-[40px] bg-slate-900 focus:bg-slate-200";
 const INTERIOR = "#0f172a";
 
 let core: Core | undefined;
-afterEach(() => core?.dispose());
+let unmount: (() => void) | undefined;
+beforeEach(() => installBuildStyles({}, compileClasses([]).bin, BOOT.join(" ").split(/\s+/)));
+afterEach(() => {
+  unmount?.();
+  unmount = undefined;
+  resetCompatStats();
+  core?.dispose();
+  installBuildStyles({}, new Uint8Array(0), []);
+});
 
 const BOOT = [COL, PLAIN_DARK, PLAIN_LIGHT, AUTHOR_RED, "focus:border-blue-600", "focus:border-2", "focus:border-red-600", "focus:bg-slate-200", "text-base text-white"];
 
 async function start(kids: Array<"dark" | "light" | "red" | "bg" | "native" | "green">): Promise<{ c: Core; nodes: NodeMirror[] }> {
   core = await bootCore({ classes: BOOT });
   const cls = { dark: PLAIN_DARK, light: PLAIN_LIGHT, red: AUTHOR_RED, bg: BG_FOCUS, native: NATIVE_FOCUS, green: PLAIN_DARK };
-  // The build hands the runtime its token set (what the source scan found); a composed literal
-  // compiles from those tokens, as it does in the app.
-  installBuildStyles({}, compileClasses([]).bin, BOOT.join(" ").split(/\s+/));
-  mount(
+  unmount = mount(
     <div className={COL}>
       {kids.map((k, i) => (
         <button key={i} className={cls[k]} />
@@ -104,8 +109,7 @@ test("an author focus border colour does not stack the default width", async () 
 
 test("an inline border style wins: no default border is added", async () => {
   core = await bootCore({ classes: BOOT });
-  installBuildStyles({}, compileClasses([]).bin, BOOT.join(" ").split(/\s+/));
-  mount(
+  unmount = mount(
     <div className={COL}>
       <button className={PLAIN_DARK} style={{ borderWidth: 3, borderColor: GREEN }} />
     </div>,
@@ -126,8 +130,7 @@ test("an author focus background keeps its fill and still gets the default borde
 
 test("a native focusable View gets no default border (native surface is untouched)", async () => {
   core = await bootCore({ classes: BOOT });
-  installBuildStyles({}, compileClasses([]).bin, BOOT.join(" ").split(/\s+/));
-  mount(
+  unmount = mount(
     <div className={COL}>
       <View className={NATIVE_FOCUS} focusable />
     </div>,
@@ -170,7 +173,7 @@ async function bootBuilt(entry: string, name: string, app: unknown): Promise<Cor
   const built = await build(entry, { outdir: SHOTS, name });
   core = await bootCore({ classes: built.tokens, fontSlots: built.fontSlots });
   installBuildStyles({}, compileClasses([]).bin, built.tokens);
-  mount(app as never, { compat: { classMiss: "drop" } });
+  unmount = mount(app as never, { compat: { classMiss: "drop" } });
   core.step(0);
   return core;
 }
