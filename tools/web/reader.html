@@ -46,6 +46,8 @@
   };
   const touchHost = params.get("touch") === "1" || navigator.maxTouchPoints > 0;
   globalThis.__pocketTextNative = touchHost;
+  // Hover: only this web host sets the gate, so native hosts never build the hover overlay.
+  globalThis.__pocketHover = true;
   const bridge = createBridgeState();
   const follow = createFocusFollower();
   const emitText = (event) => (globalThis.__pocketText ??= []).push(event);
@@ -133,6 +135,15 @@
     point(e, true);
   });
   canvas.addEventListener("mouseup", (e) => point(e, false));
+  // Hover: a mouse moving over the canvas lights the menu row under it; a touch is not a hover.
+  canvas.addEventListener("pointermove", (e) => {
+    if (e.pointerType !== "mouse") return;
+    const r = canvas.getBoundingClientRect();
+    (globalThis.__pocketPointer ??= []).push({ x: ((e.clientX - r.left) / r.width) * canvas.width, y: ((e.clientY - r.top) / r.height) * canvas.height, move: true });
+  });
+  canvas.addEventListener("pointerleave", (e) => {
+    if (e.pointerType === "mouse") (globalThis.__pocketPointer ??= []).push({ leave: true });
+  });
   // A finger lift decides inside the gesture whether the native keyboard comes up: a tap on an
   // editable field focuses the hidden textarea; a tap anywhere else lets it go.
   canvas.addEventListener("pointerup", (e) => {
