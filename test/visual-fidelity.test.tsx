@@ -229,6 +229,7 @@ test("G3 Select chevron is a real icon: 16px square, ink centred, no placeholder
   expect(centreOff(ink, box).dx).toBeLessThanOrEqual(1);
   expect(centreOff(ink, box).dy).toBeLessThanOrEqual(1);
   expect(c.texts().some((r) => r.text === "v")).toBe(false);
+  expect(compatStats().iconMiss).toBe(0);
 });
 
 test("G7 Dialog close X is a real icon: 16px square, ink centred", async () => {
@@ -254,6 +255,7 @@ test("G8 Select check mark is a real icon once an item is selected", async () =>
   c.press(BTN.CIRCLE, 4);
   c.press(BTN.CIRCLE, 4);
   expect(iconImages().some((n) => iconVariantOf(n)?.startsWith("icon.check.16."))).toBe(true);
+  expect(compatStats().iconMiss).toBe(0);
 });
 
 test("G9 the icon sheet draws all six icons in three colour variants", async () => {
