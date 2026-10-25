@@ -10,6 +10,8 @@ export type Selector =
   | { kind: "invalid" }
   | { kind: "data"; name: string; value?: string }
   | { kind: "has-svg" }
+  /** has-data-[slot=v]: a direct child whose data-slot (or component name, kebab-cased) is v. */
+  | { kind: "has-data"; value: string }
   /** A descendant rule ([&_svg]:, [&>svg]:): it styles the icon children, never the node. */
   | { kind: "svg" };
 
@@ -45,6 +47,8 @@ function selectorOf(prefix: string): Selector | null {
   if (prefix === "disabled") return { kind: "disabled" };
   if (prefix === "aria-invalid") return { kind: "invalid" };
   if (prefix === "has-[>svg]") return { kind: "has-svg" };
+  const slot = /^has-data-\[slot=([\w-]+)\]$/.exec(prefix);
+  if (slot) return { kind: "has-data", value: slot[1] };
   if (prefix === "[&_svg]" || prefix === "[&>svg]" || prefix === "[&_svg:not([class*='text-'])]")
     return { kind: "svg" };
   const m = DATA_SELECTOR.exec(prefix);
@@ -77,6 +81,22 @@ function isSvgChild(child: unknown): boolean {
   return typeof type === "function" && /Icon$/.test(type.name);
 }
 
+/** The direct React children of a node, flattened. */
+function children(value: unknown): unknown[] {
+  return Array.isArray(value) ? value.flat(Infinity) : [value];
+}
+
+/** A child's slot: its data-slot prop, else its component name in kebab-case (CardAction -> card-action). */
+function slotOf(child: unknown): string | undefined {
+  if (!child || typeof child !== "object" || !("type" in child)) return undefined;
+  const { type, props } = child as { type: unknown; props?: Record<string, unknown> };
+  const slot = props?.["data-slot"];
+  if (typeof slot === "string") return slot;
+  if (typeof type === "function" && type.name !== "")
+    return type.name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+  return undefined;
+}
+
 export function holds(sel: Selector, node: SelectorNode): boolean {
   switch (sel.kind) {
     case "disabled":
@@ -90,9 +110,10 @@ export function holds(sel: Selector, node: SelectorNode): boolean {
     }
     case "svg":
       return false;
+    case "has-data":
+      return children(node.children).some((c) => slotOf(c) === sel.value);
     case "has-svg": {
-      const list = Array.isArray(node.children) ? node.children.flat(Infinity) : [node.children];
-      return list.some(isSvgChild);
+      return children(node.children).some(isSvgChild);
     }
   }
 }

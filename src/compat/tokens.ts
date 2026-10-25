@@ -41,6 +41,10 @@ export const TOKEN_MAP: Readonly<Record<string, string>> = {
   "bg-border": "bg-slate-200",
   "text-destructive": "text-red-600",
   "border-destructive": "border-red-600",
+  // C8 Step 8 (Q3=A): a header with a CardAction child lays out as a row, space between (the
+  // grid's [1fr_auto] columns, approximated). Both halves are selectors on the same child check.
+  "has-data-[slot=card-action]:grid-cols-[1fr_auto]":
+    "has-data-[slot=card-action]:flex-row has-data-[slot=card-action]:justify-between",
   // C8 Step 6: a shadow-sm is the core's one soft shadow; rem lengths are px on a 16px root.
   "shadow-sm": "shadow",
   "border-ring": "border-slate-900",
@@ -87,6 +91,7 @@ const VARIANTS: Readonly<Record<string, string>> = {
 // policy, "owned-by-primitive" is a layout the native primitive already performs, and the
 // `no-core-feature` / `scroll` / `grid` reasons are the core gaps C10 tracks.
 export const DROP_REASONS = [
+  "not-in-build",
   "animation",
   "noop",
   "dark",
@@ -123,6 +128,8 @@ export function dropReason(tok: string): DropReason {
   if (/^(overflow-y-|overflow-x-|max-h-\(|max-h-\[var|scroll-)/.test(base)) return "scroll";
   if (/^(fixed$|top-\[50%\]|left-\[50%\]|translate-[xy]-\[-50%\]|h-\[var\(--radix|min-w-\[var\(--radix)/.test(base))
     return "owned-by-primitive";
+  // rounded-full draws only with a pinned size in the same literal (the core's [R] rule).
+  if (base === "rounded-full") return "no-core-feature";
   // Negative utilities (-translate-x-1) are arbitrary-form only in the core's subset.
   if (/calc\(|^(underline|ml-auto)|^-/.test(base)) return "no-core-feature";
   return "unmapped";
@@ -135,6 +142,8 @@ export interface RewriteResult {
   mapped: number;
   /** Tokens with no equivalent (no-op utilities, unsupported state/variants, ring-*). */
   dropped: number;
+  /** The dropped tokens themselves, so the caller can count each by its reason (C8 Step 11). */
+  droppedTokens: string[];
 }
 
 /** shadcn's focus ring border (JG-157): dropped, because the compat default focus border is the
@@ -145,6 +154,8 @@ const FOCUS_RING_BORDER = "focus-visible:border-ring";
 export function rewriteToken(tok: string): string {
   if (tok === FOCUS_RING_BORDER) return "";
   // C8: a selector the compat layer resolves per node survives the map; its body is rewritten.
+  // A whole-token substitution that needs two utilities (see the has-data card header below).
+  if (TOKEN_MAP[tok] !== undefined) return TOKEN_MAP[tok];
   const selector = splitSelector(tok);
   if (selector) {
     // Descendant rules keep only their icon colour: size and shrink are the icon default here,
@@ -182,19 +193,20 @@ export function rewriteToken(tok: string): string {
 export function rewrite(cls: string): RewriteResult {
   const tokens = cls.trim().split(/\s+/).filter(Boolean);
   const out: string[] = [];
+  const droppedTokens: string[] = [];
   let mapped = 0;
-  let dropped = 0;
   for (const tok of tokens) {
     const next = rewriteToken(tok);
     if (next === "") {
-      dropped++;
+      droppedTokens.push(tok);
     } else {
       if (next !== tok) mapped++;
       out.push(next);
     }
   }
-  return { text: out.join(" "), mapped, dropped };
+  return { text: out.join(" "), mapped, dropped: droppedTokens.length, droppedTokens };
 }
+
 
 export function rewriteLiteral(cls: string): string {
   return rewrite(cls).text;

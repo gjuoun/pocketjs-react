@@ -57,6 +57,17 @@ test("holds: disabled, aria-invalid, data-[k=v] and data-[k] read the node's pro
   expect(holds({ kind: "data", name: "inset" }, node({}))).toBe(false);
 });
 
+function CardAction() {
+  return null;
+}
+
+test("holds: has-data-[slot=v] matches a child by data-slot or by its component name (CardAction -> card-action)", () => {
+  const withAction = { props: {}, children: [<span key="a" />, <CardAction key="b" />] };
+  expect(holds({ kind: "has-data", value: "card-action" }, withAction)).toBe(true);
+  expect(holds({ kind: "has-data", value: "card-action" }, { props: {}, children: <span /> })).toBe(false);
+  expect(holds({ kind: "has-data", value: "card-action" }, { props: {}, children: <div data-slot="card-action" /> })).toBe(true);
+});
+
 test("holds: has-[>svg] is true for a React child that draws an icon", () => {
   expect(holds({ kind: "has-svg" }, { props: {}, children: <CheckIcon /> })).toBe(true);
   expect(holds({ kind: "has-svg" }, { props: {}, children: [<span key="a" />, <CheckIcon key="b" />] })).toBe(true);

@@ -23,6 +23,8 @@ export interface CompatStats {
   tokenMap: { mapped: number; dropped: number };
   /** Icon glyphs drawn as their placeholder character because the pak lacks the variant. */
   iconMiss: number;
+  /** Every dropped class token by policy reason (C8 Step 11): sums to classMiss.tokens + tokenMap.dropped. */
+  unsupported: Record<string, number>;
 }
 
 const mappedAttrs: Record<string, number> = {};
@@ -70,6 +72,7 @@ export function compatStats(): CompatStats {
       dropped: classRuntimeStats.mapDroppedTokens,
     },
     iconMiss: iconMisses,
+    unsupported: { ...classRuntimeStats.unsupported },
   };
 }
 

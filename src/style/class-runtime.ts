@@ -13,7 +13,7 @@
 // reported and dropped on native ones), never compiled behind the author's back.
 
 import { getHost, getOps } from "@pocketjs/framework/host";
-import { rewrite } from "../compat/tokens.ts";
+import { dropReason, rewrite } from "../compat/tokens.ts";
 import {
   decodeStyleTable,
   encodeStyleTable,
@@ -58,6 +58,8 @@ export const classRuntimeStats = {
   mappedTokens: 0,
   /** Tokens the compat token map dropped on purpose (dark:, rounded-full, ring-*, ...). */
   mapDroppedTokens: 0,
+  /** Every dropped token (map or classMiss), counted by its policy reason (C8 Step 11). */
+  unsupported: {} as Record<string, number>,
 };
 
 /** What happens to class tokens the build scan never collected. "throw" keeps the strict
@@ -73,6 +75,11 @@ export function resetClassMissStats(): void {
   classRuntimeStats.droppedLiterals = 0;
   classRuntimeStats.mappedTokens = 0;
   classRuntimeStats.mapDroppedTokens = 0;
+  for (const key of Object.keys(classRuntimeStats.unsupported)) delete classRuntimeStats.unsupported[key];
+}
+
+function countUnsupported(reason: string, n = 1): void {
+  classRuntimeStats.unsupported[reason] = (classRuntimeStats.unsupported[reason] ?? 0) + n;
 }
 
 /** The C2 token map: rewrite shadcn vocabulary into PocketJS vocabulary before resolving.
@@ -161,6 +168,7 @@ export function resolveClass(cls: string): number | null {
     if (unseen.length > 0) {
       if (missPolicy === "drop") {
         classRuntimeStats.droppedTokens += unseen.length;
+        countUnsupported("not-in-build", unseen.length);
         classRuntimeStats.droppedLiterals++;
         missLiteral = true;
         if (!reported.has(norm)) {
@@ -228,6 +236,7 @@ export function applyClassName(node: NodeMirror, cls: unknown): void {
   if (rewritten) {
     classRuntimeStats.mappedTokens += rewritten.mapped;
     classRuntimeStats.mapDroppedTokens += rewritten.dropped;
+    for (const tok of rewritten.droppedTokens) countUnsupported(dropReason(tok));
   }
   if (next.trim() === "") {
     appliedId.delete(node);

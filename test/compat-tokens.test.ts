@@ -10,7 +10,7 @@ import {
   rewriteToken,
   TOKEN_MAP,
 } from "../src/compat/tokens.ts";
-import { bodiesOnly } from "../src/compat/selectors.ts";
+import { bodiesOnly, splitSelector } from "../src/compat/selectors.ts";
 import { parseClassLiteral, unknownUtilities } from "../src/internal/pocket.ts";
 
 const BUTTON_BASE =
@@ -41,12 +41,14 @@ test("every map target is real PocketJS vocabulary", () => {
   for (const [from, to] of Object.entries(TOKEN_MAP)) {
     if (to === "") continue;
     for (const tok of to.split(" ")) {
-      expect({ from, tok, unknown: unknownUtilities(tok) }).toEqual({
+      // A selector target is checked by its body: the selector itself is resolved per node.
+      const body = splitSelector(tok)?.body ?? tok;
+      expect({ from, tok, unknown: unknownUtilities(body) }).toEqual({
         from,
         tok,
         unknown: [],
       });
-      expect({ from, tok, parsed: parseClassLiteral(tok) !== null }).toEqual({
+      expect({ from, tok, parsed: parseClassLiteral(body) !== null }).toEqual({
         from,
         tok,
         parsed: true,
@@ -89,7 +91,8 @@ test("token cases: semantic colors, aliases, variants, opacity and drops", () =>
 test("the button base decomposes: 5 mapped + 14 dropped = 19 (focus ring border dropped, JG-157)", () => {
   // The cva literal the fixture renders: base 22 + default 3 + size-default 4 tokens.
   const full = [BUTTON_BASE, BUTTON_DEFAULT, BUTTON_SIZE].join(" ");
-  expect(rewrite(full)).toEqual({
+  const whole = rewrite(full);
+  expect({ text: whole.text, mapped: whole.mapped, dropped: whole.dropped }).toEqual({
     text: "flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-bold transition-all disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-red-600 bg-slate-900 text-white active:bg-slate-900 h-9 px-4 py-2 has-[>svg]:px-3",
     mapped: 6,
     dropped: 10,
