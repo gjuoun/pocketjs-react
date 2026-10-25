@@ -250,6 +250,7 @@ export function Item(props: ItemProps) {
       <Pressable
         nodeRef={ref}
         disabled={props.disabled}
+        hoverable
         className={cn(
           "flex items-center gap-2 px-2 py-1.5 text-sm text-white focus:bg-blue-600 active:bg-blue-500",
           ownItem(props.className),
