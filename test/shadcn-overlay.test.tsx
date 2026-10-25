@@ -26,8 +26,13 @@ afterEach(() => {
   installBuildStyles({}, new Uint8Array(0), []);
 });
 
-async function boot(compat: Parameters<typeof mount>[1] = { compat: { classMiss: "drop" } }): Promise<Core> {
-  const built = await build(VENDOR + "/overlays-main.tsx", { outdir: OUT, name: "shadcn-overlays" });
+async function boot(
+  compat: Parameters<typeof mount>[1] = { compat: { classMiss: "drop" } },
+): Promise<Core> {
+  const built = await build(`${VENDOR}/overlays-main.tsx`, {
+    outdir: OUT,
+    name: "shadcn-overlays",
+  });
   core = await bootCore({ classes: built.tokens });
   installBuildStyles({}, compileClasses([]).bin, built.tokens);
   unmount = mount(<Overlays />, compat);
@@ -38,7 +43,10 @@ const press = (c: Core, button: number) => c.press(button, SETTLE);
 const visible = (c: Core): string[] => c.texts().map((r) => r.text);
 /** Text of the focused node's first text descendant (a Button or Trigger shows its label). */
 function focused(): string | undefined {
-  const walk = (node: { text?: string; children: unknown[] }): string | undefined => {
+  const walk = (node: {
+    text?: string;
+    children: unknown[];
+  }): string | undefined => {
     if (node.text) return node.text;
     for (const child of node.children as (typeof node)[]) {
       const found = walk(child);

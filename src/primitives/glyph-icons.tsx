@@ -9,15 +9,29 @@ export interface GlyphProps {
   className?: string;
 }
 
-function glyph(char: string) {
-  return function Glyph(props: GlyphProps) {
-    return <Text className={cn("text-sm text-white", props.className)}>{char}</Text>;
-  };
+function Glyph(props: GlyphProps & { char: string }) {
+  return (
+    <Text className={cn("text-sm text-white", props.className)}>
+      {props.char}
+    </Text>
+  );
 }
 
-export const XIcon = glyph("x");
-export const CheckIcon = glyph("+");
-export const CircleIcon = glyph("o");
-export const ChevronDownIcon = glyph("v");
-export const ChevronUpIcon = glyph("^");
-export const ChevronRightIcon = glyph(">");
+export function XIcon(props: GlyphProps) {
+  return <Glyph {...props} char="x" />;
+}
+export function CheckIcon(props: GlyphProps) {
+  return <Glyph {...props} char="+" />;
+}
+export function CircleIcon(props: GlyphProps) {
+  return <Glyph {...props} char="o" />;
+}
+export function ChevronDownIcon(props: GlyphProps) {
+  return <Glyph {...props} char="v" />;
+}
+export function ChevronUpIcon(props: GlyphProps) {
+  return <Glyph {...props} char="^" />;
+}
+export function ChevronRightIcon(props: GlyphProps) {
+  return <Glyph {...props} char=">" />;
+}

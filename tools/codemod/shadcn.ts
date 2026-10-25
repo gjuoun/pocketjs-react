@@ -365,7 +365,11 @@ function transformSource(source: string, name: string): CodemodFile {
       (stmt.specifiers ?? []).every((s: Node) => s.imported?.name === "Slot");
     if (removedByR4) continue;
     add(file.substituted, "import:" + stmt.source.value);
-    edits.push({ start: stmt.source.start, end: stmt.source.end, text: JSON.stringify(to) });
+    edits.push({
+      start: stmt.source.start,
+      end: stmt.source.end,
+      text: JSON.stringify(to),
+    });
   }
 
   const imports = (ast.program?.body ?? []).filter(

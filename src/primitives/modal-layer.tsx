@@ -26,7 +26,12 @@ export function ModalLayer(props: ModalLayerProps) {
   useButton(BTN.CROSS, props.onClose, { enabled: props.open });
   if (!props.open) return null;
   return reconciler.createPortal(
-    <View className={cn("absolute inset-0 flex-col items-center justify-center", props.shellClassName)}>
+    <View
+      className={cn(
+        "absolute inset-0 flex-col items-center justify-center",
+        props.shellClassName,
+      )}
+    >
       <FocusScope className={props.panelClassName}>{props.children}</FocusScope>
     </View>,
     getOverlayLayer(),

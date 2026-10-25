@@ -3,7 +3,13 @@
 // the class and the press merge onto the child (Radix's Slot contract, without Slot), so
 // <Close asChild><Button/></Close> presses the Button.
 
-import { cloneElement, isValidElement, type ReactElement, type ReactNode, type Ref } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+  type Ref,
+} from "react";
 import { Text, View } from "../elements.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
 import { cn } from "../style/cn.ts";

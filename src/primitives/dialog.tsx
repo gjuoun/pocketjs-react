@@ -10,8 +10,8 @@ import { getOverlayLayer } from "../renderer/mount.ts";
 import { cn } from "../style/cn.ts";
 import { ModalLayer } from "./modal-layer.tsx";
 import { Pressable } from "./press.tsx";
-import { ownSurface, ownText } from "./surface.ts";
 import { useControllableState } from "./state.ts";
+import { ownSurface, ownText } from "./surface.ts";
 
 interface DialogContextValue {
   open: boolean;
@@ -22,7 +22,8 @@ const DialogContext = createContext<DialogContextValue | null>(null);
 
 export function useDialogContext(part: string): DialogContextValue {
   const ctx = useContext(DialogContext);
-  if (!ctx) throw new Error("pocketjs-react: " + part + " must be used inside <Dialog>");
+  if (!ctx)
+    throw new Error(`pocketjs-react: ${part} must be used inside <Dialog>`);
   return ctx;
 }
 
@@ -124,7 +125,10 @@ export function Content(props: ContentProps) {
     <ModalLayer
       open={ctx.open}
       onClose={() => ctx.setOpen(false)}
-      panelClassName={cn("flex-col gap-2 p-3 rounded-xl bg-slate-800 w-[300px]", ownSurface(props.className))}
+      panelClassName={cn(
+        "flex-col gap-2 p-3 rounded-xl bg-slate-800 w-[300px]",
+        ownSurface(props.className),
+      )}
     >
       {props.children}
     </ModalLayer>
@@ -133,12 +137,21 @@ export function Content(props: ContentProps) {
 
 export function Title(props: { className?: string; children?: ReactNode }) {
   return (
-    <Text className={cn("text-base font-bold text-white", ownText(props.className))}>{props.children}</Text>
+    <Text
+      className={cn("text-base font-bold text-white", ownText(props.className))}
+    >
+      {props.children}
+    </Text>
   );
 }
 
-export function Description(props: { className?: string; children?: ReactNode }) {
+export function Description(props: {
+  className?: string;
+  children?: ReactNode;
+}) {
   return (
-    <Text className={cn("text-sm text-slate-300", ownText(props.className))}>{props.children}</Text>
+    <Text className={cn("text-sm text-slate-300", ownText(props.className))}>
+      {props.children}
+    </Text>
   );
 }

@@ -22,7 +22,10 @@ export function Dialog(props: DialogProps) {
       open={props.open}
       onClose={props.onClose}
       shellClassName={cn("bg-slate-950", props.className)}
-      panelClassName={cn("flex-col gap-2 p-3 rounded-xl bg-white", props.panelClassName)}
+      panelClassName={cn(
+        "flex-col gap-2 p-3 rounded-xl bg-white",
+        props.panelClassName,
+      )}
     >
       {props.title ? (
         <Text className="text-base text-slate-950">{props.title}</Text>

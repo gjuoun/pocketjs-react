@@ -20,7 +20,10 @@ const MenuContext = createContext<MenuContextValue | null>(null);
 
 function useMenu(part: string): MenuContextValue {
   const ctx = useContext(MenuContext);
-  if (!ctx) throw new Error("pocketjs-react: " + part + " must be used inside <DropdownMenu>");
+  if (!ctx)
+    throw new Error(
+      `pocketjs-react: ${part} must be used inside <DropdownMenu>`,
+    );
   return ctx;
 }
 
@@ -125,7 +128,9 @@ export function Content(props: ContentProps) {
 }
 
 export function Group(props: { className?: string; children?: ReactNode }) {
-  return <View className={cn("flex-col", props.className)}>{props.children}</View>;
+  return (
+    <View className={cn("flex-col", props.className)}>{props.children}</View>
+  );
 }
 
 interface ItemStateValue {
@@ -222,7 +227,9 @@ export interface RadioItemProps extends ItemProps {
 
 export function RadioItem(props: RadioItemProps) {
   if (props.value === "")
-    throw new Error("pocketjs-react: a DropdownMenu.RadioItem must have a value");
+    throw new Error(
+      "pocketjs-react: a DropdownMenu.RadioItem must have a value",
+    );
   const group = useContext(RadioContext);
   return (
     <ItemFrame
@@ -237,26 +244,49 @@ export function RadioItem(props: RadioItemProps) {
 }
 
 /** Renders its children only while the enclosing checkbox or radio item is checked. */
-export function ItemIndicator(props: { className?: string; children?: ReactNode }) {
+export function ItemIndicator(props: {
+  className?: string;
+  children?: ReactNode;
+}) {
   const { checked } = useContext(ItemStateContext);
-  return checked ? <>{props.children}</> : null;
+  return checked ? props.children : null;
 }
 
 export function Label(props: { className?: string; children?: ReactNode }) {
-  return <Text className={cn("text-sm font-bold text-white", ownText(props.className))}>{props.children}</Text>;
+  return (
+    <Text
+      className={cn("text-sm font-bold text-white", ownText(props.className))}
+    >
+      {props.children}
+    </Text>
+  );
 }
 
 export function Separator(props: { className?: string }) {
-  return <View className={cn("h-[1px] bg-slate-600", ownSurface(props.className))} />;
+  return (
+    <View className={cn("h-[1px] bg-slate-600", ownSurface(props.className))} />
+  );
 }
 
 /** Sub-menus are not supported yet (C5 F3=A): rendering one says so instead of guessing. */
-type Loose = { [key: string]: unknown; children?: ReactNode; className?: string };
-function unsupported(name: string) {
-  return function Unsupported(_props: Loose): never {
-    throw new Error("pocketjs-react: DropdownMenu." + name + " (sub-menus) is not supported yet (C5 F3)");
-  };
+type Loose = {
+  [key: string]: unknown;
+  children?: ReactNode;
+  className?: string;
+};
+function unsupportedError(name: string): Error {
+  return new Error(
+    "pocketjs-react: DropdownMenu." +
+      name +
+      " (sub-menus) is not supported yet (C5 F3)",
+  );
 }
-export const Sub = unsupported("Sub");
-export const SubTrigger = unsupported("SubTrigger");
-export const SubContent = unsupported("SubContent");
+export function Sub(_props: Loose): never {
+  throw unsupportedError("Sub");
+}
+export function SubTrigger(_props: Loose): never {
+  throw unsupportedError("SubTrigger");
+}
+export function SubContent(_props: Loose): never {
+  throw unsupportedError("SubContent");
+}

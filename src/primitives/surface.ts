@@ -5,7 +5,9 @@
 export function ownSurface(className: string | undefined): string {
   return (className ?? "")
     .split(/\s+/)
-    .filter((token) => token !== "" && !token.startsWith("bg-") && token !== "w-full")
+    .filter(
+      (token) => token !== "" && !token.startsWith("bg-") && token !== "w-full",
+    )
     .join(" ");
 }
 
@@ -19,7 +21,10 @@ const TEXT_SIZE = /^text-(2xs|xs|sm|base|lg|xl|2xl|3xl|4xl|5xl)$/;
 export function ownText(className: string | undefined): string {
   return (className ?? "")
     .split(/\s+/)
-    .filter((token) => token !== "" && !token.startsWith("leading-") && !TEXT_SIZE.test(token))
+    .filter(
+      (token) =>
+        token !== "" && !token.startsWith("leading-") && !TEXT_SIZE.test(token),
+    )
     .join(" ");
 }
 
@@ -36,7 +41,9 @@ export function ownItem(className: string | undefined): string {
         token !== "" &&
         !token.startsWith("bg-") &&
         !token.startsWith("focus:") &&
-        !/^text-(slate|white|black|muted|popover|primary|destructive|accent)/.test(token),
+        !/^text-(slate|white|black|muted|popover|primary|destructive|accent)/.test(
+          token,
+        ),
     )
     .join(" ");
 }

@@ -33,7 +33,8 @@ const SelectContext = createContext<SelectContextValue | null>(null);
 
 function useSelect(part: string): SelectContextValue {
   const ctx = useContext(SelectContext);
-  if (!ctx) throw new Error("pocketjs-react: " + part + " must be used inside <Select>");
+  if (!ctx)
+    throw new Error(`pocketjs-react: ${part} must be used inside <Select>`);
   return ctx;
 }
 
@@ -41,7 +42,8 @@ function useSelect(part: string): SelectContextValue {
 function plainText(node: ReactNode): string {
   if (typeof node === "string" || typeof node === "number") return String(node);
   if (Array.isArray(node)) return node.map(plainText).join("");
-  if (isValidElement(node)) return plainText((node.props as { children?: ReactNode }).children);
+  if (isValidElement(node))
+    return plainText((node.props as { children?: ReactNode }).children);
   return "";
 }
 
@@ -97,7 +99,9 @@ export function Root(props: SelectProps) {
 }
 
 export function Group(props: { className?: string; children?: ReactNode }) {
-  return <View className={cn("flex-col", props.className)}>{props.children}</View>;
+  return (
+    <View className={cn("flex-col", props.className)}>{props.children}</View>
+  );
 }
 
 export interface ValueProps {
@@ -110,9 +114,20 @@ export interface ValueProps {
 export function Value(props: ValueProps) {
   const ctx = useSelect("Select.Value");
   if (props.children !== undefined && props.children !== null)
-    return <Text className={cn("text-sm text-white", ownText(props.className))}>{props.children}</Text>;
-  const label = ctx.value === "" ? (props.placeholder ?? "") : (ctx.labels.get(ctx.value) ?? ctx.value);
-  return <Text className={cn("text-sm text-white", ownText(props.className))}>{label}</Text>;
+    return (
+      <Text className={cn("text-sm text-white", ownText(props.className))}>
+        {props.children}
+      </Text>
+    );
+  const label =
+    ctx.value === ""
+      ? (props.placeholder ?? "")
+      : (ctx.labels.get(ctx.value) ?? ctx.value);
+  return (
+    <Text className={cn("text-sm text-white", ownText(props.className))}>
+      {label}
+    </Text>
+  );
 }
 
 export interface TriggerProps {
@@ -173,7 +188,11 @@ export function Content(props: ContentProps) {
 }
 
 export function Viewport(props: { className?: string; children?: ReactNode }) {
-  return <View className={cn("flex-col", ownSurface(props.className))}>{props.children}</View>;
+  return (
+    <View className={cn("flex-col", ownSurface(props.className))}>
+      {props.children}
+    </View>
+  );
 }
 
 interface ItemStateValue {
@@ -192,7 +211,8 @@ export interface ItemProps {
 
 /** A row: CIRCLE selects its value and closes the list. The selected row takes focus on open. */
 export function Item(props: ItemProps) {
-  if (props.value === "") throw new Error("pocketjs-react: a Select.Item must have a value");
+  if (props.value === "")
+    throw new Error("pocketjs-react: a Select.Item must have a value");
   const ctx = useSelect("Select.Item");
   const ref = useRef<NodeMirror | null>(null);
   const selected = ctx.value === props.value;
@@ -220,21 +240,34 @@ export function Item(props: ItemProps) {
 }
 
 export function ItemText(props: { className?: string; children?: ReactNode }) {
-  return <Text className={cn("text-sm text-white", ownText(props.className))}>{props.children}</Text>;
+  return (
+    <Text className={cn("text-sm text-white", ownText(props.className))}>
+      {props.children}
+    </Text>
+  );
 }
 
 /** Renders its children only while its Item is the selected value. */
-export function ItemIndicator(props: { className?: string; children?: ReactNode }) {
+export function ItemIndicator(props: {
+  className?: string;
+  children?: ReactNode;
+}) {
   const { selected } = useContext(ItemStateContext);
-  return selected ? <>{props.children}</> : null;
+  return selected ? props.children : null;
 }
 
 export function Label(props: { className?: string; children?: ReactNode }) {
-  return <Text className={cn("text-xs text-white", ownText(props.className))}>{props.children}</Text>;
+  return (
+    <Text className={cn("text-xs text-white", ownText(props.className))}>
+      {props.children}
+    </Text>
+  );
 }
 
 export function Separator(props: { className?: string }) {
-  return <View className={cn("h-[1px] bg-slate-600", ownSurface(props.className))} />;
+  return (
+    <View className={cn("h-[1px] bg-slate-600", ownSurface(props.className))} />
+  );
 }
 
 /** Glyph slot of the trigger; with asChild it is the child itself (the vendored chevron). */
@@ -244,10 +277,16 @@ export function Icon(props: { asChild?: boolean; children?: ReactNode }) {
 }
 
 /** No overflow in this primitive (C10): nothing to scroll to. */
-export function ScrollUpButton(_props: { className?: string; children?: ReactNode }) {
+export function ScrollUpButton(_props: {
+  className?: string;
+  children?: ReactNode;
+}) {
   return null;
 }
 
-export function ScrollDownButton(_props: { className?: string; children?: ReactNode }) {
+export function ScrollDownButton(_props: {
+  className?: string;
+  children?: ReactNode;
+}) {
   return null;
 }
