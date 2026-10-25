@@ -11,11 +11,12 @@ export interface GlyphProps {
 
 // JG-156: the glyph is a view that centres its character. A text run alone draws at the top-left of
 // its box, and a stretched box stretched the character. The colour is inherited from the surface
-// the icon sits on (trigger, item or panel), so a light surface gets a dark glyph.
+// the icon sits on (trigger, item or panel), so a light surface gets a dark glyph. The pb-[3px] lifts the
+// character's ink 1.5px to the box centre (JG-156 R3b, placeholder polish; C7 replaces it).
 function Glyph(props: GlyphProps & { char: string }) {
   return (
     <View className={cn("flex items-center justify-center", props.className)}>
-      <Text className="text-sm">{props.char}</Text>
+      <Text className="text-sm pb-[3px]">{props.char}</Text>
     </View>
   );
 }

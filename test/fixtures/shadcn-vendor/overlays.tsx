@@ -31,6 +31,8 @@ export function Overlays() {
   const [changes, setChanges] = useState(0);
   return (
     <div className="w-full h-full flex-col items-start gap-1 p-2 bg-slate-100">
+      <Text className="text-sm w-full">{`Fruit changes ${changes}`}</Text>
+      <Text className="text-sm w-full">{`Deletes ${deletes}`}</Text>
       <Button>Under</Button>
       <Dialog>
         <DialogTrigger asChild>
@@ -52,7 +54,6 @@ export function Overlays() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Text className="text-sm w-full">{`Deletes ${deletes}`}</Text>
       <Select
         value={fruit}
         onValueChange={(next) => {
@@ -68,7 +69,6 @@ export function Overlays() {
           <SelectItem value="banana">Banana</SelectItem>
         </SelectContent>
       </Select>
-      <Text className="text-sm w-full">{`Fruit changes ${changes}`}</Text>
     </div>
   );
 }
