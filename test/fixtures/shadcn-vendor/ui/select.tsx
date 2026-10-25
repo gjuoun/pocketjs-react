@@ -36,7 +36,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "flex items-center justify-between gap-2 rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow transition-colors disabled:opacity-50 data-[placeholder]:text-slate-500 data-[size=default]:h-9 data-[size=sm]:h-8",
+        "flex items-center justify-between gap-2 rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow transition-colors disabled:opacity-50 data-[placeholder]:text-slate-500 data-[size=default]:h-9 data-[size=sm]:h-8 [&_svg:not([class*='text-'])]:text-slate-500",
         className
       )}
       {...props}
@@ -108,7 +108,7 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "relative flex w-full items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm focus:bg-slate-200 focus:text-slate-900 data-[disabled]:opacity-50",
+        "relative flex w-full items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm focus:bg-slate-200 focus:text-slate-900 data-[disabled]:opacity-50 [&_svg:not([class*='text-'])]:text-slate-500",
         className
       )}
       {...props}

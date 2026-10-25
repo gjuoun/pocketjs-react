@@ -105,7 +105,7 @@ test("the audit's 7 literals: selectors resolve to bodies that compile, except t
   // bodies the core cannot draw are named here; the codemod drops exactly these at generation.
   const unsupported: Record<string, string[]> = {
     "v4 button base": ["pointer-events-none", "border-destructive"],
-    "v4 badge base": ["border-destructive"],
+    "v4 badge base": ["pointer-events-none", "border-destructive"],
     "v4 dialog content": ["fixed", "grid", "top-[50%]", "left-[50%]", "max-w-[calc(100%-2rem)]", "translate-x-[-50%]", "translate-y-[-50%]"],
   };
   for (const [label, lit] of LITERALS) {

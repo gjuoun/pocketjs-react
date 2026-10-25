@@ -96,6 +96,9 @@ export function rewriteToken(tok: string): string {
   // C8: a selector the compat layer resolves per node survives the map; its body is rewritten.
   const selector = splitSelector(tok);
   if (selector) {
+    // Descendant rules keep only their icon colour: size and shrink are the icon default here,
+    // and pointer-events has no pointer (no-op), so they drop.
+    if (selector.selector.kind === "svg" && !selector.body.startsWith("text-")) return "";
     const body = rewriteToken(selector.body);
     return body === "" ? "" : selector.prefix + ":" + body;
   }

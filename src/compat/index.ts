@@ -4,6 +4,10 @@
 // up in compatStats().
 
 import { pressingFromPointer } from "../input/pointer.ts";
+import { setIconRule } from "../style/icon-colour.ts";
+import { classStringValue } from "../style/class-runtime.ts";
+import { rewriteLiteral } from "./tokens.ts";
+import { iconTextRule } from "./selectors.ts";
 import { nativeKeyboard } from "../input/text-entry.ts";
 import { bindField, fieldFor, openField } from "../input/text-field.ts";
 import { NODE_TYPE, type NodeMirror, setProp } from "../internal/pocket.ts";
@@ -74,6 +78,9 @@ export function installCompat(opts: CompatOptions = {}): void {
     bind(node, tag, props, count) {
       if (TEXTUAL_FLEX_TAGS.has(tag) && node.type === NODE_TYPE.view)
         markTextual(node, props.className);
+      // C8: a [&_svg]:text-* rule colours the icons below this node (its own icons keep their own colour).
+      const iconClass = iconTextRule(props.className);
+      setIconRule(node, iconClass === undefined ? undefined : classStringValue(rewriteLiteral(iconClass), "textColor"));
       if (!TEXT_ENTRY_TAGS.has(tag)) return;
       const known = fieldFor(node) !== undefined;
       const binding = bindField(node, tag, textFieldInput(tag, props, count));

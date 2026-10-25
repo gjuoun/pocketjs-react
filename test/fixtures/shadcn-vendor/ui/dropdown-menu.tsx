@@ -73,7 +73,7 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm focus:bg-slate-200 focus:text-slate-900 data-[disabled]:opacity-50 data-[inset]:pl-8 data-[variant=destructive]:focus:bg-red-600",
+        "relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm focus:bg-slate-200 focus:text-slate-900 data-[disabled]:opacity-50 data-[inset]:pl-8 data-[variant=destructive]:focus:bg-red-600 [&_svg:not([class*='text-'])]:text-slate-500",
         className
       )}
       {...props}
@@ -210,7 +210,7 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm focus:bg-slate-200 focus:text-slate-900 data-[inset]:pl-8 data-[state=open]:bg-slate-200 data-[state=open]:text-slate-900",
+        "flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm focus:bg-slate-200 focus:text-slate-900 data-[inset]:pl-8 data-[state=open]:bg-slate-200 data-[state=open]:text-slate-900 [&_svg:not([class*='text-'])]:text-slate-500",
         className
       )}
       {...props}

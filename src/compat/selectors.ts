@@ -9,7 +9,9 @@ export type Selector =
   | { kind: "disabled" }
   | { kind: "invalid" }
   | { kind: "data"; name: string; value?: string }
-  | { kind: "has-svg" };
+  | { kind: "has-svg" }
+  /** A descendant rule ([&_svg]:, [&>svg]:): it styles the icon children, never the node. */
+  | { kind: "svg" };
 
 export interface SplitToken {
   /** The first variant prefix as written (`disabled`, `data-[state=open]`). */
@@ -43,6 +45,8 @@ function selectorOf(prefix: string): Selector | null {
   if (prefix === "disabled") return { kind: "disabled" };
   if (prefix === "aria-invalid") return { kind: "invalid" };
   if (prefix === "has-[>svg]") return { kind: "has-svg" };
+  if (prefix === "[&_svg]" || prefix === "[&>svg]" || prefix === "[&_svg:not([class*='text-'])]")
+    return { kind: "svg" };
   const m = DATA_SELECTOR.exec(prefix);
   if (m) return { kind: "data", name: m[1], value: m[2] };
   return null;
@@ -84,6 +88,8 @@ export function holds(sel: Selector, node: SelectorNode): boolean {
       if (sel.value === undefined) return v !== undefined && v !== null && v !== false;
       return v !== undefined && String(v) === sel.value;
     }
+    case "svg":
+      return false;
     case "has-svg": {
       const list = Array.isArray(node.children) ? node.children.flat(Infinity) : [node.children];
       return list.some(isSvgChild);
@@ -101,10 +107,22 @@ export function resolveSelectors(className: string, node: SelectorNode): string 
       out.push(tok);
       return;
     }
+    // A descendant rule is consumed here and applied to the icons by the icon colour pass.
+    if (split.selector.kind === "svg") return;
     if (holds(split.selector, node)) visit(split.body);
   };
   for (const tok of className.trim().split(/\s+/)) if (tok !== "") visit(tok);
   return out.join(" ");
+}
+
+/** The text-colour utility a node's [&_svg]:text-* rule gives its icon descendants, or undefined. */
+export function iconTextRule(className: unknown): string | undefined {
+  if (typeof className !== "string") return undefined;
+  for (const tok of className.split(/\s+/)) {
+    const split = splitSelector(tok);
+    if (split?.selector.kind === "svg" && split.body.startsWith("text-")) return split.body;
+  }
+  return undefined;
 }
 
 /** The DOM prop names a class string's selectors read (disabled, aria-invalid, data-*). */

@@ -18,6 +18,11 @@ export function registerIconVariant(id: string, handle: number): void {
   handles.set(id, handle);
 }
 
+/** Forget every variant handle: a mount starts with none, so a torn-down core's handles never leak. */
+export function forgetIconVariants(): void {
+  handles.clear();
+}
+
 /** The core handle of a baked variant, or undefined when the pak does not carry it. */
 export function iconVariantHandle(id: string): number | undefined {
   return handles.get(id);
@@ -64,7 +69,7 @@ let focusSeen: NodeMirror | null | undefined;
 /** One pass over the tree: every icon Image takes the variant of the colour it inherits. */
 export function sweepIconColour(root: NodeMirror, inlineOf: InlineOf, inherited: number): void {
   focusSeen = getFocused();
-  visit(root, inherited, focusSeen, inlineOf);
+  visit(root, inherited, focusSeen, inlineOf, undefined);
 }
 
 /** Run the pass only when focus moved since the last one (focus changes between React commits). */
@@ -72,15 +77,31 @@ export function syncIconColour(root: NodeMirror, inlineOf: InlineOf, inherited: 
   if (getFocused() !== focusSeen) sweepIconColour(root, inlineOf, inherited);
 }
 
-function visit(node: NodeMirror, inherited: number, focused: NodeMirror | null | undefined, inlineOf: InlineOf): void {
+/** C8: the [&_svg]:text-* colour a node gives its icon descendants (compat sets it on bind). */
+const descendantRule = new WeakMap<NodeMirror, number>();
+export function setIconRule(node: NodeMirror, colour: number | undefined): void {
+  if (colour === undefined) descendantRule.delete(node);
+  else descendantRule.set(node, colour);
+}
+
+function visit(
+  node: NodeMirror,
+  inherited: number,
+  focused: NodeMirror | null | undefined,
+  inlineOf: InlineOf,
+  rule: number | undefined,
+): void {
   const inline = inlineOf(node);
   let own: number | undefined;
   if (inline !== undefined) own = abgr(inline);
   else if (node === focused) own = classVariantValue(node, "textColor", "focus") ?? classBaseValue(node, "textColor");
   else own = classBaseValue(node, "textColor");
   const colour = own ?? inherited;
-  if (node.type === NODE_TYPE.image) want(node, colour);
-  for (const child of node.children) visit(child, colour, focused, inlineOf);
+  // An icon's own colour (inline, focus, class) wins over an ancestor's [&_svg] rule.
+  if (node.type === NODE_TYPE.image) want(node, own ?? rule ?? inherited);
+  // A nearer colour (this node's own) wins over an ancestor's rule for everything below it.
+  const childRule = descendantRule.get(node) ?? (own !== undefined ? undefined : rule);
+  for (const child of node.children) visit(child, colour, focused, inlineOf, childRule);
 }
 
 function want(node: NodeMirror, colour: number): void {

@@ -31,7 +31,8 @@ test("splitSelector: the first variant prefix decides, nested chains keep their 
   expect(splitSelector("aria-invalid:border-red-600")).toMatchObject({ selector: { kind: "invalid" } });
   // Not resolved here: a plain variant, a descendant rule and a dark: variant stay null.
   expect(splitSelector("focus:bg-red-600")).toBeNull();
-  expect(splitSelector("[&_svg]:shrink-0")).toBeNull();
+  // A descendant rule parses as its own kind; it never resolves against the node itself.
+  expect(splitSelector("[&_svg]:shrink-0")).toMatchObject({ selector: { kind: "svg" }, body: "shrink-0" });
   expect(splitSelector("dark:bg-red-600")).toBeNull();
   expect(splitSelector("bg-red-600")).toBeNull();
 });

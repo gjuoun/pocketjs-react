@@ -281,6 +281,17 @@ export function classVariantOwns(node: NodeMirror, prop: PropName): boolean {
 }
 
 /** The base-variant value the node's current class record sets for `prop`, in setProp form. */
+/** The base-variant value a class string sets for `prop`, read from the record it compiles to. */
+export function classStringValue(cls: string, prop: PropName): number | undefined {
+  const id = resolveClass(cls);
+  if (id === null) return undefined;
+  const entry = records[id]?.base?.find((p) => PROP_NAMES[p.prop] === prop);
+  if (!entry) return undefined;
+  if (PROP_VALUE_KIND[prop] !== VALUE_KIND.f32) return entry.value;
+  f32.setUint32(0, entry.value, true);
+  return f32.getFloat32(0, true);
+}
+
 export function classBaseValue(
   node: NodeMirror,
   prop: PropName,
