@@ -2,7 +2,7 @@
 // focus: border style; an author focus: border keeps its own colour. Real wasm core, pixel asserts.
 import { afterEach, expect, test } from "bun:test";
 import { BTN, getFocused } from "@pocketjs/framework/input";
-import { mount } from "../src/index.ts";
+import { mount, View } from "../src/index.ts";
 import { type NodeMirror, rootMirror } from "../src/internal/pocket.ts";
 import { measureBox } from "../src/primitives/anchor.ts";
 import { compileClasses } from "../src/internal/pocket-build.ts";
@@ -15,16 +15,19 @@ const PLAIN_LIGHT = "flex w-[120px] h-[40px] bg-white";
 const AUTHOR_RED = "flex w-[120px] h-[40px] bg-slate-900 focus:border-red-600";
 const BLUE = "#2563eb";
 const RED = "#dc2626";
+const GREEN = "#00ff00";
+const NATIVE_FOCUS = "flex w-[120px] h-[40px] bg-slate-900 focus:bg-slate-200";
+const BG_FOCUS = "flex w-[120px] h-[40px] bg-slate-900 focus:bg-slate-200";
 const INTERIOR = "#0f172a";
 
 let core: Core | undefined;
 afterEach(() => core?.dispose());
 
-const BOOT = [COL, PLAIN_DARK, PLAIN_LIGHT, AUTHOR_RED, "focus:border-blue-600", "focus:border-2", "focus:border-red-600", "text-base text-white"];
+const BOOT = [COL, PLAIN_DARK, PLAIN_LIGHT, AUTHOR_RED, "focus:border-blue-600", "focus:border-2", "focus:border-red-600", "focus:bg-slate-200", "text-base text-white"];
 
-async function start(kids: Array<"dark" | "light" | "red">): Promise<{ c: Core; nodes: NodeMirror[] }> {
+async function start(kids: Array<"dark" | "light" | "red" | "bg" | "native" | "green">): Promise<{ c: Core; nodes: NodeMirror[] }> {
   core = await bootCore({ classes: BOOT });
-  const cls = { dark: PLAIN_DARK, light: PLAIN_LIGHT, red: AUTHOR_RED };
+  const cls = { dark: PLAIN_DARK, light: PLAIN_LIGHT, red: AUTHOR_RED, bg: BG_FOCUS, native: NATIVE_FOCUS, green: PLAIN_DARK };
   // The build hands the runtime its token set (what the source scan found); a composed literal
   // compiles from those tokens, as it does in the app.
   installBuildStyles({}, compileClasses([]).bin, BOOT.join(" ").split(/\s+/));
@@ -85,4 +88,48 @@ test("an author focus border colour wins over the default", async () => {
   const { c, nodes } = await start(["red"]);
   focusOn(c, nodes[0]);
   expect(edge(c, nodes[0])).toBe(RED);
+});
+
+test("an author focus border colour does not stack the default width", async () => {
+  const { c, nodes } = await start(["red"]);
+  focusOn(c, nodes[0]);
+  const r = measureBox(nodes[0])!;
+  c.render();
+  expect(c.pixel(r.x + 1, r.y + 20)).toBe(INTERIOR);
+});
+
+test("an inline border style wins: no default border is added", async () => {
+  core = await bootCore({ classes: BOOT });
+  installBuildStyles({}, compileClasses([]).bin, BOOT.join(" ").split(/\s+/));
+  mount(
+    <div className={COL}>
+      <button className={PLAIN_DARK} style={{ borderWidth: 3, borderColor: GREEN }} />
+    </div>,
+  );
+  core.step(0);
+  const node = rootMirror.children[0].children[0].children[0] as NodeMirror;
+  focusOn(core, node);
+  expect(edge(core, node)).toBe(GREEN);
+});
+
+test("an author focus background keeps its fill and still gets the default border", async () => {
+  const { c, nodes } = await start(["bg"]);
+  const idle = interior(c, nodes[0]);
+  focusOn(c, nodes[0]);
+  expect(edge(c, nodes[0])).toBe(BLUE);
+  expect(interior(c, nodes[0])).not.toBe(idle);
+});
+
+test("a native focusable View gets no default border (native surface is untouched)", async () => {
+  core = await bootCore({ classes: BOOT });
+  installBuildStyles({}, compileClasses([]).bin, BOOT.join(" ").split(/\s+/));
+  mount(
+    <div className={COL}>
+      <View className={NATIVE_FOCUS} focusable />
+    </div>,
+  );
+  core.step(0);
+  const node = rootMirror.children[0].children[0].children[0] as NodeMirror;
+  focusOn(core, node);
+  expect(edge(core, node)).toBe(interior(core, node));
 });
