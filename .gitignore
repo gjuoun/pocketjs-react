@@ -3,3 +3,5 @@ dist/
 .pocket-build/
 *.log
 .DS_Store
+test-results/
+playwright-report/

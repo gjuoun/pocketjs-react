@@ -1,7 +1,8 @@
 // JG-155 e2e static server (node, no Bun APIs): the browser host page, the app bundle and the host
 // files, routed the way tools/web/serve.ts routes them. Serves only what dist/e2e/manifest.json names.
-import { createServer } from "node:http";
+
 import { readFile } from "node:fs/promises";
+import { createServer } from "node:http";
 import { join, normalize, sep } from "node:path";
 
 const TYPES = {
@@ -27,13 +28,15 @@ export async function start(manifest) {
     let file = routes[path];
     if (!file && path !== "/ws" && path.startsWith("/")) {
       const rel = normalize(path.slice(1));
-      if (!rel.startsWith("..") && !rel.includes(sep + "..")) file = join(manifest.hostDir, rel);
+      if (!rel.startsWith("..") && !rel.includes(sep + ".."))
+        file = join(manifest.hostDir, rel);
     }
     try {
       if (!file || path === "/ws") throw new Error("not found");
       const body = await readFile(file);
       res.writeHead(200, {
-        "content-type": TYPES[file.split(".").pop()] ?? "application/octet-stream",
+        "content-type":
+          TYPES[file.split(".").pop()] ?? "application/octet-stream",
         "cache-control": "no-store",
       });
       res.end(body);
@@ -46,6 +49,10 @@ export async function start(manifest) {
   const { port } = server.address();
   return {
     url: "http://127.0.0.1:" + port + "/",
-    stop: () => new Promise((resolve) => { server.closeAllConnections(); server.close(resolve); }),
+    stop: () =>
+      new Promise((resolve) => {
+        server.closeAllConnections();
+        server.close(resolve);
+      }),
   };
 }
