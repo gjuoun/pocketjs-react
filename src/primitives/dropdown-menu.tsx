@@ -13,7 +13,6 @@ import { Pressable } from "./press.tsx";
 import { useControllableState } from "./state.ts";
 import { ownItem, ownSurface, ownText } from "./surface.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
-import { ChevronRightIcon } from "./glyph-icons.tsx";
 
 interface MenuContextValue {
   open: boolean;
@@ -353,7 +352,7 @@ export interface SubTriggerProps {
   children?: ReactNode;
 }
 
-/** The row that opens its sub-menu. RIGHT (the d-pad) and CIRCLE open it; the chevron points right. */
+/** The row that opens its sub-menu. RIGHT (the d-pad) and CIRCLE open it; the chevron is the caller's child. */
 export function SubTrigger(props: SubTriggerProps) {
   const sub = useSub("DropdownMenu.SubTrigger");
   const ref = useRef<NodeMirror | null>(null);
@@ -386,20 +385,50 @@ export function SubTrigger(props: SubTriggerProps) {
       }}
     >
       {labelled(props.children)}
-      <ChevronRightIcon className="w-4 h-4" />
     </Pressable>
   );
 }
 
-/** Sub-menu content is not implemented yet (C9 Step 4): rendering one says so instead of guessing. */
-type Loose = {
-  [key: string]: unknown;
-  children?: ReactNode;
+export interface SubContentProps {
   className?: string;
-};
-function unsupportedError(name: string): Error {
-  return new Error("pocketjs-react: DropdownMenu." + name + " is not supported yet (C9 Step 4)");
+  children?: ReactNode;
+  side?: "top" | "right" | "bottom" | "left";
+  align?: "start" | "center" | "end";
+  sideOffset?: number;
+  alignOffset?: number;
+  avoidCollisions?: boolean;
+  collisionPadding?: number;
+  loop?: boolean;
+  forceMount?: true;
 }
-export function SubContent(_props: Loose): never {
-  throw unsupportedError("SubContent");
+
+/** The sub-menu panel: a nested ModalLayer beside its trigger. LEFT and CROSS close it one level. */
+export function SubContent(props: SubContentProps) {
+  const sub = useSub("DropdownMenu.SubContent");
+  const latest = useRef(sub);
+  latest.current = sub;
+  return (
+    <ModalLayer
+      open={sub.open}
+      onClose={() => latest.current.setOpen(false)}
+      onDirection={(direction) => {
+        if (direction !== "left") return false;
+        latest.current.setOpen(false);
+        return true;
+      }}
+      anchoring={{
+        anchor: sub.anchor.current,
+        side: props.side ?? "right",
+        align: props.align,
+        sideOffset: props.sideOffset,
+        collisionPadding: props.collisionPadding,
+      }}
+      panelClassName={cn(
+        "flex-col p-1 rounded-md bg-slate-800 text-white w-[220px]",
+        ownSurface(props.className),
+      )}
+    >
+      {props.children}
+    </ModalLayer>
+  );
 }
