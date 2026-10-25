@@ -33,7 +33,6 @@ export function Overlays() {
     <div className="w-full h-full flex-col items-start gap-1 p-2 bg-slate-100">
       <Text className="text-sm w-full">{`Fruit changes ${changes}`}</Text>
       <Text className="text-sm w-full">{`Deletes ${deletes}`}</Text>
-      <Button>Under</Button>
       <Dialog>
         <DialogTrigger asChild>
           <Button>Open</Button>

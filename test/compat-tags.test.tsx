@@ -1,12 +1,20 @@
 // C1 tag mapping: DOM tags mount onto PocketJS host types, carry their DOM tag as
 // provenance (debugName), and interactive tags come out focusable.
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mount } from "../src/index.ts";
+import { DEFAULT_FOCUS } from "../src/compat/focus.ts";
+import { compileClasses } from "../src/internal/pocket-build.ts";
+import { installBuildStyles } from "../src/style/build-styles.ts";
 import { rootMirror } from "../src/internal/pocket.ts";
 import { bootCore, type Core } from "./harness.ts";
 
 let core: Core | undefined;
-afterEach(() => core?.dispose());
+// The app build installs the token set; a default focus border (a composed class) needs it here.
+beforeEach(() => installBuildStyles({}, compileClasses([]).bin, DEFAULT_FOCUS.split(" ")));
+afterEach(() => {
+  core?.dispose();
+  installBuildStyles({}, new Uint8Array(0), []);
+});
 // A class list is required even for unstyled nodes: it is what bakes the font atlas the
 // drawn text runs come from.
 const boot = async (): Promise<Core> =>

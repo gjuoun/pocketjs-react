@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "pocketjs-react"
 
 const buttonVariants = cva(
-  "flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-bold transition-all focus:border-slate-900",
+  "flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-bold transition-all",
   {
     variants: {
       variant: {

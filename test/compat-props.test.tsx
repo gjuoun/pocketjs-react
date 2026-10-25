@@ -1,14 +1,20 @@
 // C1 prop policy: shadcn's data-*/aria-* and the DOM attribute surface drop + count,
 // onClick aliases to onPress, unknown props throw by default and drop+count under
 // mount({ compat: { unknownProps: "drop" } }), and interactive tags come out focusable.
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, test } from "bun:test";
 import { compatStats, mount, resetCompatStats } from "../src/index.ts";
+import { DEFAULT_FOCUS } from "../src/compat/focus.ts";
+import { compileClasses } from "../src/internal/pocket-build.ts";
+import { installBuildStyles } from "../src/style/build-styles.ts";
 import { rootMirror } from "../src/internal/pocket.ts";
 import { bootCore, type Core } from "./harness.ts";
 
 let core: Core | undefined;
+// The app build installs the token set; a default focus border (a composed class) needs it here.
+beforeEach(() => installBuildStyles({}, compileClasses([]).bin, DEFAULT_FOCUS.split(" ")));
 afterEach(() => {
   core?.dispose();
+  installBuildStyles({}, new Uint8Array(0), []);
   resetCompatStats();
 });
 const boot = async (): Promise<Core> =>

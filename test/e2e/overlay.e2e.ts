@@ -69,12 +69,11 @@ async function tapAt(
   else await page.mouse.click(cx, cy);
 }
 
-/** Focus the trigger (Under -> Open) and open the dialog with CIRCLE. */
+/** Focus the trigger (Open, the first focusable on the page) and open the dialog with CIRCLE. */
 async function openDialog(page: Page, testInfo: TestInfo): Promise<void> {
   await openHost(page, testInfo, server.url + "?manual=1");
   await frame(page);
-  await press(page, BTN.DOWN); // no initial focus: the first DOWN takes Under
-  await press(page, BTN.DOWN); // the second takes Open (the trigger)
+  await press(page, BTN.DOWN); // no initial focus: the first DOWN takes Open (the trigger)
   await press(page, BTN.CIRCLE);
   await frames(page, 4);
   expect(await titleRun(page)).toBeDefined();
@@ -86,8 +85,7 @@ test("the scrim dims the app behind it (slate-950 at 60%); the panel stays opaqu
   await openHost(page, testInfo, server.url + "?manual=1");
   await frame(page);
   const base = await pixelAt(page, 2, 2); // the app's page, outside every panel
-  await press(page, BTN.DOWN); // no initial focus: Under, then Open
-  await press(page, BTN.DOWN);
+  await press(page, BTN.DOWN); // no initial focus: the first DOWN takes Open
   await press(page, BTN.CIRCLE);
   await frames(page, 4);
   const dimmed = await pixelAt(page, 2, 2);

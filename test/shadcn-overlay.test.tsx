@@ -86,7 +86,8 @@ test("Dialog: while open the d-pad cannot reach the app beneath", async () => {
     press(c, BTN.UP);
     seen.add(focused());
   }
-  expect(seen.has("Under")).toBe(false);
+  // the only focusable inside the dialog is its own close control (glyph "x"); nothing beneath is reachable
+  expect([...seen].every((label) => label === "x")).toBe(true);
   expect(visible(c)).toContain("Dialog title");
 });
 
@@ -152,7 +153,7 @@ test("the vendored menu and select keep the d-pad inside them", async () => {
     press(c, BTN.UP);
     seen.add(focused());
   }
-  expect(seen.has("Under")).toBe(false);
+  expect([...seen].every((label) => label === "Edit" || label === "Delete")).toBe(true);
   expect(seen.has("Open")).toBe(false);
   expect(seen.has("Pick fruit")).toBe(false);
   expect(seen.has("Menu")).toBe(false);
@@ -165,7 +166,7 @@ test("the vendored menu and select keep the d-pad inside them", async () => {
     press(c, BTN.DOWN);
     seen2.add(focused());
   }
-  expect(seen2.has("Under")).toBe(false);
+  expect([...seen2].every((label) => label === "Apple" || label === "Banana")).toBe(true);
   expect(seen2.has("Menu")).toBe(false);
   expect(seen2.has(undefined)).toBe(false);
 });

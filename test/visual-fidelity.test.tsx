@@ -171,13 +171,7 @@ test("G1 fixture: the status text is not white on the slate-100 page", async () 
 });
 
 // --- G2 (Step 6, Step 7): buttons are content-width with centred labels ------------------------
-test("G2 Under is content-width: box = label + px-4 on both sides (±1px)", async () => {
-  const c = await bootOverlays();
-  const box = measureBox(hostOf("Under"))!;
-  expect(Math.abs(box.w - (runOf(c, "Under").w + 32))).toBeLessThanOrEqual(1);
-});
-
-test("G2 Open trigger is content-width like Under: box = label + px-4 (±1px)", async () => {
+test("G2 Open trigger is content-width: box = label + px-4 (±1px)", async () => {
   const c = await bootOverlays();
   const box = measureBox(hostOf("Open"))!;
   expect(Math.abs(box.w - (runOf(c, "Open").w + 32))).toBeLessThanOrEqual(1);
