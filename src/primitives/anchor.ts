@@ -22,7 +22,7 @@ function containsId(node: NodeMirror, id: number): boolean {
 }
 
 /** True when the topmost layout-bounds hit at (x, y) is the node or one of its descendants. */
-function hitsWithin(node: NodeMirror, x: number, y: number): boolean {
+export function hitsWithin(node: NodeMirror, x: number, y: number): boolean {
   const ops = getOps();
   const query = ops.hitTestBounds ?? ops.hitTest;
   if (!query) return false;

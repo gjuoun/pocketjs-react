@@ -297,7 +297,7 @@ test("select: an Item without a value is an error, not a silent empty choice", a
   ).rejects.toThrow("value");
 });
 
-test("dialog: the scrim is inert to taps (F5 fell back to B); a tap on the panel keeps it open", async () => {
+test("dialog: a tap on the scrim closes it (C6 routes it); a tap on the panel keeps it open", async () => {
   const calls: boolean[] = [];
   const c = await start(dialogScreen((open) => calls.push(open)));
   focusOn(c, "Open");
@@ -306,8 +306,6 @@ test("dialog: the scrim is inert to taps (F5 fell back to B); a tap on the panel
   click(c, title.x + 2, title.y + 2);
   expect(visible(c)).toContain("Dialog title");
   click(c, 2, 2);
-  expect(visible(c)).toContain("Dialog title");
-  press(c, BTN.CROSS);
   expect(visible(c)).not.toContain("Dialog title");
   expect(calls).toEqual([true, false]);
 });

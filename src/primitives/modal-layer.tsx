@@ -1,7 +1,7 @@
 // <ModalLayer>: the modal core shared by <Dialog> and the native dialog/menu/select primitives.
 // While open it portals a full-screen shell into the overlay layer above the app, traps d-pad
-// focus (FocusScope), and closes on CROSS (back). The shell and panel classes are the caller's;
-// the trap and the close are not.
+// focus (FocusScope), and closes on CROSS (back) or a tap outside its panel (C6). The shell and panel
+// classes are the caller's; the trap and the close are not.
 //
 // Anchoring (C6): when the caller passes a trigger box, the panel is placed beside it. It first
 // mounts at the top-left corner, invisible (opacity 0.01), so the core lays it out and its box can
@@ -26,6 +26,7 @@ import {
   placePopper,
   type Side,
 } from "./anchor.ts";
+import { pushLayer } from "./layer-stack.ts";
 
 /** Where a panel goes: the trigger's box (null: centred) and the placement options. */
 export interface Anchoring {
@@ -58,7 +59,11 @@ export function ModalLayer(props: ModalLayerProps) {
         props.shellClassName,
       )}
     >
-      <Panel className={props.panelClassName} anchoring={props.anchoring}>
+      <Panel
+        className={props.panelClassName}
+        anchoring={props.anchoring}
+        onClose={props.onClose}
+      >
         {props.children}
       </Panel>
     </View>,
@@ -71,9 +76,19 @@ export function ModalLayer(props: ModalLayerProps) {
 function Panel(props: {
   className?: string;
   anchoring?: Anchoring;
+  onClose: () => void;
   children?: ReactNode;
 }) {
   const node = useRef<NodeMirror | null>(null);
+  // The layer registers once per open; the close it calls is always the latest prop.
+  const onClose = useRef(props.onClose);
+  onClose.current = props.onClose;
+  useEffect(
+    () =>
+      pushLayer({ panel: () => node.current, close: () => onClose.current() }),
+    [],
+  );
+
   const [placed, setPlaced] = useState<Placement | null>(null);
   const anchor = props.anchoring?.anchor ?? null;
   const side = props.anchoring?.side;
