@@ -27,6 +27,7 @@ import { readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { parse } from "@babel/parser";
 import { rewriteToken } from "../../src/compat/tokens.ts";
+import { bodiesOnly, splitSelector } from "../../src/compat/selectors.ts";
 import { parseClassLiteral } from "../../src/internal/pocket.ts";
 import { unknownUtilities } from "../../src/internal/pocket-build.ts";
 
@@ -169,6 +170,13 @@ function rewriteOne(
     }
     if (DROP_PREFIX.some((prefix) => next.startsWith(prefix))) {
       add(file.substituted, next);
+      continue;
+    }
+    // C8: a selector stays when its body is a utility the compiler draws; the runtime resolves it.
+    const selector = splitSelector(next);
+    if (selector) {
+      if (unknownUtilities(selector.body).length > 0) add(file.compilerDropped, next);
+      else kept.push(next);
       continue;
     }
     if (unknownUtilities(next).length > 0) {
@@ -454,7 +462,7 @@ function checkResidual(text: string, file: CodemodFile): void {
   if (text === "") return;
   let ok = false;
   try {
-    ok = parseClassLiteral(text) !== null;
+    ok = parseClassLiteral(bodiesOnly(text)) !== null;
   } catch {
     ok = false;
   }

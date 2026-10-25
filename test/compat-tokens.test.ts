@@ -8,6 +8,7 @@ import {
   rewriteToken,
   TOKEN_MAP,
 } from "../src/compat/tokens.ts";
+import { bodiesOnly } from "../src/compat/selectors.ts";
 import { parseClassLiteral, unknownUtilities } from "../src/internal/pocket.ts";
 
 const BUTTON_BASE =
@@ -69,9 +70,10 @@ test("token cases: semantic colors, aliases, variants, opacity and drops", () =>
     ["focus-visible:border-ring", ""],
     ["focus-visible:ring-ring/50", ""],
     ["dark:aria-invalid:ring-destructive/40", ""],
-    ["disabled:opacity-50", ""],
+    ["disabled:opacity-50", "disabled:opacity-50"],
+    ["disabled:bg-primary", "disabled:bg-slate-900"],
     ["[&_svg]:shrink-0", ""],
-    ["has-[>svg]:px-3", ""],
+    ["has-[>svg]:px-3", "has-[>svg]:px-3"],
     ["ring-destructive/20", ""],
     ["rounded-full", ""],
     ["underline", ""],
@@ -86,9 +88,9 @@ test("the button base decomposes: 5 mapped + 14 dropped = 19 (focus ring border 
   // The cva literal the fixture renders: base 22 + default 3 + size-default 4 tokens.
   const full = [BUTTON_BASE, BUTTON_DEFAULT, BUTTON_SIZE].join(" ");
   expect(rewrite(full)).toEqual({
-    text: "flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-bold transition-all bg-slate-900 text-white active:bg-slate-900 h-9 px-4 py-2",
+    text: "flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-bold transition-all disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive bg-slate-900 text-white active:bg-slate-900 h-9 px-4 py-2 has-[>svg]:px-3",
     mapped: 5,
-    dropped: 14,
+    dropped: 10,
   });
 });
 
@@ -98,17 +100,22 @@ test("the button default variant rewrites to slate-900 / white / active slate-90
   );
 });
 
-test("the audit's 7 literals: 6 compile after the map, the Dialog core gap stays", () => {
+test("the audit's 7 literals: selectors resolve to bodies that compile, except the named gaps", () => {
+  // C8: a selector token is resolved per node, so what the build compiles is its body. The
+  // bodies the core cannot draw are named here; the codemod drops exactly these at generation.
+  const unsupported: Record<string, string[]> = {
+    "v4 button base": ["pointer-events-none", "border-destructive"],
+    "v4 badge base": ["border-destructive"],
+    "v4 dialog content": ["fixed", "grid", "top-[50%]", "left-[50%]", "max-w-[calc(100%-2rem)]", "translate-x-[-50%]", "translate-y-[-50%]"],
+  };
   for (const [label, lit] of LITERALS) {
-    const out = rewriteLiteral(lit);
-    const compiled = parseClassLiteral(out) !== null;
-    const expected = label !== "v4 dialog content";
-    expect({ label, compiled, text: out }).toEqual({
+    const out = rewriteLiteral(bodiesOnly(lit));
+    const bad = out.split(" ").filter((tok) => unknownUtilities(tok).length > 0);
+    expect({ label, bad: bad.filter((t) => !unsupported[label]?.includes(t)) }).toEqual({ label, bad: [] });
+    expect({ label, compiled: parseClassLiteral(out) !== null }).toEqual({
       label,
-      compiled,
-      text: out,
+      compiled: (unsupported[label]?.length ?? 0) === 0,
     });
-    expect({ label, compiled }).toEqual({ label, compiled: expected });
   }
   // The Dialog residue names exactly what only a core change can fix (L3-d, C10).
   expect(rewriteLiteral(DIALOG)).toBe(

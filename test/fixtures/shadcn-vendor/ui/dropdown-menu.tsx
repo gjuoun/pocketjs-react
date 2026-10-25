@@ -73,7 +73,7 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm focus:bg-slate-200 focus:text-slate-900",
+        "relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm focus:bg-slate-200 focus:text-slate-900 data-[disabled]:opacity-50 data-[inset]:pl-8 data-[variant=destructive]:focus:bg-red-600",
         className
       )}
       {...props}
@@ -91,7 +91,7 @@ function DropdownMenuCheckboxItem({
     <DropdownMenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
       className={cn(
-        "relative flex items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm focus:bg-slate-200 focus:text-slate-900",
+        "relative flex items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm focus:bg-slate-200 focus:text-slate-900 data-[disabled]:opacity-50",
         className
       )}
       checked={checked}
@@ -127,7 +127,7 @@ function DropdownMenuRadioItem({
     <DropdownMenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
       className={cn(
-        "relative flex items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm focus:bg-slate-200 focus:text-slate-900",
+        "relative flex items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm focus:bg-slate-200 focus:text-slate-900 data-[disabled]:opacity-50",
         className
       )}
       {...props}
@@ -154,7 +154,7 @@ function DropdownMenuLabel({
       data-slot="dropdown-menu-label"
       data-inset={inset}
       className={cn(
-        "px-2 py-1.5 text-sm font-bold",
+        "px-2 py-1.5 text-sm font-bold data-[inset]:pl-8",
         className
       )}
       {...props}
@@ -210,7 +210,7 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm focus:bg-slate-200 focus:text-slate-900",
+        "flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm focus:bg-slate-200 focus:text-slate-900 data-[inset]:pl-8 data-[state=open]:bg-slate-200 data-[state=open]:text-slate-900",
         className
       )}
       {...props}

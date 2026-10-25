@@ -18,6 +18,7 @@ import type { TextFieldInput } from "../input/text-field.ts";
 import { withDefaultFocus } from "./focus.ts";
 import { isMapped, TEXT_ENTRY_TAGS } from "./tags.ts";
 import { countDroppedAttr, countMappedAttr, countUnknownAttr } from "./stats.ts";
+import { resolveSelectors, selectorInputs } from "./selectors.ts";
 
 const ALIAS: Record<string, string> = { onClick: "onPress" };
 
@@ -169,8 +170,19 @@ export function compatProps(
 ): Props {
   const text = TEXT_ENTRY_TAGS.has(tag);
   const out: Props = {};
+  // C8: selector tokens resolve against this node's own props and children; the DOM props they
+  // read (disabled, aria-invalid, data-*) are consumed by the class, not dropped.
+  const inputs = selectorInputs(props.className);
+  const className =
+    typeof props.className === "string"
+      ? resolveSelectors(props.className, { props, children: props.children })
+      : undefined;
   for (const key in props) {
     if (key === "children") continue;
+    if (inputs.has(key)) {
+      if (count) countMappedAttr(key);
+      continue;
+    }
     if (
       text &&
       (TEXT_FIELD_ATTRS.has(key) || (key === "type" && props.type === "password"))
@@ -214,6 +226,7 @@ export function compatProps(
         ' compat layer maps; pass mount({ compat: { unknownProps: "drop" } }) to drop and count it',
     );
   }
+  if (className !== undefined) out.className = className;
   // Focus defaults: interactive tags and any onClick/onPointerDown carrier join the d-pad
   // traversal; an explicit focusable prop always wins; plain elements stay untouched so the
   // native View/Text surface behaves exactly as before.
@@ -223,7 +236,7 @@ export function compatProps(
   if (focusable) {
     out.focusable = true;
     // Only DOM-mapped tags: a native View/Text keeps its own focus surface (JG-157 F3).
-    if (isMapped(tag)) out.className = withDefaultFocus(props.className as string | undefined, props.style);
+    if (isMapped(tag)) out.className = withDefaultFocus(out.className as string | undefined, props.style);
   } else if (props.focusable === false) out.focusable = false;
   return out;
 }

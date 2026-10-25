@@ -1,3 +1,5 @@
+import { splitSelector } from "./selectors.ts";
+
 // C2: the fixed shadcn vocabulary -> PocketJS vocabulary map (Jun ruling: fixed values from
 // the existing 19-color Tailwind v3 palette; no build-time theme table, no dark theme).
 //
@@ -91,6 +93,12 @@ const FOCUS_RING_BORDER = "focus-visible:border-ring";
 /** One token -> its PocketJS form, or "" when the map drops it. Pass-through otherwise. */
 export function rewriteToken(tok: string): string {
   if (tok === FOCUS_RING_BORDER) return "";
+  // C8: a selector the compat layer resolves per node survives the map; its body is rewritten.
+  const selector = splitSelector(tok);
+  if (selector) {
+    const body = rewriteToken(selector.body);
+    return body === "" ? "" : selector.prefix + ":" + body;
+  }
   const colon = tok.indexOf(":");
   if (colon > 0) {
     const variant = tok.slice(0, colon);
