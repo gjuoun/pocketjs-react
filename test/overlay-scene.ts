@@ -29,9 +29,13 @@ export async function bootScene(
   sceneFile: string,
   element: () => ReactNode,
   compat: CompatOptions = { classMiss: "throw", unknownProps: "throw", tokenMap: true },
+  also: string[] = [],
 ): Promise<Booted> {
   const own = await collect(sceneFile, []);
-  const literals = [...new Set([...(await srcClasses()), ...own.literals])]
+  // Files the scene loads by a computed path (invisible to the static scan) are listed in `also`.
+  const extra: string[] = [];
+  for (const file of also) extra.push(...(await collect(join(ROOT, file), [])).literals);
+  const literals = [...new Set([...(await srcClasses()), ...own.literals, ...extra])]
     .map(rewriteLiteral)
     .map(bodiesOnly);
   const tokens: string[] = [];
