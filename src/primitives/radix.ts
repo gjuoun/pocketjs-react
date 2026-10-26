@@ -31,3 +31,4 @@ export * as Slider from "./slider.tsx";
 export * as Direction from "./direction.tsx";
 // Batch 4 members: one block, kept at the end of the file.
 export * as ScrollArea from "./scroll-area.tsx";
+export * as NavigationMenu from "./navigation-menu.tsx";
