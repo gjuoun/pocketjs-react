@@ -34,7 +34,7 @@ import {
 import { heldBy, holdRun, markTextual } from "./text-wrap.ts";
 import { setClipper, clipsOverflow } from "../focus/ring.ts";
 import { ownsFocusBorder } from "./focus.ts";
-import { DEFAULT_RING, parseRing, setRingTarget } from "./ring.ts";
+import { focusRingOf, setRingTarget } from "./ring.ts";
 import { rewriteLiteral } from "./tokens.ts";
 
 /** DOM text tags that become views when they carry flex. */
@@ -95,7 +95,7 @@ export function installCompat(opts: CompatOptions = {}): void {
       setRingTarget(
         node,
         isMapped(tag) && node.focusable && !ownsFocusBorder(props.className as string | undefined, props.style)
-          ? (parseRing(props.className as string | undefined).ring ?? DEFAULT_RING)
+          ? focusRingOf(props.className, props.style)
           : null,
       );
       if (!TEXT_ENTRY_TAGS.has(tag)) return;

@@ -1,12 +1,16 @@
 // Focus ring (compat only). One ring per mount, drawn just outside the box of the focused DOM-mapped
-// focusable: the ring the default focus used to draw as a layout border, now absolute nodes that take
-// no part in layout, so focusing never moves the control. The ring is four edge bars (top, bottom,
-// left, right), each a root child added after the overlay layer, so it paints above every app and
-// popup layer. hitPass keeps the bars hit-transparent: a click on the band still reaches the control or
-// row underneath.
+// focusable, so the ring the default focus used to draw as a layout border takes no part in layout and
+// focusing never moves the control. Two shapes, both root children added after the overlay layer (they
+// paint above every app and popup layer) and both hit-transparent (hitPass), so a click on the band
+// still reaches the control or row underneath:
 //
-// Clipping (CSS parity): a bar is cut to the intersection of every overflow-hidden ancestor's box, so a
-// ring at the edge of a clipping container is clipped exactly where CSS would clip it.
+//   - the rounded ring: one bordered node, border-box = the box grown by the ring width, corner radius
+//     = the target's radius + the ring width (when the target has a corner). The core draws a bordered
+//     rounded box as an outer rounded rect and an inner one of radius (outer - width), so the band
+//     follows the target's corner arc exactly. A square target (radius 0) gets a square ring.
+//   - the edge bars: four bars (top, bottom, left, right) cut to the clip of the overflow-hidden
+//     ancestors. Used only when the ring would leave a clipping box, so a ring at a clip edge is cut
+//     where CSS cuts it. A cut corner is square (no arc is drawn across a clip line).
 //
 // Geometry is measureBox: nodeRect on an overlay core (re-measured every frame, one call per box), the
 // hit-test search otherwise (re-measured on a focus change, when the liveness probe fails, and every
@@ -27,8 +31,10 @@ import { cssToCore } from "../style/css.ts";
 
 /** Default-core frames between re-measures of a target that measured as absent. */
 const MISS_FRAMES = 20;
-/** Number of ring bars: top, bottom, left, right. */
+/** Edge bars: top, bottom, left, right. */
 const BARS = 4;
+/** Node 0 is the rounded ring; nodes 1..BARS are the edge bars. */
+const NODES = 1 + BARS;
 
 /** A rect in root (screen) pixels, half-open: [x0, x1) x [y0, y1). */
 interface Rect {
@@ -38,7 +44,7 @@ interface Rect {
   y1: number;
 }
 
-/** The overflow-hidden ancestors, by node. Set by the compat layer at create and update. */
+/** The overflow-hidden ancestors, by node. Set by the compat layer at bind. */
 const clippers = new WeakSet<NodeMirror>();
 
 /** Mark a node as an overflow-hidden clipper (its box clips the ring of a focused descendant). */
@@ -67,6 +73,10 @@ function meet(a: Rect, b: Rect): Rect {
   return { x0: Math.max(a.x0, b.x0), y0: Math.max(a.y0, b.y0), x1: Math.min(a.x1, b.x1), y1: Math.min(a.y1, b.y1) };
 }
 
+function contains(outer: Rect, inner: Rect): boolean {
+  return inner.x0 >= outer.x0 && inner.y0 >= outer.y0 && inner.x1 <= outer.x1 && inner.y1 <= outer.y1;
+}
+
 /**
  * The clip of a node: the intersection of its overflow-hidden ancestors' boxes (null = no clipper).
  * "gone" when a clipper has no box on screen, so nothing of the ring is visible.
@@ -83,14 +93,23 @@ function clipOf(node: NodeMirror): Rect | null | "gone" {
 }
 
 /**
+ * The outer corner radius of the rounded ring: the target's radius (clamped to half its short side)
+ * plus the ring width, so the band is concentric with the target's corner. A square target stays square.
+ */
+export function outerRadius(radius: number, box: Box, width: number): number {
+  const r = Math.min(radius, Math.floor(Math.min(box.w, box.h) / 2));
+  return r > 0 ? r + width : 0;
+}
+
+/**
  * Install the ring: a frame pump (registered through `pump`) that shows the ring on the focused
  * target, moves it with the target, and hides it. Returns the teardown: the pump is removed and the
- * bars leave the root.
+ * nodes leave the root.
  */
 export function installFocusRing(pump: (fn: () => void) => () => void): () => void {
-  const bars: NodeMirror[] = Array.from({ length: BARS }, () => createElement("view"));
-  const attached: boolean[] = bars.map(() => false);
-  const lastStyle: string[] = bars.map(() => "");
+  const nodes: NodeMirror[] = Array.from({ length: NODES }, () => createElement("view"));
+  const attached: boolean[] = nodes.map(() => false);
+  const lastStyle: string[] = nodes.map(() => "");
   const hidden = JSON.stringify(cssToCore({ display: "none" }));
   const hasRect = typeof (getOps() as { nodeRect?: unknown }).nodeRect === "function";
   let target: NodeMirror | null = null;
@@ -98,38 +117,26 @@ export function installFocusRing(pump: (fn: () => void) => () => void): () => vo
   let clip: Rect | null | "gone" = null;
   let missed = 0;
 
-  // Hiding keeps the bars in the root and sets display none: a removed node is swept (destroyed), so
+  // Hiding keeps the nodes in the root and sets display none: a removed node is swept (destroyed), so
   // it cannot come back. Only the teardown removes them.
-  const hideBar = (i: number): void => {
+  const hideNode = (i: number): void => {
     if (!attached[i] || lastStyle[i] === hidden) return;
-    setProp(bars[i], "style", cssToCore({ display: "none" }) as never);
+    setProp(nodes[i], "style", cssToCore({ display: "none" }) as never);
     lastStyle[i] = hidden;
   };
-  const hide = (): void => {
-    for (let i = 0; i < BARS; i++) hideBar(i);
+  const hideAll = (): void => {
+    for (let i = 0; i < NODES; i++) hideNode(i);
   };
-
-  const showBar = (i: number, r: Rect, colour: string): void => {
-    const style = {
-      ...cssToCore({
-        position: "absolute",
-        display: "flex", // explicit: an inline display:none written earlier must not stick
-        left: r.x0,
-        top: r.y0,
-        width: r.x1 - r.x0,
-        height: r.y1 - r.y0,
-        backgroundColor: colour,
-      }),
-      hitPass: 1,
-    };
+  const showNode = (i: number, style: Record<string, unknown>): void => {
+    const full = { ...style, hitPass: 1 };
     if (!attached[i]) {
-      insertNode(rootMirror, bars[i]);
+      insertNode(rootMirror, nodes[i]);
       attached[i] = true;
       lastStyle[i] = "";
     }
-    const key = JSON.stringify(style);
+    const key = JSON.stringify(full);
     if (key !== lastStyle[i]) {
-      setProp(bars[i], "style", style as never);
+      setProp(nodes[i], "style", full as never);
       lastStyle[i] = key;
     }
   };
@@ -140,7 +147,7 @@ export function installFocusRing(pump: (fn: () => void) => () => void): () => vo
     if (!focus || !ring || !inRoot(focus)) {
       target = null;
       box = null;
-      return hide();
+      return hideAll();
     }
     if (focus !== target) {
       target = focus;
@@ -150,28 +157,58 @@ export function installFocusRing(pump: (fn: () => void) => () => void): () => vo
     }
     if (!hasRect && box !== null && !hitsWithin(focus, box.x + Math.floor(box.w / 2), box.y + Math.floor(box.h / 2))) box = null;
     if (hasRect || box === null) {
-      if (box === null && missed > 0 && --missed > 0) return hide();
+      if (box === null && missed > 0 && --missed > 0) return hideAll();
       box = measureBox(focus);
       if (box === null) {
         missed = MISS_FRAMES;
-        return hide();
+        return hideAll();
       }
       clip = clipOf(focus);
     }
-    if (clip === "gone") return hide();
+    if (clip === "gone") return hideAll();
     const cut: Rect | null = clip;
     const w = ring.width;
-    const outer: Rect = { x0: box.x - w, y0: box.y - w, x1: box.x + box.w + w, y1: box.y + box.h + w };
+    const b = box;
+    const outer: Rect = { x0: b.x - w, y0: b.y - w, x1: b.x + b.w + w, y1: b.y + b.h + w };
+    if (cut === null || contains(cut, outer)) {
+      for (let i = 1; i <= BARS; i++) hideNode(i);
+      showNode(0, {
+        ...cssToCore({
+          position: "absolute",
+          display: "flex", // explicit: an inline display:none written earlier must not stick
+          left: outer.x0,
+          top: outer.y0,
+          width: outer.x1 - outer.x0,
+          height: outer.y1 - outer.y0,
+          borderWidth: w,
+          borderColor: ring.colour,
+          borderRadius: outerRadius(ring.radius, b, w),
+        }),
+      });
+      return;
+    }
+    hideNode(0);
     const edges: Rect[] = [
-      { x0: outer.x0, y0: outer.y0, x1: outer.x1, y1: box.y }, // top
-      { x0: outer.x0, y0: box.y + box.h, x1: outer.x1, y1: outer.y1 }, // bottom
-      { x0: outer.x0, y0: box.y, x1: box.x, y1: box.y + box.h }, // left
-      { x0: box.x + box.w, y0: box.y, x1: outer.x1, y1: box.y + box.h }, // right
+      { x0: outer.x0, y0: outer.y0, x1: outer.x1, y1: b.y }, // top
+      { x0: outer.x0, y0: b.y + b.h, x1: outer.x1, y1: outer.y1 }, // bottom
+      { x0: outer.x0, y0: b.y, x1: b.x, y1: b.y + b.h }, // left
+      { x0: b.x + b.w, y0: b.y, x1: outer.x1, y1: b.y + b.h }, // right
     ];
     edges.forEach((edge, i) => {
-      const r = cut === null ? edge : meet(edge, cut);
-      if (r.x1 <= r.x0 || r.y1 <= r.y0) hideBar(i);
-      else showBar(i, r, ring.colour);
+      const r = meet(edge, cut);
+      if (r.x1 <= r.x0 || r.y1 <= r.y0) hideNode(i + 1);
+      else
+        showNode(i + 1, {
+          ...cssToCore({
+            position: "absolute",
+            display: "flex",
+            left: r.x0,
+            top: r.y0,
+            width: r.x1 - r.x0,
+            height: r.y1 - r.y0,
+            backgroundColor: ring.colour,
+          }),
+        });
     });
   };
 
@@ -180,8 +217,8 @@ export function installFocusRing(pump: (fn: () => void) => () => void): () => vo
     removePump();
     target = null;
     box = null;
-    bars.forEach((bar, i) => {
-      if (attached[i]) removeNode(rootMirror, bar);
+    nodes.forEach((node, i) => {
+      if (attached[i]) removeNode(rootMirror, node);
       attached[i] = false;
       lastStyle[i] = "";
     });

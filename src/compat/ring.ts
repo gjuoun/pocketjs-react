@@ -2,7 +2,8 @@
 // focus ring is an absolute overlay node drawn just outside the box (src/focus/ring.ts), so the ring
 // tokens are lifted out of the className here and never reach the style table. A ring token this
 // file does not understand stays in the className, and the token map drops and counts it as before.
-import type { NodeMirror } from "../internal/pocket.ts";
+import { type NodeMirror, PROP, parseClassLiteral } from "../internal/pocket.ts";
+import { rewrite } from "./tokens.ts";
 
 export interface RingSpec {
   /** Ring width in px. */
@@ -66,16 +67,50 @@ function ringToken(base: string): { width?: number; colour?: string } | undefine
   return undefined;
 }
 
+/** A focusable's ring: its spec plus the radius of its own corner (px; 0 when square). */
+export interface RingTarget extends RingSpec {
+  radius: number;
+}
+
+/** A f32 radius from the compiled style record's u32 payload. */
+function f32(bits: number): number {
+  const view = new DataView(new ArrayBuffer(4));
+  view.setUint32(0, bits >>> 0, true);
+  return view.getFloat32(0, true);
+}
+
+/**
+ * The corner radius of a node: an inline borderRadius wins, else the radius its class compiles to
+ * (the same parse the build runs). A class the compiler cannot parse (rounded-full without a size) counts as square.
+ */
+export function radiusOf(rest: string, style: unknown): number {
+  const inline = style !== null && typeof style === "object" ? (style as { borderRadius?: unknown }).borderRadius : undefined;
+  if (typeof inline === "number") return inline;
+  if (rest.trim() === "") return 0;
+  try {
+    const hit = parseClassLiteral(rewrite(rest).text)?.base?.find((p) => p.prop === PROP.radius);
+    return hit ? f32(hit.value) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** The ring a focusable DOM-mapped node draws, with its own corner radius. */
+export function focusRingOf(className: unknown, style: unknown): RingTarget {
+  const parsed = parseRing(typeof className === "string" ? className : undefined);
+  return { ...(parsed.ring ?? DEFAULT_RING), radius: radiusOf(parsed.rest, style) };
+}
+
 /** The ring a focusable DOM-mapped node draws, by node. Set by the compat layer at create and update. */
-const targets = new WeakMap<NodeMirror, RingSpec>();
+const targets = new WeakMap<NodeMirror, RingTarget>();
 
 /** Register a DOM-mapped focusable's ring (its own tokens, or the default). */
-export function setRingTarget(node: NodeMirror, ring: RingSpec | null): void {
+export function setRingTarget(node: NodeMirror, ring: RingTarget | null): void {
   if (ring === null) targets.delete(node);
   else targets.set(node, ring);
 }
 
 /** The ring a node draws when focused, or undefined when it is not a DOM-mapped focusable. */
-export function ringTargetOf(node: NodeMirror): RingSpec | undefined {
+export function ringTargetOf(node: NodeMirror): RingTarget | undefined {
   return targets.get(node);
 }
