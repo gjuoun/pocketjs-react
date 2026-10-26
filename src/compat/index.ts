@@ -27,10 +27,14 @@ import { countUnknownTag } from "./stats.ts";
 import {
   hostTypeOf,
   INTERACTIVE_TAGS,
+  isMapped,
   TEXT_ENTRY_TAGS,
   unknownTagMessage,
 } from "./tags.ts";
 import { heldBy, holdRun, markTextual } from "./text-wrap.ts";
+import { setClipper, clipsOverflow } from "../focus/ring.ts";
+import { ownsFocusBorder } from "./focus.ts";
+import { focusRingOf, setRingTarget } from "./ring.ts";
 import { rewriteLiteral } from "./tokens.ts";
 
 /** DOM text tags that become views when they carry flex. */
@@ -76,6 +80,7 @@ export function installCompat(opts: CompatOptions = {}): void {
       return compatProps(tag, props, INTERACTIVE_TAGS.has(tag), count);
     },
     bind(node, tag, props, count) {
+      setClipper(node, clipsOverflow(props.className, props.style));
       if (TEXTUAL_FLEX_TAGS.has(tag) && node.type === NODE_TYPE.view)
         markTextual(node, props.className);
       // C8: a [&_svg]:text-* rule colours the icons below this node (its own icons keep their own colour).
@@ -85,6 +90,13 @@ export function installCompat(opts: CompatOptions = {}): void {
         iconClass === undefined
           ? undefined
           : classStringValue(rewriteLiteral(iconClass), "textColor"),
+      );
+      // The focus ring of a DOM-mapped focusable: its own ring tokens, or the default ring.
+      setRingTarget(
+        node,
+        isMapped(tag) && node.focusable && !ownsFocusBorder(props.className as string | undefined, props.style)
+          ? focusRingOf(props.className, props.style)
+          : null,
       );
       if (!TEXT_ENTRY_TAGS.has(tag)) return;
       const known = fieldFor(node) !== undefined;

@@ -15,7 +15,7 @@
 // because shadcn's {...props} pass-through must not crash. onClick is left to the binding:
 // pressing the field opens its keyboard and then calls the app's handler.
 import type { TextFieldInput } from "../input/text-field.ts";
-import { withDefaultFocus } from "./focus.ts";
+import { parseRing } from "./ring.ts";
 import { resolveSelectors, selectorInputs } from "./selectors.ts";
 import {
   countDroppedAttr,
@@ -243,10 +243,7 @@ export function compatProps(
     out.focusable = true;
     // Only DOM-mapped tags: a native View/Text keeps its own focus surface.
     if (isMapped(tag))
-      out.className = withDefaultFocus(
-        out.className as string | undefined,
-        props.style,
-      );
+      out.className = parseRing(out.className as string | undefined).rest;
   } else if (props.focusable === false) out.focusable = false;
   return out;
 }
