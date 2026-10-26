@@ -307,7 +307,7 @@ The reference consumer app is `test/fixtures/shadcn-vendor/`:
 | `ui/`                  | codemod output, committed and never hand-edited — `--check` fails on drift              |
 | `app.tsx` / `main.tsx` | the consumer demo: button, badge, input, card and the Radix dialog                      |
 
-Five components are vendored (button, badge, input, card, dialog).
+Twelve components are vendored: button, badge, input, card, dialog, dropdown-menu, select, label, separator, aspect-ratio, progress and avatar.
 `test/codemod-shadcn.test.ts` pins the committed `ui/` to the codemod output, the idempotency and
 the diagnostics; `test/shadcn-vendor.test.tsx` builds the demo and asserts what the host draws,
 including a mount under `{ classMiss: "throw", tokenMap: false }` — the proof that the rewritten
@@ -317,7 +317,7 @@ source needs neither the C2 map nor the drop policy.
 
 | Rule | Change                                                                                                  | Reason                                                                                                                                                                                  |
 | ---- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R0   | `rounded-full` → `rounded-[Npx]`                                                                        | a pill is `min(w,h)/2`; N comes from `h-N` (2N) or `py-N` + `text-*` (a badge lands on 10px). The C2 map drops the token, because the [R] rule needs a pinned size in the same literal. |
+| R0   | `rounded-full` → `rounded-[Npx]`                                                                        | a pill is `min(w,h)/2`; N comes from `h-N` or `size-N` (2N), or `py-N` + `text-*` (a badge lands on 10px). The C2 map drops the token, because the [R] rule needs a pinned size in the same literal. |
 | R1   | the C2 map                                                                                              | one table for build, runtime and codemod (`src/compat/tokens.ts`)                                                                                                                       |
 | R2   | `grid` → `flex flex-col`, `flex-col-reverse` → `flex-col`, `sr-only` → `hidden`, `@container/*` dropped | the core lays out with flexbox; a one-column grid stacks                                                                                                                                |
 | R3   | `unknownUtilities()` filter                                                                             | the build-time capability probe the C2 map cannot do                                                                                                                                    |
@@ -332,9 +332,9 @@ rewritten, so every other byte of a vendored file is untouched and a second run 
 `bun tools/codemod/shadcn.ts <src> <out> [--report] [--json] [--check]` reports, per file, the
 literal count and the tokens it mapped, substituted, dropped by the map, dropped by the compiler,
 flattened from `asChild`, emptied and skipped, plus any residual. For the vendored five:
-`40 literals, 39 changed, 50 mapped, 2 asChild, 0 residual`; `fixed`×2, `shadow-sm`,
-`col-start-2` and friends are dropped by name, and `grid`/`sr-only`/`rounded-full` are substituted
-by name.
+`82 literals, 77 changed, 129 mapped, 0 residual`. Drops are named by reason (`no-core-feature`,
+`noop`, `dark`, ...), and `grid`/`sr-only`/`rounded-full` are substituted by name. R4 is retired, so
+no `asChild` is flattened: Slot is kept.
 
 ### What it does not do
 
@@ -353,12 +353,31 @@ by name.
 The demo needs `radix-ui`, `lucide-react` and `react-dom` as dev dependencies (the fixture only);
 its bundle carries the Radix dialog even though the content never mounts.
 
+## Batch A primitives
+
+Six Radix members join `pocketjs-react/radix`: `Slot`, `Label`, `Separator`, `AspectRatio`, `Progress` and
+`Avatar`. `test/shadcn-batch-a.test.tsx` mounts the six vendored components under the strict policies, with
+exact `compatStats()`, and every primitive has a pixel assertion of its own.
+
+- **Slot** — the real Slot: `asChild` merges the class, style, handlers and ref onto its one child, with no node of its own. Pressable keeps its own merge order (the child's class first).
+- **Label** — not focusable. A tap on it focuses the control its `htmlFor` names: the compat layer registers each element's `id`, and `pointer.ts` falls back to the label under the tap when no focusable is hit.
+- **Separator** — a 1px line; `data-orientation` resolves the caller's selector tokens. `decorative` and `role` have no core equivalent and are not forwarded.
+- **AspectRatio** — the core has no aspect ratio, so the box reads its own width and sets `width / ratio`. It starts 4px tall with nothing mounted, so an unmeasured frame draws nothing rather than a wrong size; a width change re-measures every four frames.
+- **Progress** — the vendored source gives `value` only to the indicator's `translateX` transform. The root reads it there (or from a `value` prop), and the fill is flex-grow, never a transform.
+- **Avatar** — the image draws only once its texture is registered (`hasTexture`, a guarded lookup, so an unknown URL falls back and never throws). The fallback waits its `delayMs` in frames at 60 Hz.
+
+### Notes
+
+- `nodeRect` exists only on the overlay core. On the stock host the hit-test search cannot see a 1px box, so the Separator test finds its line by layout position, not by `measureBox`.
+- A selector token holds only on the node that carries its DOM prop, so a primitive forwards `data-size` and `data-orientation` to the View it renders.
+
 ## Overlays (C5)
 
 The vendored shadcn `dialog`, `dropdown-menu` and `select` render their content through native
 primitives instead of Radix. The codemod rewrites only the import edge (rule R6):
 `from "radix-ui"` becomes `from "pocketjs-react/radix"`, which exports `Dialog`, `DropdownMenu` and
-`Select` under Radix's member names. The JSX, the props and the class strings are unchanged, so the
+`Select` under Radix's member names, and batch A adds `Slot`, `Label`, `Separator`, `AspectRatio`,
+`Progress` and `Avatar` (see "Batch A primitives"). The JSX, the props and the class strings are unchanged, so the
 vendored `ui/` files need no structural rewrite. Lucide icons take the same route (R7) to
 `pocketjs-react/glyph-icons`.
 
