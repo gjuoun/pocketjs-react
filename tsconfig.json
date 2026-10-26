@@ -20,5 +20,6 @@
       "pocketjs-react/glyph-icons": ["./src/primitives/glyph-icons.tsx"]
     }
   },
-  "include": ["src", "test", "tools", "examples"]
+  "include": ["src", "test", "tools", "examples"],
+  "exclude": ["node_modules", "test/fixtures/shadcn-full"]
 }
