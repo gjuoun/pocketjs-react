@@ -7,6 +7,7 @@ export * as DropdownMenu from "./dropdown-menu.tsx";
 export * as Label from "./label.tsx";
 export * as Progress from "./progress.tsx";
 export * as Select from "./select.tsx";
+export * as Avatar from "./avatar.tsx";
 export * as AspectRatio from "./aspect-ratio.tsx";
 export * as Separator from "./separator.tsx";
 export * as Slot from "./slot.tsx";
