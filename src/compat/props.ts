@@ -22,7 +22,8 @@ import {
   countMappedAttr,
   countUnknownAttr,
 } from "./stats.ts";
-import { isMapped, TEXT_ENTRY_TAGS } from "./tags.ts";
+import { cn } from "../style/cn.ts";
+import { isMapped, TAG_DEFAULTS, TEXT_ENTRY_TAGS } from "./tags.ts";
 
 const ALIAS: Record<string, string> = { onClick: "onPress" };
 
@@ -40,6 +41,16 @@ const DROP_ATTRS = new Set([
   "htmlFor",
   "autoFocus",
   "asChild",
+  "label",
+  "colSpan",
+  "rowSpan",
+  "scope",
+  "headers",
+  "align",
+  "valign",
+  "required",
+  "multiple",
+  "form",
   "dir",
   "lang",
   "target",
@@ -200,6 +211,16 @@ export function compatProps(
     )
       continue;
     if (text && key === "onClick") continue;
+    // Batch 1: an option's selected prop is what makes it the one a closed native select shows.
+    if (tag === "option" && key === "selected") {
+      if (count) countMappedAttr("selected");
+      continue;
+    }
+    // The select's value (value, else defaultValue) and the option's value pick its visible row (selects.ts).
+    if ((tag === "select" && (key === "value" || key === "defaultValue")) || (tag === "option" && key === "value")) {
+      if (count) countMappedAttr(key);
+      continue;
+    }
     // A native image's texture key is the PocketJS surface (icons), not a DOM attribute.
     if (tag === "image" && key === "src") {
       out.src = props[key];
@@ -237,7 +258,12 @@ export function compatProps(
         ' compat layer maps; pass mount({ compat: { unknownProps: "drop" } }) to drop and count it',
     );
   }
-  if (className !== undefined) out.className = className;
+  // Batch 1: the tag's own layout (TAG_DEFAULTS) under the caller's classes, which win on conflict; an
+  // option is hidden unless it is the selected one (the closed native select shows exactly one row).
+  let classes = className;
+  if (tag === "option" && !props.selected) classes = cn(classes, "hidden");
+  if (TAG_DEFAULTS[tag] !== undefined) classes = cn(TAG_DEFAULTS[tag], classes);
+  if (classes !== undefined) out.className = classes;
   // Focus defaults: interactive tags and any onClick/onPointerDown carrier join the d-pad
   // traversal; an explicit focusable prop always wins; plain elements stay untouched so the
   // native View/Text surface behaves exactly as before.

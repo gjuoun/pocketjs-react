@@ -28,9 +28,13 @@ import {
   hostTypeOf,
   INTERACTIVE_TAGS,
   isMapped,
+  TAG_DEFAULTS,
   TEXT_ENTRY_TAGS,
+  TEXT_HOLDING_VIEW_TAGS,
   unknownTagMessage,
 } from "./tags.ts";
+import { cn } from "../style/cn.ts";
+import { bindOption, bindSelect } from "./selects.ts";
 import { heldBy, holdRun, markTextual } from "./text-wrap.ts";
 import { setClipper, clipsOverflow } from "../focus/ring.ts";
 import { ownsFocusBorder } from "./focus.ts";
@@ -82,8 +86,18 @@ export function installCompat(opts: CompatOptions = {}): void {
     },
     bind(node, tag, props, count) {
       setClipper(node, clipsOverflow(props.className, props.style));
-      if (TEXTUAL_FLEX_TAGS.has(tag) && node.type === NODE_TYPE.view)
-        markTextual(node, props.className);
+      // Batch 1: a cell or key cap holds its raw text the way a flex span does; its defaults count as its classes.
+      const classes =
+        TAG_DEFAULTS[tag] !== undefined
+          ? cn(TAG_DEFAULTS[tag], props.className as string | undefined)
+          : props.className;
+      if (tag === "select") bindSelect(node, props);
+      if (tag === "option") bindOption(node, props);
+      if (
+        (TEXTUAL_FLEX_TAGS.has(tag) || TEXT_HOLDING_VIEW_TAGS.has(tag)) &&
+        node.type === NODE_TYPE.view
+      )
+        markTextual(node, classes);
       // Batch A (R-L): the element's DOM id names it for a Label's htmlFor (a tap focuses it).
       if (typeof props.id === "string") registerControl(props.id, node);
       // C8: a [&_svg]:text-* rule colours the icons below this node (its own icons keep their own colour).
