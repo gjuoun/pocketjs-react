@@ -16,6 +16,7 @@
 // pressing the field opens its keyboard and then calls the app's handler.
 import type { TextFieldInput } from "../input/text-field.ts";
 import { withDefaultFocus } from "./focus.ts";
+import { parseRing } from "./ring.ts";
 import { resolveSelectors, selectorInputs } from "./selectors.ts";
 import {
   countDroppedAttr,
@@ -244,7 +245,7 @@ export function compatProps(
     // Only DOM-mapped tags: a native View/Text keeps its own focus surface.
     if (isMapped(tag))
       out.className = withDefaultFocus(
-        out.className as string | undefined,
+        parseRing(out.className as string | undefined).rest,
         props.style,
       );
   } else if (props.focusable === false) out.focusable = false;

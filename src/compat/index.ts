@@ -27,10 +27,12 @@ import { countUnknownTag } from "./stats.ts";
 import {
   hostTypeOf,
   INTERACTIVE_TAGS,
+  isMapped,
   TEXT_ENTRY_TAGS,
   unknownTagMessage,
 } from "./tags.ts";
 import { heldBy, holdRun, markTextual } from "./text-wrap.ts";
+import { DEFAULT_RING, parseRing, setRingTarget } from "./ring.ts";
 import { rewriteLiteral } from "./tokens.ts";
 
 /** DOM text tags that become views when they carry flex. */
@@ -85,6 +87,11 @@ export function installCompat(opts: CompatOptions = {}): void {
         iconClass === undefined
           ? undefined
           : classStringValue(rewriteLiteral(iconClass), "textColor"),
+      );
+      // The focus ring of a DOM-mapped focusable: its own ring tokens, or the default ring.
+      setRingTarget(
+        node,
+        isMapped(tag) && node.focusable ? (parseRing(props.className as string | undefined).ring ?? DEFAULT_RING) : null,
       );
       if (!TEXT_ENTRY_TAGS.has(tag)) return;
       const known = fieldFor(node) !== undefined;
