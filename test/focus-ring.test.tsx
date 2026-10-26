@@ -26,17 +26,18 @@ const TXT = "text-sm text-white";
 const ROW = "flex w-[120px] h-[40px] bg-slate-900 px-2";
 const LIT = "absolute inset-0 active:bg-blue-600";
 const SUPPRESS = "absolute inset-0 active:bg-slate-800";
-const VARIANT: Record<"plain" | "ring3" | "ring2" | "offset", string> = {
+const VARIANT: Record<"plain" | "ring3" | "ring2" | "offset" | "round", string> = {
   plain: "",
   ring3: "focus-visible:ring-[3px] focus-visible:ring-ring/50",
   ring2: "ring-2 focus-visible:ring-ring",
   offset: "ring-2 ring-offset-2 focus-visible:ring-ring",
+  round: "rounded-md",
 };
 const AUTO = "flex bg-slate-900 px-2";
 const AUTO_FOCUS = AUTO + " focus:border-blue-600 focus:border-2";
 const CLIP = "flex flex-col";
 const CLIP_BTN = "ml-4 flex w-[120px] h-[40px] bg-slate-900 px-2";
-const BOOT = [ROOT, BASE, BASE_FOCUS, AUTO, AUTO_FOCUS, TXT, ROW, LIT, SUPPRESS, CLIP, CLIP_BTN, "focus:border-blue-600", "focus:border-2"];
+const BOOT = [ROOT, BASE, BASE_FOCUS, AUTO, AUTO_FOCUS, TXT, ROW, LIT, SUPPRESS, CLIP, CLIP_BTN, CLIP_BTN + " rounded-md", BASE + " rounded-md", "focus:border-blue-600", "focus:border-2"];
 
 let core: Core | undefined;
 let unmount: (() => void) | undefined;
@@ -202,6 +203,63 @@ test("the ring census: a focused control paints exactly 4(w+h)+16 blue pixels ar
   expect(blue()).toBe(0);
   focusOn(c, a);
   expect(blue()).toBe(4 * (box.w + box.h) + 16);
+});
+
+/** The ring pixel at the corner: a sharp corner would paint the outer corner pixels; a rounded one does not. */
+test("a rounded button's ring follows its corner: the sharp corner square is empty, the arc is inked", async () => {
+  const { c, a } = await start("round");
+  focusOn(c, a);
+  const b = measureBox(a)!;
+  const r = 6; // rounded-md
+  const rm = r + 1; // the middle of the 2px band, measured from the arc centre
+  const corners: [number, number][] = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+  for (const [sx, sy] of corners) {
+    const cx = sx < 0 ? b.x + r : b.x + b.w - r;
+    const cy = sy < 0 ? b.y + r : b.y + b.h - r;
+    const ox = sx < 0 ? -1 : 0;
+    const oy = sy < 0 ? -1 : 0;
+    const corner = sx < 0 ? b.x - 1 : b.x + b.w;
+    const cornerY = sy < 0 ? b.y - 1 : b.y + b.h;
+    // The two outermost corner pixels a square ring would paint: empty on a rounded ring.
+    expect(px(c, corner + ox, cornerY + oy)).toBe(LIGHT);
+    expect(px(c, sx < 0 ? b.x - 2 : b.x + b.w + 1, sy < 0 ? b.y - 2 : b.y + b.h + 1)).toBe(LIGHT);
+    // Five samples along the arc, from the straight edge to the straight edge: each is inked.
+    const arc = [0, 22.5, 45, 67.5, 90].map((deg) => {
+      const t = (deg * Math.PI) / 180;
+      return px(c, Math.floor(cx + sx * rm * Math.cos(t)), Math.floor(cy + sy * rm * Math.sin(t)));
+    });
+    expect(arc.filter((p) => p !== LIGHT).length).toBe(5);
+  }
+});
+
+test("a square button keeps a square ring: its outer corner pixel is inked", async () => {
+  const { c, a } = await start();
+  focusOn(c, a);
+  const b = measureBox(a)!;
+  expect(px(c, b.x - 1, b.y - 1)).toBe(BLUE);
+  expect(px(c, b.x + b.w, b.y + b.h)).toBe(BLUE);
+});
+
+test("a rounded button at a clip edge: the cut band is gone and the straight sides keep the ring", async () => {
+  core = await bootCore({ classes: BOOT });
+  const c = core;
+  const refs: { a?: NodeMirror } = {};
+  unmount = mount(
+    <View className={ROOT}>
+      <View className={CLIP} style={{ position: "absolute", left: 20, top: 100, width: 200, height: 100, overflow: "hidden" } as never}>
+        <button ref={at((n) => { refs.a = n; })} className={CLIP_BTN + " rounded-md"}>
+          <Text className={TXT}>Clip</Text>
+        </button>
+      </View>
+    </View>,
+  );
+  c.step(0);
+  c.step(0);
+  const a = refs.a!;
+  focusOn(c, a);
+  const box = measureBox(a)!;
+  expect([px(c, box.x + 20, box.y - 1), px(c, box.x + 20, box.y - 2)]).toEqual([LIGHT, LIGHT]);
+  expect(leftBand(c, box, 2)).toEqual([BLUE, BLUE]);
 });
 
 test("focus-visible:ring-[3px] draws a 3px band", async () => {
