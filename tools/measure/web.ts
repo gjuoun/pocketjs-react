@@ -9,7 +9,11 @@
 // depends on pocketjs-react); the CLI below passes the built-in profile named by --app.
 import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { HeadlessChrome, webHostFile } from "../../src/internal/pocket-build.ts";
+import {
+  HeadlessChrome,
+  WEB_PLAYGROUND,
+  webHostFile,
+} from "../../src/internal/pocket-build.ts";
 import {
   OUT,
   type Profile,
@@ -51,7 +55,9 @@ export async function runWeb(
   const pressJs = (bit: number, down: boolean) =>
     appInstance
       ? "window.__host.press(" + bit + ", " + down + ")"
-      : "import('/engine.js').then(m => m.pressVirtual(" +
+      : "import('" +
+        WEB_PLAYGROUND.engine +
+        "').then(m => m.pressVirtual(" +
         bit +
         ", " +
         down +
@@ -78,7 +84,7 @@ export async function runWeb(
             },
           },
         );
-      const file = path === "/" ? "index.html" : path.slice(1);
+      const file = path === "/" ? WEB_PLAYGROUND.page : path.slice(1);
       const hostFile = webHostFile(file);
       if (!existsSync(hostFile))
         return new Response("not found", { status: 404 });

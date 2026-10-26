@@ -74,6 +74,16 @@ export const WEB_PAGE_DIR = existsSync(FRAMEWORK_ROOT + "programs/web/app-instan
  */
 export const WEB_HOST_SEARCH: readonly string[] = [WEB_PAGE_DIR, WEB_HOST_DIR, FRAMEWORK_ROOT];
 
+/**
+ * The playground page the stock browser run drives (its demo picker and virtual buttons): upstream keeps it under
+ * programs/web/dev with its engine module; the npm package keeps index.html and engine.js beside the binding.
+ */
+export const WEB_PLAYGROUND: { page: string; engine: string } = existsSync(
+  FRAMEWORK_ROOT + "programs/web/dev/engine.js",
+)
+  ? { page: "programs/web/dev/index.html", engine: "/programs/web/dev/engine.js" }
+  : { page: "index.html", engine: "/engine.js" };
+
 /** The file a host-page URL path (relative, no leading slash) resolves to; the first existing candidate wins. */
 export function webHostFile(rel: string): string {
   return (
