@@ -24,3 +24,5 @@ export * as Switch from "./switch.tsx";
 export * as RadioGroup from "./radio-group.tsx";
 export * as Toggle from "./toggle.tsx";
 export * as ToggleGroup from "./toggle-group.tsx";
+export * as Accordion from "./accordion.tsx";
+export * as Collapsible from "./collapsible.tsx";
