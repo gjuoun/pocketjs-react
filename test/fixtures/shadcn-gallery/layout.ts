@@ -1,6 +1,7 @@
 // Gallery layout as data: one entry per vendored shadcn component (test/fixtures/shadcn-full/ui/*.tsx),
 // each section's fixed height, and the scroll arithmetic. No React here, so the proof test reads the same
 // numbers the page uses. A section is at most 260px, so a section snapped to the top fits the 272px screen.
+// The column ends with a tail (TAIL_H) so the last section can also snap to the top of the screen.
 
 /** The logical screen height the page scrolls inside. */
 export const VIEW_H = 272;
@@ -77,9 +78,14 @@ export type SectionName = (typeof SECTIONS)[number]["name"];
 export const TOPS: number[] = SECTIONS.map((_, i) =>
   SECTIONS.slice(0, i).reduce((n, s) => n + s.h, 0),
 );
-/** The content column's full length. */
-export const TOTAL = SECTIONS.reduce((n, s) => n + s.h, 0);
-/** The largest offset: the last section ends at the bottom of the screen. */
+/**
+ * The tail after the last section: VIEW_H minus the last section's height. With it, the last section's top can
+ * sit at the top of the screen, so the last section is the topmost one at the end. The page draws it as a footer.
+ */
+export const TAIL_H = Math.max(0, VIEW_H - SECTIONS[SECTIONS.length - 1].h);
+/** The content column's full length: the sections, then the tail. */
+export const TOTAL = SECTIONS.reduce((n, s) => n + s.h, 0) + TAIL_H;
+/** The largest offset: the last section's top is at the top of the screen (the tail fills the rest). */
 export const MAX_OFFSET = Math.max(0, TOTAL - VIEW_H);
 
 /** The offset one DOWN press moves to: the next section top, clamped to the end. */

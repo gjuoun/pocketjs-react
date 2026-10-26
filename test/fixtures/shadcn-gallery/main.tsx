@@ -2,11 +2,11 @@
 // Built by tools/build.ts (`--name=shadcn-gallery`) and mounted like any app.
 //
 // Scroll: the content column is moved with a negative marginTop from React state (ScrollArea cannot scroll on the
-// pinned core: its range is 0). DOWN and UP snap to the next or previous section top; the last section ends at the
-// bottom. Every section stays mounted (a body mounted late does not draw on this core); the sections off screen
-// are display:none inside their fixed-height slots, so the column keeps its length. Each body is guarded, so one
+// pinned core: its range is 0). DOWN and UP snap to the next or previous section top; the last section's top sits at
+// the top of the screen, with a footer tail below it. Every section stays mounted (a body mounted late does not draw on this
+// core); the sections off screen are display:none inside their fixed-height slots, so the column keeps its length. Each body is guarded, so one
 // throwing component cannot blank the page.
-import { BTN, mount, useButton, View } from "pocketjs-react";
+import { BTN, mount, Text, useButton, View } from "pocketjs-react";
 import { useState } from "react";
 import { Frame } from "./frame.tsx";
 import {
@@ -14,6 +14,7 @@ import {
   nextTop,
   prevTop,
   SECTIONS,
+  TAIL_H,
   TOPS,
   VIEW_H,
 } from "./layout.ts";
@@ -55,6 +56,15 @@ function Gallery() {
             </View>
           );
         })}
+        {/* The tail: the last section can snap to the top, and this footer fills the rest of the screen. */}
+        <View
+          className="w-full flex-col items-center justify-center bg-slate-200"
+          style={{ height: TAIL_H }}
+        >
+          <Text className="text-xs font-bold text-slate-600">
+            {"end of gallery · " + SECTIONS.length + " components"}
+          </Text>
+        </View>
       </View>
     </View>
   );
