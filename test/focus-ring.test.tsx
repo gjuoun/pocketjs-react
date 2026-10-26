@@ -51,6 +51,13 @@ afterEach(() => {
   installBuildStyles({}, new Uint8Array(0), []);
 });
 
+/** A ref callback that stores the mounted node (compat elements hand back their NodeMirror). */
+function at(set: (n: NodeMirror) => void): never {
+  return ((n: unknown) => {
+    if (n) set(n as NodeMirror);
+  }) as never;
+}
+
 interface Scene {
   c: Core;
   a: NodeMirror;
@@ -63,10 +70,10 @@ async function start(variant: keyof typeof VARIANT = "plain"): Promise<Scene> {
   const refs: { a?: NodeMirror; b?: NodeMirror } = {};
   unmount = mount(
     <View className={ROOT}>
-      <button ref={(n: NodeMirror | null) => { if (n) refs.a = n; }} className={(BASE + " " + VARIANT[variant]).trim()} style={{ position: "absolute", left: 40, top: 60 } as never}>
+      <button ref={at((n) => { refs.a = n; })} className={(BASE + " " + VARIANT[variant]).trim()} style={{ position: "absolute", left: 40, top: 60 } as never}>
         <Text className={TXT}>Go</Text>
       </button>
-      <button ref={(n: NodeMirror | null) => { if (n) refs.b = n; }} className={BASE} style={{ position: "absolute", left: 40, top: 120 } as never}>
+      <button ref={at((n) => { refs.b = n; })} className={BASE} style={{ position: "absolute", left: 40, top: 120 } as never}>
         <Text className={TXT}>Next</Text>
       </button>
     </View>,
@@ -141,7 +148,7 @@ test("an auto-sized button (no fixed width) keeps its box when focused: the bord
   const refs: { a?: NodeMirror } = {};
   unmount = mount(
     <View className={ROOT}>
-      <button ref={(n: NodeMirror | null) => { if (n) refs.a = n; }} className={AUTO} style={{ position: "absolute", left: 40, top: 60 } as never}>
+      <button ref={at((n) => { refs.a = n; })} className={AUTO} style={{ position: "absolute", left: 40, top: 60 } as never}>
         <Text className={TXT}>Save changes</Text>
       </button>
     </View>,
@@ -199,11 +206,11 @@ test("hover claims the highlight: the ring yields to a lit row, and returns when
   const refs: { a?: NodeMirror; row?: NodeMirror } = {};
   unmount = mount(
     <View className={ROOT}>
-      <button ref={(n: NodeMirror | null) => { if (n) refs.a = n; }} className={BASE} style={{ position: "absolute", left: 40, top: 60 } as never}>
+      <button ref={at((n) => { refs.a = n; })} className={BASE} style={{ position: "absolute", left: 40, top: 60 } as never}>
         <Text className={TXT}>Go</Text>
       </button>
       <View style={{ position: "absolute", left: 40, top: 140 } as never}>
-        <Pressable hoverable onPress={() => {}} nodeRef={(n: NodeMirror | null) => { if (n) refs.row = n; }} className={ROW}>
+        <Pressable hoverable onPress={() => {}} nodeRef={at((n) => { refs.row = n; })} className={ROW}>
           Row
         </Pressable>
       </View>
@@ -256,7 +263,7 @@ test("hidden target: display none removes the ring", async () => {
     setHidden = set;
     return (
       <View className={ROOT}>
-        <button ref={(n: NodeMirror | null) => { if (n) refs.a = n; }} className={BASE} style={{ position: "absolute", left: 40, top: 60, ...(hidden ? { display: "none" } : {}) } as never}>
+        <button ref={at((n) => { refs.a = n; })} className={BASE} style={{ position: "absolute", left: 40, top: 60, ...(hidden ? { display: "none" } : {}) } as never}>
           <Text className={TXT}>Go</Text>
         </button>
       </View>
@@ -270,6 +277,8 @@ test("hidden target: display none removes the ring", async () => {
   const box = measureBox(a)!;
   expect(leftBand(c, box, 2)).toEqual([BLUE, BLUE]);
   setHidden(true);
+  // The state update commits on the scheduler's next tick, then a frame draws the hidden target.
+  await new Promise((resolve) => setTimeout(resolve, 0));
   c.step(0);
   c.step(0);
   expect(measureBox(a)).toBeNull();
