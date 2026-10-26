@@ -18,3 +18,7 @@ export * as HoverCard from "./hover-card.tsx";
 export * as AlertDialog from "./alert-dialog.tsx";
 export * as ContextMenu from "./context-menu.tsx";
 export * as Menubar from "./menubar.tsx";
+// Batch 3 members: one block, kept at the end of the file.
+export * as Checkbox from "./checkbox.tsx";
+export * as Switch from "./switch.tsx";
+export * as RadioGroup from "./radio-group.tsx";

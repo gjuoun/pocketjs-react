@@ -35,7 +35,7 @@ function orderedItems(root: NodeMirror): NodeMirror[] {
 }
 
 export interface RovingOptions {
-  orientation: "horizontal" | "vertical";
+  orientation: "horizontal" | "vertical" | "both";
   /** The last item's arrow goes to the first, and back. */
   loop: boolean;
   /** Moving focus also presses the item (Tabs, RadioGroup). */
@@ -44,14 +44,14 @@ export interface RovingOptions {
 
 /** The arrows of a group: a focus controller on its node. Returns the teardown. */
 export function rovingGroup(node: NodeMirror, opts: RovingOptions): () => void {
-  const back = opts.orientation === "horizontal" ? "left" : "up";
-  const fwd = opts.orientation === "horizontal" ? "right" : "down";
+  const axes: string[] =
+    opts.orientation === "horizontal" ? ["left", "right"] : opts.orientation === "vertical" ? ["up", "down"] : ["left", "right", "up", "down"];
   return pushFocusController(node, (direction) => {
-    if (direction !== back && direction !== fwd) return false;
+    if (!axes.includes(direction)) return false;
     const list = orderedItems(node);
     const i = list.indexOf(getFocused() as unknown as NodeMirror);
     if (i < 0) return false;
-    const step = direction === fwd ? 1 : -1;
+    const step = direction === "right" || direction === "down" ? 1 : -1;
     let j = i + step;
     if (j < 0 || j >= list.length) {
       if (!opts.loop) return true;

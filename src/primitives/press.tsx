@@ -56,6 +56,22 @@ function selectorProps(props: PressableProps): Record<string, unknown> {
   return out;
 }
 
+/**
+ * The fill of a control whose state is a selector (data-[state=on]:bg-*): the vendored base carries a bg-* of its own
+ * (bg-transparent, bg-white) that would win over the selector, so the base's bg-* tokens go and the off fill is given
+ * here instead. A selector token (it has a colon) stays.
+ */
+export function controlSurface(on: boolean, className: string | undefined, offFill = "bg-white"): string {
+  const kept = (className ?? "").split(/\s+/).filter((t) => t !== "" && (t.includes(":") || !t.startsWith("bg-")));
+  return [on ? "" : offFill, kept.join(" ")].filter((t) => t !== "").join(" ");
+}
+
+/** A label child as its own text run with no colour of its own, so it takes its surface's colour (Pressable's
+ *  default Text is white). Non-text children pass through. */
+export function plainLabel(children: ReactNode): ReactNode {
+  return typeof children === "string" || typeof children === "number" ? <Text>{children}</Text> : children;
+}
+
 export function Pressable(props: PressableProps) {
   if (props.asChild && isValidElement(props.children)) {
     const child = props.children as ReactElement<ChildProps & { ref?: Ref<NodeMirror> }>;
