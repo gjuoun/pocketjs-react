@@ -27,3 +27,4 @@ export * as ToggleGroup from "./toggle-group.tsx";
 export * as Accordion from "./accordion.tsx";
 export * as Collapsible from "./collapsible.tsx";
 export * as Tabs from "./tabs.tsx";
+export * as Slider from "./slider.tsx";
