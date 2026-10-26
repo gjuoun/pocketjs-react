@@ -6,7 +6,7 @@ import {
   useMessageScroller,
   useMessageScrollerScrollable,
   useMessageScrollerVisibility,
-} from "@shadcn/react/message-scroller"
+} from "pocketjs-react/message-scroller"
 import { cn } from "pocketjs-react"
 import { ArrowDownIcon } from "pocketjs-react/glyph-icons"
 

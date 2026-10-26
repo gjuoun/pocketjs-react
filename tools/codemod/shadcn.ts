@@ -155,6 +155,7 @@ const IMPORT_EDGE: Record<string, string> = {
   "embla-carousel-react": "pocketjs-react/embla-carousel-react",
   recharts: "pocketjs-react/recharts",
   "@base-ui/react": "pocketjs-react/base-ui",
+  "@shadcn/react/message-scroller": "pocketjs-react/message-scroller",
 };
 
 type Node = Record<string, any>;

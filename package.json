@@ -29,7 +29,8 @@
     "./react-day-picker": "./src/primitives/react-day-picker.tsx",
     "./embla-carousel-react": "./src/primitives/embla-carousel-react.ts",
     "./recharts": "./src/primitives/recharts.tsx",
-    "./base-ui": "./src/primitives/base-ui.tsx"
+    "./base-ui": "./src/primitives/base-ui.tsx",
+    "./message-scroller": "./src/primitives/message-scroller.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

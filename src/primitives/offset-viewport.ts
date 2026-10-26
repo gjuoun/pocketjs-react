@@ -4,6 +4,7 @@
 import { type MutableRefObject, useLayoutEffect, useRef } from "react";
 import { type NodeMirror, setProp } from "../internal/pocket.ts";
 import { addFramePump } from "../renderer/mount.ts";
+import { getOps } from "@pocketjs/framework/host";
 import { registerDrag } from "../input/pointer.ts";
 import { measureBox } from "./anchor.ts";
 
@@ -23,13 +24,35 @@ export interface Offset {
   max(): number;
   /** The content length along the axis (0 when unknown). */
   extent(): number;
+  /** The current offset along the axis. */
+  offset(): number;
+  /** Scrolls to the largest offset (the end of the content). */
+  scrollToEnd(): void;
   /** A drag on the thumb node scrolls the content by the pointer distance, scaled to the extent. */
   drag(node: NodeMirror): () => void;
 }
 
 const MIN_THUMB = 12;
 
-export function useOffset(axis: Axis, bar?: OffsetThumb): Offset {
+/** The content\'s untrimmed rect when the host has nodeRect (measureBox clamps to the screen, which cuts a long list at the bottom edge). */
+function contentRect(
+  node: NodeMirror,
+): { x: number; y: number; w: number; h: number } | null {
+  const ops = getOps() as {
+    nodeRect?: (
+      id: number,
+    ) => { x: number; y: number; w: number; h: number } | null;
+  };
+  if (typeof ops.nodeRect === "function") return ops.nodeRect(node.id);
+  return measureBox(node);
+}
+
+/** `startAtEnd` puts the first measured offset at the end of the content (a message list sticks to its newest item). */
+export function useOffset(
+  axis: Axis,
+  bar?: OffsetThumb,
+  startAtEnd = false,
+): Offset {
   const viewport = useRef<NodeMirror | null>(null);
   const content = useRef<NodeMirror | null>(null);
   const s = useRef({
@@ -39,6 +62,8 @@ export function useOffset(axis: Axis, bar?: OffsetThumb): Offset {
     written: NaN,
     thumbLen: NaN,
     thumbTop: NaN,
+    started: false,
+    prevExtent: -1,
   });
   const len = (b: { w: number; h: number }) => (axis === "y" ? b.h : b.w);
 
@@ -48,10 +73,18 @@ export function useOffset(axis: Axis, bar?: OffsetThumb): Offset {
       const ct = content.current;
       if (!vp || !ct) return;
       const vb = measureBox(vp);
-      const cb = measureBox(ct);
+      const cb = contentRect(ct);
       const visible = vb ? len(vb) : 0;
       s.current.extent = cb ? len(cb) : 0;
       s.current.max = Math.max(0, s.current.extent - visible);
+      // The first measured extent can still be growing (children lay out over frames): start at the end once it is steady.
+      const steady =
+        s.current.extent > 0 && s.current.extent === s.current.prevExtent;
+      s.current.prevExtent = s.current.extent;
+      if (startAtEnd && !s.current.started && steady) {
+        s.current.started = true;
+        s.current.offset = s.current.max;
+      }
       s.current.offset = Math.min(Math.max(0, s.current.offset), s.current.max);
       if (s.current.offset !== s.current.written) {
         const move: Record<string, number> =
@@ -99,6 +132,8 @@ export function useOffset(axis: Axis, bar?: OffsetThumb): Offset {
     scrollTo,
     scrollBy: (delta) => scrollTo(s.current.offset + delta),
     max: () => s.current.max,
+    offset: () => s.current.offset,
+    scrollToEnd: () => scrollTo(s.current.max),
     extent: () => s.current.extent,
     drag(node) {
       let last = NaN;
