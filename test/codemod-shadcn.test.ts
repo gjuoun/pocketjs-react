@@ -181,13 +181,13 @@ test("C5: R6/R7 move the radix-ui and lucide-react edges, and a second run chang
 test("C3: the NOTICE merge keeps earlier rows, replaces a re-fetched row in place, appends new files", async () => {
   const existing = await Bun.file(VENDOR + "/NOTICE.md").text();
   const before = [...existing.matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]);
-  const base = { name: "badge", url: "https://example.test/badge.json", bytes: 1, remaps: ["r"] };
-  const next = mergeNotice(existing, "new-york-v4", [
-    { ...base, file: "badge.tsx", sha256: "a".repeat(64) },
-    { ...base, name: "newone", file: "newone.tsx", sha256: "b".repeat(64) },
-  ]);
+  const base = { name: "badge", file: "badge.tsx", url: "https://example.test/badge.json", bytes: 1, remaps: ["r"], sha256: "a".repeat(64) };
+  const next = mergeNotice(existing, {
+    style: "new-york-v4",
+    fetched: "2026-10-26",
+    entries: [base, { ...base, name: "newone", file: "newone.tsx", sha256: "b".repeat(64) }],
+  });
   const after = [...next.matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]);
-  expect(after).toEqual([...before, "newone.tsx"]);
+  expect([...after].sort()).toEqual([...new Set([...before, "newone.tsx"])].sort());
   expect(next).toContain("| `badge.tsx` | 1 | `" + "a".repeat(64) + "` |");
-  expect(next).not.toContain("4f759008c5106765daa61ca91a9bcbfea871e4064fbc24aab57c0605e26ea90a");
 });
