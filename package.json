@@ -21,7 +21,8 @@
     "./glyph-icons": "./src/primitives/glyph-icons.tsx",
     "./vaul": "./src/primitives/vaul.ts",
     "./sonner": "./src/primitives/sonner.tsx",
-    "./next-themes": "./src/primitives/next-themes.tsx"
+    "./next-themes": "./src/primitives/next-themes.tsx",
+    "./cmdk": "./src/primitives/cmdk.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

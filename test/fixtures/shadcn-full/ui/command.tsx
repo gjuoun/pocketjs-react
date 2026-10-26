@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Command as CommandPrimitive } from "cmdk"
+import { Command as CommandPrimitive } from "pocketjs-react/cmdk"
 import { cn } from "pocketjs-react"
 import { SearchIcon } from "pocketjs-react/glyph-icons"
 
