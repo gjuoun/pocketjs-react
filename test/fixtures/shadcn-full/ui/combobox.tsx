@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Combobox as ComboboxPrimitive } from "@base-ui/react"
+import { Combobox as ComboboxPrimitive } from "pocketjs-react/base-ui"
 import { cn } from "pocketjs-react"
 import { CheckIcon, ChevronDownIcon, XIcon } from "pocketjs-react/glyph-icons"
 

@@ -28,7 +28,8 @@
     "./input-otp": "./src/primitives/input-otp.tsx",
     "./react-day-picker": "./src/primitives/react-day-picker.tsx",
     "./embla-carousel-react": "./src/primitives/embla-carousel-react.ts",
-    "./recharts": "./src/primitives/recharts.tsx"
+    "./recharts": "./src/primitives/recharts.tsx",
+    "./base-ui": "./src/primitives/base-ui.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
