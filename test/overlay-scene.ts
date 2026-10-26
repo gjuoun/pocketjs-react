@@ -58,31 +58,57 @@ export async function bootScene(
   };
 }
 
+/** One frame, then a yield to the event loop: React's scheduled work (state, effects) runs between frames,
+ * as it does on a device. A synchronous loop of frames would starve it. */
+export async function frame(c: Core, buttons = 0): Promise<void> {
+  c.step(buttons);
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+}
+
+export async function frames(c: Core, n: number): Promise<void> {
+  for (let i = 0; i < n; i++) await frame(c);
+}
+
+/** A d-pad press: the button held for `settle` frames, then released and settled. */
+export async function press(c: Core, buttons: number, settle = 1): Promise<void> {
+  await frame(c, buttons);
+  await frames(c, settle);
+  await frame(c, 0);
+  await frames(c, settle);
+}
+
+function pointer(): { __pocketPointer?: { x: number; y: number; down: boolean; move?: boolean; leave?: boolean }[] } {
+  return globalThis as never;
+}
+
 /** A pointer tap: press, release, then let the frames settle. */
-export function tap(c: Core, x: number, y: number, settle = 4): void {
-  const g = globalThis as { __pocketPointer?: { x: number; y: number; down: boolean; move?: boolean; leave?: boolean }[] };
-  const q = (g.__pocketPointer ??= []);
+export async function tap(c: Core, x: number, y: number, settle = 4): Promise<void> {
+  const q = (pointer().__pocketPointer ??= []);
   q.push({ x, y, down: true });
-  c.step(0);
+  await frame(c);
   q.push({ x, y, down: false });
-  for (let i = 0; i < settle; i++) c.step(0);
+  await frames(c, settle);
 }
 
 /** Hold the pointer down for `frames` frames, then release it. */
-export function hold(c: Core, x: number, y: number, frames: number): void {
-  const g = globalThis as { __pocketPointer?: { x: number; y: number; down: boolean }[] };
-  const q = (g.__pocketPointer ??= []);
+export async function hold(c: Core, x: number, y: number, count: number): Promise<void> {
+  const q = (pointer().__pocketPointer ??= []);
   q.push({ x, y, down: true });
-  for (let i = 0; i < frames; i++) c.step(0);
+  await frames(c, count);
   q.push({ x, y, down: false });
-  for (let i = 0; i < 4; i++) c.step(0);
+  await frames(c, 4);
 }
 
 /** Move the pointer (web hover events). */
-export function move(c: Core, x: number, y: number): void {
-  const g = globalThis as { __pocketPointer?: { x: number; y: number; down: boolean; move?: boolean }[] };
-  (g.__pocketPointer ??= []).push({ x, y, down: false, move: true });
-  c.step(0);
+export async function move(c: Core, x: number, y: number): Promise<void> {
+  (pointer().__pocketPointer ??= []).push({ x, y, down: false, move: true });
+  await frame(c);
+}
+
+/** The pointer leaves the canvas (web hover). */
+export async function leave(c: Core): Promise<void> {
+  (pointer().__pocketPointer ??= []).push({ x: 0, y: 0, down: false, leave: true });
+  await frame(c);
 }
 
 /** Text rect of the first text run equal to `text`, or throws. */

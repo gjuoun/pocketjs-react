@@ -13,3 +13,5 @@ export * as Separator from "./separator.tsx";
 export * as Slot from "./slot.tsx";
 // Batch 2 members: one block, kept at the end of the file.
 export * as Popover from "./popover.tsx";
+export * as Tooltip from "./tooltip.tsx";
+export * as HoverCard from "./hover-card.tsx";

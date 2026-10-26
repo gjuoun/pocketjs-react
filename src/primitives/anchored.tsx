@@ -7,6 +7,7 @@ import {
   type MutableRefObject,
   type ReactNode,
   type Ref,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -47,7 +48,8 @@ export function usePlacedStyle(
   const alignOffset = anchoring?.alignOffset;
   const collisionPadding = anchoring?.collisionPadding;
 
-  useEffect(() => {
+  // A layout effect: the measuring pump is registered in the commit that mounts the panel.
+  useLayoutEffect(() => {
     if (!anchor || placed) return;
     return addFramePump(() => {
       const current = node.current;
@@ -104,7 +106,7 @@ export function within(ancestor: NodeMirror, node: NodeMirror | null): boolean {
  */
 export function useAnchorBox(open: boolean, target: () => NodeMirror | null): Box | null {
   const [box, setBox] = useState<Box | null>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) {
       setBox(null);
       return;
@@ -139,6 +141,8 @@ export interface PopperPanelProps {
   focusFirst?: boolean;
   /** When the panel unmounts with focus inside it (or lost), focus goes back to this node. */
   restore?: { current: NodeMirror | null };
+  /** Receives the panel's node while it is mounted (null after): a hover or focus check reads it. */
+  panelRef?: { current: NodeMirror | null };
   children?: ReactNode;
 }
 
@@ -161,7 +165,8 @@ export function PopperPanel(props: PopperPanelProps) {
   const layered = props.onDismiss !== undefined;
   // CROSS dismisses a layered panel too (the back button, as ModalLayer does).
   useButton(BTN.CROSS, () => onDismiss.current?.(), { enabled: layered });
-  useEffect(() => {
+  // A layout effect: the layer is on the stack in the same commit, so a tap on the next frame sees it.
+  useLayoutEffect(() => {
     if (!layered) return;
     return pushLayer({
       panel: () => node.current,
@@ -186,9 +191,18 @@ export function PopperPanel(props: PopperPanelProps) {
     };
   }, []);
 
+  const panelRef = props.panelRef;
+  const setNode = useCallback(
+    (n: NodeMirror | null) => {
+      node.current = n;
+      if (panelRef) panelRef.current = n;
+    },
+    [panelRef],
+  );
+
   return reconciler.createPortal(
     <View
-      ref={node as Ref<NodeMirror>}
+      ref={setNode as Ref<NodeMirror>}
       className={cn("absolute", props.className)}
       style={style}
     >

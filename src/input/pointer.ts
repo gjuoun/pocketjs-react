@@ -67,6 +67,18 @@ function drain(): PointerEvent[] {
   return events;
 }
 
+/** Web hover subscribers: called with the pointer point on a move, and with nulls when it leaves. */
+type MoveListener = (x: number | null, y: number | null) => void;
+const moveListeners: MoveListener[] = [];
+
+export function onPointerMove(fn: MoveListener): () => void {
+  moveListeners.push(fn);
+  return () => {
+    const i = moveListeners.indexOf(fn);
+    if (i >= 0) moveListeners.splice(i, 1);
+  };
+}
+
 let pressing = false;
 
 /** True while the pointer pump presses a node (a tap or click), not a CIRCLE press. */
@@ -108,10 +120,12 @@ export function installPointer(): () => void {
       // Hover never touches `armed`, focus or presses: it only lights the row overlay.
       if (event.leave) {
         hoverClear();
+        for (const fn of [...moveListeners]) fn(null, null);
         continue;
       }
       if (event.move) {
         hoverMove(hitFocusable(event.x, event.y), armed !== null);
+        for (const fn of [...moveListeners]) fn(event.x, event.y);
         continue;
       }
       if (event.down) {
