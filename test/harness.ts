@@ -3,7 +3,6 @@
 // what the core drew: text runs with their rects, and framebuffer pixels.
 
 import { detectHost, installHost } from "@pocketjs/framework/host";
-import { DEFAULT_FOCUS } from "../src/compat/focus.ts";
 import {
   registerStyles,
   resetRendererState,
@@ -59,8 +58,7 @@ export async function bootCore(
     // The framework's pak reader is process-global and has no unload: an earlier test's pak would
     // still be loaded by mount(). An empty pak clears it, so mount() loads nothing from this boot.
     loadPack(pack([]).slice().buffer);
-    // The compat default focus border is a class every compat focusable may carry (default focus pass).
-    const styles = compileClasses([...(opts.classes ?? []), DEFAULT_FOCUS]);
+    const styles = compileClasses([...(opts.classes ?? [])]);
     ops.loadStyles(styles.bin);
     // fontSlots: the slots a build baked for its whole source (the product pak carries them all).
     for (const slot of new Set([

@@ -73,11 +73,11 @@ function focusOn(c: Core, node: NodeMirror): void {
   for (let i = 0; i < SETTLE; i++) c.step(0);
 }
 
-/** The outermost pixel, mid-height: the focus border covers it. */
+/** The ring band: the pixel just outside the box, mid-height. */
 function edge(c: Core, node: NodeMirror): string {
   const r = measureBox(node)!;
   c.render();
-  return c.pixel(r.x, r.y + Math.floor(r.h / 2));
+  return c.pixel(r.x - 1, r.y + Math.floor(r.h / 2)); // the ring band, just outside the box
 }
 
 test("the vendored shadcn Button draws the focus border for its focus-visible ring", async () => {

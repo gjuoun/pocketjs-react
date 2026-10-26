@@ -2,17 +2,22 @@
 // provenance (debugName), and interactive tags come out focusable.
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mount } from "../src/index.ts";
-import { DEFAULT_FOCUS } from "../src/compat/focus.ts";
 import { compileClasses } from "../src/internal/pocket-build.ts";
 import { installBuildStyles } from "../src/style/build-styles.ts";
-import { rootMirror } from "../src/internal/pocket.ts";
+import { removeNode, rootMirror, runSweep } from "../src/internal/pocket.ts";
 import { bootCore, type Core } from "./harness.ts";
 
 let core: Core | undefined;
+let stop: (() => void) | undefined;
 // The app build installs the token set; a default focus border (a composed class) needs it here.
-beforeEach(() => installBuildStyles({}, compileClasses([]).bin, DEFAULT_FOCUS.split(" ")));
+beforeEach(() => installBuildStyles({}, compileClasses([]).bin, []));
 afterEach(() => {
   core?.dispose();
+  // These tests mount without unmounting: drop the leftover layers so the next file sees a clean root.
+  stop?.();
+  stop = undefined;
+  for (const child of [...rootMirror.children]) removeNode(rootMirror, child);
+  runSweep();
   installBuildStyles({}, new Uint8Array(0), []);
 });
 // A class list is required even for unstyled nodes: it is what bakes the font atlas the
@@ -23,7 +28,7 @@ const appLayer = () => rootMirror.children[0];
 
 test("<div> mounts as a view with its DOM tag as provenance", async () => {
   const c = await boot();
-  mount(<div />);
+  stop = mount(<div />);
   c.step(0);
   const div = appLayer().children[0];
   expect(div.domTag).toBe("view");
@@ -33,7 +38,7 @@ test("<div> mounts as a view with its DOM tag as provenance", async () => {
 test("<span> mounts as text and draws its run", async () => {
   const c = await boot();
   // The run needs a font slot: only styled text draws, so the span carries the boot class.
-  mount(
+  stop = mount(
     <div>
       <span className="text-base text-white">after</span>
     </div>,
@@ -47,7 +52,7 @@ test("<span> mounts as text and draws its run", async () => {
 
 test("<button> mounts as a focusable view with provenance", async () => {
   const c = await boot();
-  mount(
+  stop = mount(
     <div>
       <button>Save</button>
     </div>,

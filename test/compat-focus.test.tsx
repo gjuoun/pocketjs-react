@@ -21,7 +21,7 @@ const BLUE = "#2563eb";
 const RED = "#dc2626";
 const GREEN = "#00ff00";
 const NATIVE_FOCUS = "flex w-[120px] h-[40px] bg-slate-900 focus:bg-slate-200";
-const BG_FOCUS = "flex w-[120px] h-[40px] bg-slate-900 focus:bg-slate-200";
+const BG_FOCUS = "ml-4 flex w-[120px] h-[40px] bg-slate-900 focus:bg-slate-200";
 const INTERIOR = "#0f172a";
 
 let core: Core | undefined;
@@ -35,7 +35,7 @@ afterEach(() => {
   installBuildStyles({}, new Uint8Array(0), []);
 });
 
-const BOOT = [COL, PLAIN_DARK, PLAIN_LIGHT, AUTHOR_RED, "focus:border-blue-600", "focus:border-2", "focus:border-red-600", "focus:bg-slate-200", "text-base text-white"];
+const BOOT = [COL, PLAIN_DARK, PLAIN_LIGHT, AUTHOR_RED, "focus:border-blue-600", "focus:border-2", "focus:border-red-600", "focus:bg-slate-200", "text-base text-white", "ml-4 flex w-[120px] h-[40px] bg-slate-900 focus:bg-slate-200"];
 
 async function start(kids: Array<"dark" | "light" | "red" | "bg" | "native" | "green">): Promise<{ c: Core; nodes: NodeMirror[] }> {
   core = await bootCore({ classes: BOOT });
@@ -58,8 +58,15 @@ function focusOn(c: Core, node: NodeMirror): void {
   expect(getFocused()).toBe(node);
 }
 
-/** The outermost pixel, mid-height: the focus border covers it (1px or 2px wide). */
+/** The ring band: the pixel just outside the box, mid-height (the focus ring is drawn there). */
 function edge(c: Core, node: NodeMirror): string {
+  const r = measureBox(node)!;
+  c.render();
+  return c.pixel(r.x - 1, r.y + Math.floor(r.h / 2));
+}
+
+/** The outermost pixel inside the box, mid-height: an author border colour is drawn there. */
+function inner(c: Core, node: NodeMirror): string {
   const r = measureBox(node)!;
   c.render();
   return c.pixel(r.x, r.y + Math.floor(r.h / 2));
@@ -76,13 +83,13 @@ test("compat button shows a default focus border when focused", async () => {
   const idle = edge(c, nodes[0]);
   focusOn(c, nodes[0]);
   expect(edge(c, nodes[0])).toBe(BLUE);
-  expect(idle).toBe(INTERIOR);
+  expect(idle).not.toBe(BLUE);
 });
 
 test("an unfocused compat button draws no focus border", async () => {
   const { c, nodes } = await start(["dark", "light"]);
-  expect(edge(c, nodes[0])).toBe(interior(c, nodes[0]));
-  expect(edge(c, nodes[1])).toBe(interior(c, nodes[1]));
+  expect(edge(c, nodes[0])).not.toBe(BLUE);
+  expect(edge(c, nodes[1])).not.toBe(BLUE);
 });
 
 test("blurring restores the unfocused pixels exactly", async () => {
@@ -96,7 +103,7 @@ test("blurring restores the unfocused pixels exactly", async () => {
 test("an author focus border colour wins over the default", async () => {
   const { c, nodes } = await start(["red"]);
   focusOn(c, nodes[0]);
-  expect(edge(c, nodes[0])).toBe(RED);
+  expect(inner(c, nodes[0])).toBe(RED);
 });
 
 test("an author focus border colour does not stack the default width", async () => {
@@ -117,7 +124,7 @@ test("an inline border style wins: no default border is added", async () => {
   core.step(0);
   const node = rootMirror.children[0].children[0].children[0] as NodeMirror;
   focusOn(core, node);
-  expect(edge(core, node)).toBe(GREEN);
+  expect(inner(core, node)).toBe(GREEN);
 });
 
 test("an author focus background keeps its fill and still gets the default border", async () => {
@@ -138,7 +145,7 @@ test("a native focusable View gets no default border (native surface is untouche
   core.step(0);
   const node = rootMirror.children[0].children[0].children[0] as NodeMirror;
   focusOn(core, node);
-  expect(edge(core, node)).toBe(interior(core, node));
+  expect(inner(core, node)).toBe(interior(core, node));
 });
 
 /** Every pixel inside a node's border box, row-major. */

@@ -236,7 +236,18 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
     null,
   );
   reconciler.flushSyncWork();
-  if (errors.length > 0) throw errors[0];
+  if (errors.length > 0) {
+    // A failed mount leaves nothing behind: the pumps and layers it registered are torn down first.
+    removeRing();
+    removePointer();
+    removeTextEntry();
+    for (const child of [appLayer, overlay]) removeNode(rootMirror, child);
+    setInputRoot(null);
+    setHitRoot(null);
+    overlayLayer = null;
+    setOskTarget(null);
+    throw errors[0];
+  }
 
   return () => {
     reconciler.updateContainerSync(null, container, null, null);

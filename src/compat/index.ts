@@ -32,6 +32,7 @@ import {
   unknownTagMessage,
 } from "./tags.ts";
 import { heldBy, holdRun, markTextual } from "./text-wrap.ts";
+import { ownsFocusBorder } from "./focus.ts";
 import { DEFAULT_RING, parseRing, setRingTarget } from "./ring.ts";
 import { rewriteLiteral } from "./tokens.ts";
 
@@ -91,7 +92,9 @@ export function installCompat(opts: CompatOptions = {}): void {
       // The focus ring of a DOM-mapped focusable: its own ring tokens, or the default ring.
       setRingTarget(
         node,
-        isMapped(tag) && node.focusable ? (parseRing(props.className as string | undefined).ring ?? DEFAULT_RING) : null,
+        isMapped(tag) && node.focusable && !ownsFocusBorder(props.className as string | undefined, props.style)
+          ? (parseRing(props.className as string | undefined).ring ?? DEFAULT_RING)
+          : null,
       );
       if (!TEXT_ENTRY_TAGS.has(tag)) return;
       const known = fieldFor(node) !== undefined;
