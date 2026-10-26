@@ -2,7 +2,7 @@
 
 import { cn } from "pocketjs-react"
 import { GripVerticalIcon } from "pocketjs-react/glyph-icons"
-import * as ResizablePrimitive from "react-resizable-panels"
+import * as ResizablePrimitive from "pocketjs-react/react-resizable-panels"
 
 function ResizablePanelGroup({
   className,

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Combobox as ComboboxPrimitive } from "@base-ui/react"
+import { Combobox as ComboboxPrimitive } from "pocketjs-react/base-ui"
 import { cn } from "pocketjs-react"
 import { CheckIcon, ChevronDownIcon, XIcon } from "pocketjs-react/glyph-icons"
 
@@ -116,7 +116,7 @@ function ComboboxContent({
           data-slot="combobox-content"
           data-chips={!!anchor}
           className={cn(
-            "relative max-h-96 overflow-hidden rounded-md bg-white text-slate-900 shadow-md duration-100",
+            "relative max-h-96 w-(--anchor-width) max-w-(--available-width) overflow-hidden rounded-md bg-white text-slate-900 shadow-md duration-100",
             className
           )}
           {...props}

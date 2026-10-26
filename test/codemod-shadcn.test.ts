@@ -59,7 +59,8 @@ test("C3: the report names what it dropped, substituted and flattened", async ()
       residual: [],
     });
   // The compiler-only gaps C2 cannot see are dropped by name, not silently.
-  expect(totals.compilerDropped.fixed).toBeGreaterThanOrEqual(1);
+  // D5: fixed is mapped to absolute (the sidebar container leaves the flow), so it is no longer a compiler drop.
+  expect(totals.compilerDropped.fixed).toBeUndefined();
   // C8 Step 6: shadow-sm is the core's soft shadow now, so it is mapped, not dropped.
   expect(totals.mapDropped["shadow-sm"]).toBeUndefined();
   expect(totals.compilerDropped["shadow-sm"]).toBeUndefined();
@@ -83,7 +84,7 @@ test("C3: the report names what it dropped, substituted and flattened", async ()
   expect(button.after).toContain('import { Slot } from "pocketjs-react/radix"');
 });
 
-test("C8: a comparison operand is data, not a class (position === \"popper\")", async () => {
+test('C8: a comparison operand is data, not a class (position === "popper")', async () => {
   const dir = TMP + "/operands";
   const source = [
     'import { cn } from "pocketjs-react"',
@@ -181,13 +182,25 @@ test("C5: R6/R7 move the radix-ui and lucide-react edges, and a second run chang
 test("C3: the NOTICE merge keeps earlier rows, replaces a re-fetched row in place, appends new files", async () => {
   const existing = await Bun.file(VENDOR + "/NOTICE.md").text();
   const before = [...existing.matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]);
-  const base = { name: "badge", file: "badge.tsx", url: "https://example.test/badge.json", bytes: 1, remaps: ["r"], sha256: "a".repeat(64) };
+  const base = {
+    name: "badge",
+    file: "badge.tsx",
+    url: "https://example.test/badge.json",
+    bytes: 1,
+    remaps: ["r"],
+    sha256: "a".repeat(64),
+  };
   const next = mergeNotice(existing, {
     style: "new-york-v4",
     fetched: "2026-10-26",
-    entries: [base, { ...base, name: "newone", file: "newone.tsx", sha256: "b".repeat(64) }],
+    entries: [
+      base,
+      { ...base, name: "newone", file: "newone.tsx", sha256: "b".repeat(64) },
+    ],
   });
   const after = [...next.matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]);
-  expect([...after].sort()).toEqual([...new Set([...before, "newone.tsx"])].sort());
+  expect([...after].sort()).toEqual(
+    [...new Set([...before, "newone.tsx"])].sort(),
+  );
   expect(next).toContain("| `badge.tsx` | 1 | `" + "a".repeat(64) + "` |");
 });

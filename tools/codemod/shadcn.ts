@@ -27,7 +27,11 @@
 import { readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { parse } from "@babel/parser";
-import { dropReason, rewriteToken } from "../../src/compat/tokens.ts";
+import {
+  dropReason,
+  parseBinding,
+  rewriteToken,
+} from "../../src/compat/tokens.ts";
 import { bodiesOnly, splitSelector } from "../../src/compat/selectors.ts";
 import { parseClassLiteral } from "../../src/internal/pocket.ts";
 import { unknownUtilities } from "../../src/internal/pocket-build.ts";
@@ -61,7 +65,9 @@ function roundedFullRadius(tokens: string[]): string {
   const size = tokens
     .map((t) => /^text-(2xs|xs|sm|base|lg|xl|2xl|4xl|5xl)$/.exec(t))
     .find(Boolean);
-  const square = tokens.map((t) => /^size-(\d+(?:\.\d+)?)$/.exec(t)).find(Boolean);
+  const square = tokens
+    .map((t) => /^size-(\d+(?:\.\d+)?)$/.exec(t))
+    .find(Boolean);
   // Batch A (B4): size-N is the same w and h as h-N, so the radius is N * 2 px.
   if (square) return "rounded-[" + Number(square[1]) * 2 + "px]";
   const height =
@@ -119,7 +125,18 @@ interface Edit {
 }
 
 const CLASS_CALLEES = new Set(["cn", "clsx", "cva", "twMerge"]);
-const COMPARISON_OPS = new Set(["===", "!==", "==", "!=", "<", ">", "<=", ">=", "in", "instanceof"]);
+const COMPARISON_OPS = new Set([
+  "===",
+  "!==",
+  "==",
+  "!=",
+  "<",
+  ">",
+  "<=",
+  ">=",
+  "in",
+  "instanceof",
+]);
 
 /** R6/R7: registry module specifier -> the PocketJS module that provides the same names. */
 const IMPORT_EDGE: Record<string, string> = {
@@ -129,6 +146,16 @@ const IMPORT_EDGE: Record<string, string> = {
   vaul: "pocketjs-react/vaul",
   sonner: "pocketjs-react/sonner",
   "next-themes": "pocketjs-react/next-themes",
+  // R9 (batch 4): the npm-backed modules are native shims, never the packages.
+  cmdk: "pocketjs-react/cmdk",
+  "react-resizable-panels": "pocketjs-react/react-resizable-panels",
+  "react-hook-form": "pocketjs-react/react-hook-form",
+  "input-otp": "pocketjs-react/input-otp",
+  "react-day-picker": "pocketjs-react/react-day-picker",
+  "embla-carousel-react": "pocketjs-react/embla-carousel-react",
+  recharts: "pocketjs-react/recharts",
+  "@base-ui/react": "pocketjs-react/base-ui",
+  "@shadcn/react/message-scroller": "pocketjs-react/message-scroller",
 };
 
 type Node = Record<string, any>;
@@ -150,10 +177,13 @@ function add(counts: TokenCounts, token: string, n = 1): void {
 }
 
 /** Every dropped token of a file, grouped by the reason it was dropped (C8 Step 5). */
-function reasonsOf(file: Pick<CodemodFile, "mapDropped" | "compilerDropped">): TokenCounts {
+function reasonsOf(
+  file: Pick<CodemodFile, "mapDropped" | "compilerDropped">,
+): TokenCounts {
   const out: TokenCounts = {};
   for (const counts of [file.mapDropped, file.compilerDropped])
-    for (const [token, n] of Object.entries(counts)) add(out, dropReason(token), n);
+    for (const [token, n] of Object.entries(counts))
+      add(out, dropReason(token), n);
   return out;
 }
 
@@ -188,10 +218,16 @@ function rewriteOne(
       add(file.substituted, next);
       continue;
     }
+    // Var-bound lengths stay in the vendored source; the runtime turns them into bindings (vars.ts).
+    if (parseBinding(next)) {
+      kept.push(next);
+      continue;
+    }
     // C8: a selector stays when its body is a utility the compiler draws; the runtime resolves it.
     const selector = splitSelector(next);
     if (selector) {
-      if (unknownUtilities(selector.body).length > 0) add(file.compilerDropped, next);
+      if (unknownUtilities(selector.body).length > 0)
+        add(file.compilerDropped, next);
       else kept.push(next);
       continue;
     }
@@ -383,7 +419,12 @@ function checkResidual(text: string, file: CodemodFile): void {
   if (text === "") return;
   let ok = false;
   try {
-    ok = parseClassLiteral(bodiesOnly(text)) !== null;
+    // A var binding is resolved at run time (vars.ts), so the compiler is not asked about it.
+    const compiled = text
+      .split(/\s+/)
+      .filter((t) => t !== "" && parseBinding(t) === null)
+      .join(" ");
+    ok = compiled === "" || parseClassLiteral(bodiesOnly(compiled)) !== null;
   } catch {
     ok = false;
   }

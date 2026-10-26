@@ -32,6 +32,8 @@ const ALIAS: Record<string, string> = { onClick: "onPress" };
 const WIRED = new Set(["disabled", "tabIndex"]);
 
 const DROP_ATTRS = new Set([
+  // batch 4: raw HTML has no core meaning (chart's <style> carries CSS the core does not read).
+  "dangerouslySetInnerHTML",
   "role",
   "type",
   "href",
@@ -69,6 +71,7 @@ const DROP_EVENTS = new Set([
   "onFocus",
   "onBlur",
   "onKeyDown",
+  "onKeyDownCapture",
   "onPointerDown",
   "onPointerUp",
   "onMouseEnter",
@@ -228,7 +231,10 @@ export function compatProps(
       continue;
     }
     // The select's value (value, else defaultValue) and the option's value pick its visible row (selects.ts).
-    if ((tag === "select" && (key === "value" || key === "defaultValue")) || (tag === "option" && key === "value")) {
+    if (
+      (tag === "select" && (key === "value" || key === "defaultValue")) ||
+      (tag === "option" && key === "value")
+    ) {
       if (count) countMappedAttr(key);
       continue;
     }
@@ -283,7 +289,8 @@ export function compatProps(
     (interactive || text || "onClick" in props || "onPointerDown" in props);
   if (props.focusable === undefined) {
     if (props.disabled) focusable = false;
-    else if (typeof props.tabIndex === "number") focusable = props.tabIndex >= 0;
+    else if (typeof props.tabIndex === "number")
+      focusable = props.tabIndex >= 0;
   }
   if (focusable) {
     out.focusable = true;

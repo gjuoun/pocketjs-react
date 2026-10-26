@@ -12,7 +12,7 @@ import {
   type ControllerProps,
   type FieldPath,
   type FieldValues,
-} from "react-hook-form"
+} from "pocketjs-react/react-hook-form"
 
 import { Label } from "./label.tsx"
 

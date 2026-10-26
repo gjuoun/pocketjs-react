@@ -53,6 +53,8 @@ export const TAG_TO_HOST: Record<string, string> = {
   option: "text",
   optgroup: "view",
   kbd: "view",
+  // batch 4: chart's ChartStyle emits a <style> of colour variables. The core has no CSS, so the element is a hidden view.
+  style: "view",
 };
 
 /**
@@ -78,7 +80,9 @@ export const TAG_DEFAULTS: Readonly<Record<string, string>> = {
   td: "flex-1 flex-row items-center px-2 py-1 border border-slate-200 text-sm",
   caption: "text-sm text-slate-500",
   legend: "text-sm font-bold",
-  select: "flex-row items-center px-3 py-2 border border-slate-200 rounded-md text-sm bg-white",
+  select:
+    "flex-row items-center px-3 py-2 border border-slate-200 rounded-md text-sm bg-white",
+  style: "hidden",
   kbd: "flex-row items-center justify-center px-1 border border-slate-300 bg-slate-100 rounded-sm text-xs font-bold",
 };
 
@@ -87,7 +91,13 @@ export const TEXT_HOLDING_VIEW_TAGS = new Set(["th", "td", "kbd"]);
 
 /** Tags that render as focusable views; the prop policy extends this to any tag carrying
  *  an onClick/onPointerDown handler. */
-export const INTERACTIVE_TAGS = new Set(["button", "a", "input", "textarea", "select"]);
+export const INTERACTIVE_TAGS = new Set([
+  "button",
+  "a",
+  "input",
+  "textarea",
+  "select",
+]);
 
 /** Tags that mount as an editable field: a focusable view plus the text children the
  *  compat layer owns (React never gives <input> children). C4. */

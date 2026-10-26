@@ -22,7 +22,7 @@ const BADGE_BASE =
 const INPUT =
   "h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors outline-none";
 const DIALOG =
-  "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none sm:max-w-lg";
+  "absolute top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none sm:max-w-lg";
 
 const LITERALS: [string, string][] = [
   ["v4 button base", BUTTON_BASE],
@@ -92,7 +92,11 @@ test("the button base decomposes: 5 mapped + 14 dropped = 19 (focus ring border 
   // The cva literal the fixture renders: base 22 + default 3 + size-default 4 tokens.
   const full = [BUTTON_BASE, BUTTON_DEFAULT, BUTTON_SIZE].join(" ");
   const whole = rewrite(full);
-  expect({ text: whole.text, mapped: whole.mapped, dropped: whole.dropped }).toEqual({
+  expect({
+    text: whole.text,
+    mapped: whole.mapped,
+    dropped: whole.dropped,
+  }).toEqual({
     text: "flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-bold transition-all disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-red-600 bg-slate-900 text-white active:bg-slate-900 h-9 px-4 py-2 has-[>svg]:px-3",
     mapped: 6,
     dropped: 10,
@@ -111,12 +115,24 @@ test("the audit's 7 literals: selectors resolve to bodies that compile, except t
   const unsupported: Record<string, string[]> = {
     "v4 button base": ["pointer-events-none", "border-destructive"],
     "v4 badge base": ["pointer-events-none", "border-destructive"],
-    "v4 dialog content": ["fixed", "grid", "top-[50%]", "left-[50%]", "max-w-[calc(100%-2rem)]", "translate-x-[-50%]", "translate-y-[-50%]"],
+    "v4 dialog content": [
+      "grid",
+      "top-[50%]",
+      "left-[50%]",
+      "max-w-[calc(100%-2rem)]",
+      "translate-x-[-50%]",
+      "translate-y-[-50%]",
+    ],
   };
   for (const [label, lit] of LITERALS) {
     const out = rewriteLiteral(bodiesOnly(lit));
-    const bad = out.split(" ").filter((tok) => unknownUtilities(tok).length > 0);
-    expect({ label, bad: bad.filter((t) => !unsupported[label]?.includes(t)) }).toEqual({ label, bad: [] });
+    const bad = out
+      .split(" ")
+      .filter((tok) => unknownUtilities(tok).length > 0);
+    expect({
+      label,
+      bad: bad.filter((t) => !unsupported[label]?.includes(t)),
+    }).toEqual({ label, bad: [] });
     expect({ label, compiled: parseClassLiteral(out) !== null }).toEqual({
       label,
       compiled: (unsupported[label]?.length ?? 0) === 0,
@@ -124,7 +140,7 @@ test("the audit's 7 literals: selectors resolve to bodies that compile, except t
   }
   // The Dialog residue names exactly what only a core change can fix (L3-d, C10).
   expect(rewriteLiteral(DIALOG)).toBe(
-    "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-white p-6 shadow-lg duration-200",
+    "absolute top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-white p-6 shadow-lg duration-200",
   );
 });
 
@@ -143,7 +159,6 @@ test("rewriting is idempotent and normalizes whitespace", () => {
   );
   expect(rewriteLiteral("")).toBe("");
 });
-
 
 // C8 Step 5/6: the reason every dropped token carries, and the low-cost mappings that replaced some drops.
 test("C8: each dropped family names its policy reason", () => {
@@ -185,7 +200,9 @@ test("C8: the Step 6 mappings (shadow-sm, rem lengths, destructive colours)", ()
 // Batch A (B1 to B5): the defects that pinned the avatar to 24px, dropped its size-full, and
 // painted the progress track the same colour as its fill.
 test("batch A: every token an expanded size-N keeps the variant prefix (B1)", () => {
-  expect(rewriteLiteral("data-[size=lg]:size-10")).toBe("data-[size=lg]:w-10 data-[size=lg]:h-10");
+  expect(rewriteLiteral("data-[size=lg]:size-10")).toBe(
+    "data-[size=lg]:w-10 data-[size=lg]:h-10",
+  );
   expect(rewriteLiteral("hover:size-4")).toBe("active:w-4 active:h-4");
   expect(rewriteLiteral("size-8")).toBe("w-8 h-8");
 });
@@ -193,7 +210,9 @@ test("batch A: every token an expanded size-N keeps the variant prefix (B1)", ()
 test("batch A: size-full, the primary/20 track and w-px map to PocketJS vocabulary (B2, B3)", () => {
   expect(rewriteLiteral("size-full")).toBe("w-full h-full");
   expect(rewriteLiteral("bg-primary/20")).toBe("bg-slate-300");
-  expect(rewriteLiteral("data-[orientation=vertical]:w-px")).toBe("data-[orientation=vertical]:w-[1px]");
+  expect(rewriteLiteral("data-[orientation=vertical]:w-px")).toBe(
+    "data-[orientation=vertical]:w-[1px]",
+  );
   for (const target of ["w-full h-full", "bg-slate-300", "w-[1px]"])
     expect(unknownUtilities(target)).toEqual([]);
 });

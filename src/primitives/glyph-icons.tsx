@@ -4,7 +4,7 @@
 // re-exported below. Each draws its baked texture variant (tools/icon-bake.ts, pak key ui:img.icon.*).
 
 import { GlyphIcon, type GlyphProps } from "./glyph-icon.tsx";
-import { MoreHorizontalIcon } from "./glyph-icons.gen.tsx";
+import { ArrowLeftIcon, ArrowRightIcon, MoreHorizontalIcon } from "./glyph-icons.gen.tsx";
 
 export { GlyphIcon, type GlyphIconProps, type GlyphProps } from "./glyph-icon.tsx";
 
@@ -33,6 +33,12 @@ export function ChevronRight(props: GlyphProps) {
 }
 export function MoreHorizontal(props: GlyphProps) {
   return <MoreHorizontalIcon {...props} />;
+}
+export function ArrowLeft(props: GlyphProps) {
+  return <ArrowLeftIcon {...props} />;
+}
+export function ArrowRight(props: GlyphProps) {
+  return <ArrowRightIcon {...props} />;
 }
 
 export * from "./glyph-icons.gen.tsx";

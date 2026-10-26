@@ -20,8 +20,8 @@ function px(key: string, value: unknown): number {
   if (typeof value === "number") return value;
   if (typeof value === "string") {
     if (value === "100%") return SIZE_FULL;
-    const m = /^(-?\d+(?:\.\d+)?)(px)?$/.exec(value.trim());
-    if (m) return parseFloat(m[1]);
+    const m = /^(-?\d+(?:\.\d+)?)(px|rem)?$/.exec(value.trim());
+    if (m) return parseFloat(m[1]) * (m[2] === "rem" ? 16 : 1);
   }
   return fail(key, 'a px number, "Npx" or "100%"', value);
 }
@@ -168,6 +168,8 @@ export const CSS_TO_CORE: Record<string, Setter> = {
   },
   lineHeight: one("lineHeight", "lineHeight", px),
   letterSpacing: one("letterSpacing", "tracking", px),
+  translateX: one("translateX", "translateX", px),
+  translateY: one("translateY", "translateY", px),
 };
 
 /** Core defaults for every prop the table writes (engine/core/src/style.rs Resolved::default). */
@@ -213,12 +215,22 @@ export const CORE_DEFAULTS: CoreStyle = {
   tracking: 0,
 };
 
+/** The custom properties (`--name`) of a style. They never reach the core: a var binding reads them (src/style/vars.ts). */
+export function cssVars(style: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (style == null || typeof style !== "object") return out;
+  for (const [key, value] of Object.entries(style as Record<string, unknown>))
+    if (key.startsWith("--") && value != null) out[key] = String(value);
+  return out;
+}
+
 export function cssToCore(style: unknown): CoreStyle {
   const out: CoreStyle = {};
   if (style == null) return out;
   if (typeof style !== "object")
     throw new Error("pocketjs-react: style must be an object");
   for (const [key, value] of Object.entries(style as Record<string, unknown>)) {
+    if (key.startsWith("--")) continue;
     const set = CSS_TO_CORE[key];
     if (!set)
       throw new Error(

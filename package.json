@@ -21,7 +21,16 @@
     "./glyph-icons": "./src/primitives/glyph-icons.tsx",
     "./vaul": "./src/primitives/vaul.ts",
     "./sonner": "./src/primitives/sonner.tsx",
-    "./next-themes": "./src/primitives/next-themes.tsx"
+    "./next-themes": "./src/primitives/next-themes.tsx",
+    "./cmdk": "./src/primitives/cmdk.tsx",
+    "./react-resizable-panels": "./src/primitives/react-resizable-panels.tsx",
+    "./react-hook-form": "./src/primitives/react-hook-form.tsx",
+    "./input-otp": "./src/primitives/input-otp.tsx",
+    "./react-day-picker": "./src/primitives/react-day-picker.tsx",
+    "./embla-carousel-react": "./src/primitives/embla-carousel-react.ts",
+    "./recharts": "./src/primitives/recharts.tsx",
+    "./base-ui": "./src/primitives/base-ui.tsx",
+    "./message-scroller": "./src/primitives/message-scroller.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
