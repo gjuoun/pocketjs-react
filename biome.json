@@ -10,7 +10,9 @@
       "**",
       "!dist/**",
       "!test/fixtures/shadcn-vendor/upstream/**",
-      "!test/fixtures/shadcn-vendor/ui/**"
+      "!test/fixtures/shadcn-vendor/ui/**",
+      "!test/fixtures/shadcn-full/upstream/**",
+      "!test/fixtures/shadcn-full/ui/**"
     ]
   },
   "formatter": {
