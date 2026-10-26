@@ -3,7 +3,11 @@
 // the app bundle at /dist/app.{js,pak}.
 //   bun tools/web/serve.ts --js <bundle.js> --pak <bundle.pak> [--port 8140]
 import { existsSync } from "node:fs";
-import { FRAMEWORK_ROOT } from "../../src/internal/pocket-build.ts";
+import {
+  FRAMEWORK_ROOT,
+  WEB_HOST_DIR,
+  WEB_PAGE_DIR,
+} from "../../src/internal/pocket-build.ts";
 
 const HERE = import.meta.dir + "/";
 const TYPES: Record<string, string> = {
@@ -18,11 +22,20 @@ export interface ReaderServer {
   stop(): void;
 }
 
+/**
+ * The host page's file for a URL path, looked up in the page's own directory, the binding directory, then
+ * the core root (upstream's binding imports its modules from the root, e.g. /engine/guest-web/).
+ */
+function hostFile(path: string): string {
+  const rel = path.slice(1);
+  const dirs = [WEB_PAGE_DIR, WEB_HOST_DIR, FRAMEWORK_ROOT];
+  return dirs.map((dir) => dir + rel).find((file) => existsSync(file)) ?? WEB_PAGE_DIR + rel;
+}
+
 export function serveReader(
   app: { js: string; pak: string },
   port = 0,
 ): ReaderServer {
-  const host = FRAMEWORK_ROOT + "hosts/web/";
   const server = Bun.serve({
     hostname: process.env.HOST ?? "127.0.0.1",
     port,
@@ -39,7 +52,7 @@ export function serveReader(
               ? app.js
               : path === "/dist/app.pak"
                 ? app.pak
-                : host + path.slice(1);
+                : hostFile(path);
       if (path === "/ws" || !existsSync(file))
         return new Response("not found", { status: 404 });
       return new Response(Bun.file(file), {

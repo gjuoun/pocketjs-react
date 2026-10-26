@@ -2,6 +2,7 @@
 // writer, the wasm core binding and the headless Chrome driver, imported by path from the
 // pinned @pocketjs/framework package. Never imported by guest (runtime) code.
 
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -44,8 +45,30 @@ export const FRAMEWORK_ROOT = (
 // runtime load is the root's file. Build and test code only; guest code never imports this module.
 import type * as WebOps from "@pocket-internal/hosts/web/wasm-ops.js";
 
+/**
+ * The web host directory of the core root. The upstream layout keeps the binding and the wasm in
+ * platforms/web; the pinned npm package keeps them in hosts/web. Detected by the binding file.
+ */
+const WEB_HOST_DIRS = ["platforms/web/", "hosts/web/"] as const;
+const webHostRel = WEB_HOST_DIRS.find((dir) =>
+  existsSync(FRAMEWORK_ROOT + dir + "wasm-ops.js"),
+);
+if (!webHostRel) {
+  throw new Error(
+    `no wasm-ops.js under ${FRAMEWORK_ROOT} (looked in ${WEB_HOST_DIRS.join(", ")})`,
+  );
+}
+/** The web host directory of the selected core root. */
+export const WEB_HOST_DIR = FRAMEWORK_ROOT + webHostRel;
+/** The core's prebuilt wasm, beside its binding. */
+export const WEB_WASM_PATH = WEB_HOST_DIR + "pocketjs.wasm";
+/** The host page's own assets: upstream keeps app-instance.js in programs/web, the npm package beside the binding. */
+export const WEB_PAGE_DIR = existsSync(FRAMEWORK_ROOT + "programs/web/app-instance.js")
+  ? FRAMEWORK_ROOT + "programs/web/"
+  : WEB_HOST_DIR;
+
 const host = (await import(
-  pathToFileURL(FRAMEWORK_ROOT + "hosts/web/wasm-ops.js").href
+  pathToFileURL(WEB_HOST_DIR + "wasm-ops.js").href
 )) as typeof WebOps;
 
 export { HeadlessChrome } from "@pocket-internal/tools/headless-chrome.ts";
