@@ -1,6 +1,7 @@
 // Proof for the shadcn gallery: the app built by tools/build.ts, booted on the wasm core (the pixel harness).
 // Every section must draw ink in its own rect, the page must scroll to the last section with DOWN presses,
-// the page must show 61 distinct titles, and no section may print its `failed:` notice.
+// the page must show 61 distinct titles, the topmost section must be each section in turn on the way down
+// (the counter walks 1..61), and no section may print its `failed:` notice.
 import { expect, test } from "bun:test";
 import { mkdirSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -12,6 +13,7 @@ import {
   nextTop,
   prevTop,
   SECTIONS,
+  TAIL_H,
   TITLE_H,
   TOPS,
   TOTAL,
@@ -30,6 +32,20 @@ const INK_MIN = 20; // pixels in a section body that differ from the card surfac
 const N = SECTIONS.length;
 const titleOf = (i: number) =>
   `${String(i + 1).padStart(2, "0")}/${N} ${SECTIONS[i].name}`;
+const byTitle = new Map(SECTIONS.map((_, i) => [titleOf(i), i] as const));
+
+/** The section at the top of the screen: the visible title bar with the smallest y (the counter's section). */
+function topmostTitle(runs: TextRun[]): number {
+  let best = -1;
+  let bestY = Infinity;
+  for (const r of runs) {
+    const i = byTitle.get(r.text);
+    if (i === undefined || r.y < 0 || r.y >= VIEW_H || r.y >= bestY) continue;
+    best = i;
+    bestY = r.y;
+  }
+  return best;
+}
 
 /** Top row of a section: walk up from its title text while the bar colour continues. */
 function frameTop(core: Core, run: TextRun): number {
@@ -77,6 +93,11 @@ test("the scroll arithmetic: DOWN and UP snap between section tops and clamp at 
   expect(prevTop(TOPS[1])).toBe(0);
   expect(nextTop(MAX_OFFSET)).toBe(MAX_OFFSET);
   expect(MAX_OFFSET).toBe(TOTAL - VIEW_H);
+  // The last section's top is the largest offset: it snaps to the top of the screen, the tail fills below it.
+  expect(MAX_OFFSET).toBe(TOPS[N - 1]);
+  expect(TAIL_H).toBe(VIEW_H - SECTIONS[N - 1].h);
+  expect(nextTop(TOPS[N - 2])).toBe(TOPS[N - 1]);
+  expect(prevTop(MAX_OFFSET)).toBe(TOPS[N - 2]);
 });
 
 test("the built gallery draws all 61 sections, scrolls to the last one, and shows 61 titles", async () => {
@@ -90,9 +111,14 @@ test("the built gallery draws all 61 sections, scrolls to the last one, and show
   const titles = new Set<number>();
   const failed: string[] = [];
   let lastTop = NaN;
+  const topmostAt: number[] = [];
+  const topText: string[] = [];
   for (let press = 0; press <= N + 5; press++) {
     const runs = core.texts();
     for (const r of runs) if (r.text.startsWith("failed:")) failed.push(r.text);
+    const topIdx = topmostTitle(runs);
+    topmostAt.push(topIdx);
+    topText.push(topIdx < 0 ? "" : titleOf(topIdx));
     for (let i = 0; i < N; i++) {
       const run = runs.find((r) => r.text === titleOf(i));
       if (!run) continue;
@@ -110,12 +136,18 @@ test("the built gallery draws all 61 sections, scrolls to the last one, and show
   }
   writePng(core, "shadcn-gallery-bottom.png");
   const missing = [...Array(N).keys()].filter((i) => !passed.has(i));
+  const counter = [0, 29, 57, 58, 59, 60].map((p) => String(topmostAt[p] + 1));
   const minInk = Math.min(...[...best.values()]);
   console.log(
-    `bundle ${built.bundleBytes} B, pak ${built.pakBytes} B | sections inked ${passed.size}/${N} | titles seen ${titles.size}/${N} | min ink ${minInk} px | last section top ${lastTop} (bottom at ${lastTop + SECTIONS[N - 1].h}, screen ${VIEW_H}) | failed ${failed.length}`,
+    `bundle ${built.bundleBytes} B, pak ${built.pakBytes} B | sections inked ${passed.size}/${N} | titles seen ${titles.size}/${N} | min ink ${minInk} px | counter after 0/29/57/58/59/60 DOWN: ${counter.join('/')} | last section top ${lastTop} | failed ${failed.length}`,
   );
   expect(failed).toEqual([]);
   expect(missing.map((i) => titleOf(i))).toEqual([]);
   expect(titles.size).toBe(N);
-  expect(Math.abs(lastTop + SECTIONS[N - 1].h - VIEW_H)).toBeLessThanOrEqual(1);
+  // Every section is the topmost one on the way down, 59 and 60 included.
+  expect(topmostAt.slice(0, N)).toEqual([...Array(N).keys()]);
+  // The bottom: the last section sits at the top of the screen and its title bar reads 61/61.
+  expect(Math.abs(lastTop)).toBeLessThanOrEqual(1);
+  expect(topText.at(-1)).toBe(titleOf(N - 1));
+  expect(topText.at(-1)?.startsWith("61/61 ")).toBe(true);
 }, 600_000);
