@@ -13,8 +13,8 @@
 //   R2  equivalent-subset substitutions: grid -> flex flex-col, flex-col-reverse -> flex-col,
 //       sr-only -> hidden, @container/* -> dropped
 //   R3  unknownUtilities() filter - everything the compiler rejects, dropped and counted by name
-//   R4  Slot/asChild flattening: `asChild ? Slot.Root : "tag"` becomes `"tag"`, the Slot import
-//       and asChild plumbing go away (C1 F1 policy; a real Slot belongs to C5)
+//   R4  retired (batch A): Slot/asChild is kept. `asChild ? Slot.Root : "tag"` reaches the real
+//       Slot through R6, which merges the props onto the child (src/primitives/slot.tsx)
 //   R5  a literal that maps to nothing stays as "" (cn("", className) is harmless)
 //   R6  the radix-ui import edge -> pocketjs-react/radix (native Dialog/DropdownMenu/Select, C5)
 //   R7  the lucide-react import edge -> pocketjs-react/glyph-icons (text glyph stubs until C7, C5)
@@ -60,6 +60,9 @@ function roundedFullRadius(tokens: string[]): string {
   const size = tokens
     .map((t) => /^text-(2xs|xs|sm|base|lg|xl|2xl|4xl|5xl)$/.exec(t))
     .find(Boolean);
+  const square = tokens.map((t) => /^size-(\d+(?:\.\d+)?)$/.exec(t)).find(Boolean);
+  // Batch A (B4): size-N is the same w and h as h-N, so the radius is N * 2 px.
+  if (square) return "rounded-[" + Number(square[1]) * 2 + "px]";
   const height =
     (py ? Number(py[1]) * 8 : 0) + (size ? FONT_PX[size[1]] * 1.25 : 16);
   return "rounded-[" + Math.round(height / 2) + "px]";
@@ -84,7 +87,6 @@ export interface CodemodFile {
   compilerDropped: TokenCounts;
   /** R0/R2 rules that fired, by source token (rounded-full, grid, sr-only, @container/...). */
   substituted: TokenCounts;
-  asChildFlattened: number;
   /** Literals that became empty after the rewrite. */
   emptied: number;
   /** Template literals with expressions: not statically rewritable. */
@@ -104,7 +106,6 @@ export interface CodemodReport {
     substituted: TokenCounts;
     /** Drops grouped by reason (mapDropped + compilerDropped, C8 Step 5). */
     reasons: TokenCounts;
-    asChildFlattened: number;
     emptied: number;
     skipped: number;
   };
@@ -262,7 +263,6 @@ function transformSource(source: string, name: string): CodemodFile {
     mapDropped: {},
     compilerDropped: {},
     substituted: {},
-    asChildFlattened: 0,
     emptied: 0,
     skipped: 0,
     residual: [],
@@ -353,111 +353,17 @@ function transformSource(source: string, name: string): CodemodFile {
   };
   visit(ast);
 
-  // R4: `const Comp = asChild ? Slot.Root : "button"` -> `const Comp = "button"`
-  const visitAsChild = (node: Node) => {
-    if (!node || typeof node !== "object") return;
-    if (
-      node.type === "ConditionalExpression" &&
-      node.test?.type === "Identifier" &&
-      node.test.name === "asChild" &&
-      node.consequent?.type === "MemberExpression" &&
-      calleeName(node.consequent) === "Root" &&
-      node.alternate?.type === "StringLiteral"
-    ) {
-      file.asChildFlattened++;
-      edits.push({
-        start: node.start,
-        end: node.end,
-        text: JSON.stringify(node.alternate.value),
-      });
-    }
-    for (const key in node) {
-      if (["loc", "start", "end", "extra", "comments"].includes(key)) continue;
-      const value = node[key];
-      if (Array.isArray(value)) value.forEach(visitAsChild);
-      else if (value && typeof value === "object") visitAsChild(value);
-    }
-  };
-  visitAsChild(ast);
-
   // R6/R7: only the module specifier moves; the JSX and the class strings stay byte-identical.
-  // A radix-ui declaration R4 removes whole (Slot only) is left to R4.
   for (const stmt of ast.program?.body ?? []) {
     if (stmt.type !== "ImportDeclaration") continue;
     const to = IMPORT_EDGE[stmt.source?.value];
     if (!to) continue;
-    const removedByR4 =
-      stmt.source.value === "radix-ui" &&
-      (stmt.specifiers ?? []).every((s: Node) => s.imported?.name === "Slot");
-    if (removedByR4) continue;
     add(file.substituted, "import:" + stmt.source.value);
     edits.push({
       start: stmt.source.start,
       end: stmt.source.end,
       text: JSON.stringify(to),
     });
-  }
-
-  const imports = (ast.program?.body ?? []).filter(
-    (stmt: Node) =>
-      stmt.type === "ImportDeclaration" && stmt.source?.value === "radix-ui",
-  );
-  for (const decl of imports) {
-    const specifiers: Node[] = decl.specifiers ?? [];
-    const slot = specifiers.find((s) => s.imported?.name === "Slot");
-    if (!slot) continue;
-    if (specifiers.length > 1) {
-      // Remove just the Slot specifier and the comma after it.
-      const siblings = specifiers.slice().sort((a, b) => a.start - b.start);
-      const index = siblings.indexOf(slot);
-      const next = siblings[index + 1];
-      const end = next ? next.start : slot.end;
-      edits.push({ start: slot.start, end, text: "" });
-    } else {
-      const end = source.indexOf("\n", decl.end);
-      edits.push({
-        start: decl.start,
-        end: end >= 0 ? end + 1 : decl.end,
-        text: "",
-      });
-    }
-  }
-  for (const node of allNodes(ast)) {
-    if (node.type === "ObjectProperty" || node.type === "ObjectPattern") {
-      // destructured `asChild = false` in the component signature
-      const properties: Node[] = node.properties ?? [];
-      for (const property of properties) {
-        if (
-          keyName(property) === "asChild" &&
-          property.type === "ObjectProperty"
-        ) {
-          const next = properties[properties.indexOf(property) + 1];
-          const end = next ? next.start : property.end;
-          edits.push({ start: property.start, end, text: "" });
-        }
-      }
-    }
-    if (node.type === "TSPropertySignature" && keyName(node) === "asChild") {
-      // Drop the whole `& { asChild?: boolean }` member when it is the literal's only member,
-      // so the prop type reads `VariantProps<...>` instead of `VariantProps<...> & {}`.
-      const literal = parents.get(node);
-      const intersection = literal ? parents.get(literal) : undefined;
-      const index = intersection?.types?.indexOf(literal) ?? -1;
-      if (
-        literal?.type === "TSTypeLiteral" &&
-        intersection &&
-        (literal.members ?? []).length === 1 &&
-        index > 0
-      ) {
-        edits.push({
-          start: intersection.types[index - 1].end,
-          end: literal.end,
-          text: "",
-        });
-      } else {
-        edits.push({ start: node.start, end: node.end, text: "" });
-      }
-    }
   }
 
   let after = source;
@@ -479,22 +385,6 @@ function checkResidual(text: string, file: CodemodFile): void {
   if (!ok) file.residual.push(text);
 }
 
-function allNodes(root: Node): Node[] {
-  const out: Node[] = [];
-  const walk = (node: Node) => {
-    if (!node || typeof node !== "object") return;
-    out.push(node);
-    for (const key in node) {
-      if (["loc", "start", "end", "extra", "comments"].includes(key)) continue;
-      const value = node[key];
-      if (Array.isArray(value)) value.forEach(walk);
-      else if (value && typeof value === "object") walk(value);
-    }
-  };
-  walk(root);
-  return out;
-}
-
 /** Run the codemod over a directory. Pure: nothing is written (the CLI does that). */
 export async function codemod(srcDir: string): Promise<CodemodReport> {
   const dir = resolve(srcDir);
@@ -514,7 +404,6 @@ export async function codemod(srcDir: string): Promise<CodemodReport> {
     compilerDropped: {},
     substituted: {},
     reasons: {},
-    asChildFlattened: 0,
     emptied: 0,
     skipped: 0,
   };
@@ -524,7 +413,6 @@ export async function codemod(srcDir: string): Promise<CodemodReport> {
     totals.literals += file.literals;
     totals.changed += file.changed;
     totals.mapped += file.mapped;
-    totals.asChildFlattened += file.asChildFlattened;
     totals.emptied += file.emptied;
     totals.skipped += file.skipped;
     for (const [token, n] of Object.entries(file.mapDropped))
@@ -605,7 +493,6 @@ export async function main(argv: string[]): Promise<number> {
           mapDropped,
           compilerDropped,
           substituted,
-          asChildFlattened,
           emptied,
           skipped,
           residual,
@@ -617,7 +504,6 @@ export async function main(argv: string[]): Promise<number> {
           mapDropped,
           compilerDropped,
           substituted,
-          asChildFlattened,
           emptied,
           skipped,
           residual,
@@ -644,8 +530,6 @@ export async function main(argv: string[]): Promise<number> {
         " compiler-dropped, " +
         Object.values(file.substituted).reduce((a, b) => a + b, 0) +
         " substituted, " +
-        file.asChildFlattened +
-        " asChild, " +
         file.emptied +
         " emptied, " +
         file.skipped +
@@ -667,8 +551,6 @@ export async function main(argv: string[]): Promise<number> {
       " changed, " +
       report.totals.mapped +
       " mapped, " +
-      report.totals.asChildFlattened +
-      " asChild, " +
       report.files.reduce((n, f) => n + f.residual.length, 0) +
       " residual",
   );

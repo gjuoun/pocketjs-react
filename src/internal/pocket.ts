@@ -1,3 +1,4 @@
+import { resolveTexture as frameworkResolveTexture } from "@pocket-internal/framework/src/native-tree.ts";
 // The ONLY runtime module that imports @pocketjs/framework files outside its public
 // `exports`. PocketJS does not publish raw native-node creation, the per-frame input
 // loop, the class-string resolver or the class compiler, so a third-party React renderer
@@ -52,3 +53,15 @@ export {
   resetStyles,
   resolveStyle,
 } from "@pocket-internal/framework/src/styles.ts";
+
+/**
+ * True when `key` names a registered texture. resolveTexture throws on an unknown key on a strict
+ * host, so the lookup is guarded: an Avatar with an unknown URL falls back instead of failing the mount.
+ */
+export function hasTexture(key: string): boolean {
+  try {
+    return frameworkResolveTexture(key) !== undefined;
+  } catch {
+    return false;
+  }
+}

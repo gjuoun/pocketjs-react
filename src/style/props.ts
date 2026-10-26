@@ -20,6 +20,7 @@ import {
 import { CORE_DEFAULTS, type CoreStyle, cssToCore } from "./css.ts";
 import { sweepIconColour, syncIconColour } from "./icon-colour.ts";
 import { defaultTextColour, forgetTextOverride, sweepTextColor } from "./text-color.ts";
+import { sweepSelects } from "../compat/selects.ts";
 
 type Props = Record<string, unknown>;
 const appliedStyle = new WeakMap<NodeMirror, CoreStyle>();
@@ -71,6 +72,8 @@ export function installStyleLayer(): void {
         applyStyle(node, props.style);
     },
     afterCommit() {
+      // The select sweep writes option classes; the table flush after it loads any ids they need.
+      sweepSelects();
       flushClassTable();
       sweepTextColor(rootMirror, inlineTextColour);
       sweepIconColour(rootMirror, inlineTextColour, defaultTextColour());

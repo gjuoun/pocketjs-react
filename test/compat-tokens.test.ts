@@ -181,3 +181,23 @@ test("C8: the Step 6 mappings (shadow-sm, rem lengths, destructive colours)", ()
   expect(rewriteToken("text-destructive")).toBe("text-red-600");
   expect(rewriteToken("border-destructive")).toBe("border-red-600");
 });
+
+// Batch A (B1 to B5): the defects that pinned the avatar to 24px, dropped its size-full, and
+// painted the progress track the same colour as its fill.
+test("batch A: every token an expanded size-N keeps the variant prefix (B1)", () => {
+  expect(rewriteLiteral("data-[size=lg]:size-10")).toBe("data-[size=lg]:w-10 data-[size=lg]:h-10");
+  expect(rewriteLiteral("hover:size-4")).toBe("active:w-4 active:h-4");
+  expect(rewriteLiteral("size-8")).toBe("w-8 h-8");
+});
+
+test("batch A: size-full, the primary/20 track and w-px map to PocketJS vocabulary (B2, B3)", () => {
+  expect(rewriteLiteral("size-full")).toBe("w-full h-full");
+  expect(rewriteLiteral("bg-primary/20")).toBe("bg-slate-300");
+  expect(rewriteLiteral("data-[orientation=vertical]:w-px")).toBe("data-[orientation=vertical]:w-[1px]");
+  for (const target of ["w-full h-full", "bg-slate-300", "w-[1px]"])
+    expect(unknownUtilities(target)).toEqual([]);
+});
+
+test("batch A: aspect-square is owned by the primitive, not an unmapped utility (B5)", () => {
+  expect(dropReason("aspect-square")).toBe("owned-by-primitive");
+});

@@ -21,6 +21,7 @@ import { hitsWithin } from "../primitives/anchor.ts";
 import { type Layer, topLayer } from "../primitives/layer-stack.ts";
 import { addFramePump } from "../renderer/mount.ts";
 import { hoverClear, hoverMove } from "./hover.ts";
+import { focusLabelControlAt } from "./label-map.ts";
 
 export interface PointerEvent {
   x: number;
@@ -124,6 +125,8 @@ export function installPointer(): () => void {
         armed = target;
         armedFocused = target !== null && getFocused() === target;
         if (target) focusNode(target);
+        // Batch A (R-L): no focusable under the tap, but a label is: its control takes the focus.
+        else focusLabelControlAt(event.x, event.y);
       } else if (armedOutside) {
         const layer = armedOutside;
         armedOutside = null;

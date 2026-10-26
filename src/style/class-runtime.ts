@@ -13,6 +13,8 @@
 // reported and dropped on native ones), never compiled behind the author's back.
 
 import { getHost, getOps } from "@pocketjs/framework/host";
+import { bakedTimelines } from "@pocket-internal/framework/compiler/animation.ts";
+import type { AnimTimeline } from "@pocket-internal/contracts/spec/spec.ts";
 import { dropReason, rewrite } from "../compat/tokens.ts";
 import {
   decodeStyleTable,
@@ -37,6 +39,9 @@ const reported = new Set<string>();
 let header = new Uint8Array(0);
 let recordBytes = new Uint8Array(0);
 let animBytes = new Uint8Array(0);
+/** The ANIM TABLE every record may reference (a record's animation ids index it). It starts as the
+ *  build's table and grows when the compiler bakes a timeline a runtime literal needs. */
+let timelines: AnimTimeline[] = [];
 let recordCount = 0;
 let loadedCount = 0;
 const canonical = new Map<string, number>();
@@ -123,13 +128,42 @@ export function initClassRuntime(
     if (!canonical.has(key)) canonical.set(key, id);
   });
   header = bin.slice(0, HEADER_SIZE);
-  recordBytes = body(encodeStyleTable(table.styles, [])).slice();
-  animBytes = body(encodeStyleTable([], table.anims)).slice();
+  timelines = table.anims.slice();
+  animBytes = animSection(timelines);
+  recordBytes = recordsOf(table.styles, timelines);
   recordCount = loadedCount = table.styles.length;
 }
 
+/** The anim section alone: what encodeStyleTable writes after the records. */
+function animSection(anims: readonly AnimTimeline[]): Uint8Array<ArrayBuffer> {
+  return new Uint8Array(body(encodeStyleTable([], anims)));
+}
+
+/**
+ * The record bytes of `styles`, validated against `anims`. encodeStyleTable checks every animation id
+ * against the table it is given, so the records are encoded WITH the table and the anim section is cut
+ * off the end (records come first in the encoding). Encoding them against an empty table is what threw
+ * "bad anim id" for every skeleton and spinner.
+ */
+function recordsOf(
+  styles: readonly StyleRecord[],
+  anims: readonly AnimTimeline[],
+): Uint8Array<ArrayBuffer> {
+  const full = body(encodeStyleTable(styles, anims));
+  return new Uint8Array(full.subarray(0, full.length - animSection(anims).length));
+}
+
+/** Take in any timelines the compiler has baked since the table was last read (ids only grow). */
+function syncTimelines(): void {
+  const live = bakedTimelines();
+  if (live.length === timelines.length) return;
+  timelines = live.slice();
+  animBytes = animSection(timelines);
+}
+
 function append(record: StyleRecord): number {
-  const bytes = body(encodeStyleTable([record], []));
+  syncTimelines();
+  const bytes = recordsOf([record], timelines);
   const grown = new Uint8Array(recordBytes.length + bytes.length);
   grown.set(recordBytes);
   grown.set(bytes, recordBytes.length);
@@ -144,7 +178,9 @@ function assemble(): Uint8Array {
     HEADER_SIZE + recordBytes.length + animBytes.length,
   );
   out.set(header);
-  new DataView(out.buffer).setUint16(6, recordCount, true);
+  const view = new DataView(out.buffer);
+  view.setUint16(6, recordCount, true);
+  view.setUint16(8, timelines.length, true);
   out.set(recordBytes, HEADER_SIZE);
   out.set(animBytes, HEADER_SIZE + recordBytes.length);
   return out;

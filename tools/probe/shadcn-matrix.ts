@@ -312,7 +312,7 @@ async function staticFacts() {
         literals: f.literals,
         changed: f.changed,
         residual: f.residual.length,
-        asChildFlattened: f.asChildFlattened,
+        asChildSlots: (f.after.match(/asChild \? Slot\.Root/g) ?? []).length,
       })),
     },
     reasonTokens,
