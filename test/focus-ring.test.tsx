@@ -34,7 +34,9 @@ const VARIANT: Record<"plain" | "ring3" | "ring2" | "offset", string> = {
 };
 const AUTO = "flex bg-slate-900 px-2";
 const AUTO_FOCUS = AUTO + " focus:border-blue-600 focus:border-2";
-const BOOT = [ROOT, BASE, BASE_FOCUS, AUTO, AUTO_FOCUS, TXT, ROW, LIT, SUPPRESS, "focus:border-blue-600", "focus:border-2"];
+const CLIP = "flex flex-col";
+const CLIP_BTN = "ml-4 flex w-[120px] h-[40px] bg-slate-900 px-2";
+const BOOT = [ROOT, BASE, BASE_FOCUS, AUTO, AUTO_FOCUS, TXT, ROW, LIT, SUPPRESS, CLIP, CLIP_BTN, "focus:border-blue-600", "focus:border-2"];
 
 let core: Core | undefined;
 let unmount: (() => void) | undefined;
@@ -160,6 +162,31 @@ test("an auto-sized button (no fixed width) keeps its box when focused: the bord
   focusOn(c, a);
   expect(measureBox(a)).toEqual(before);
   expect(leftBand(c, before, 2)).toEqual([BLUE, BLUE]);
+});
+
+test("a ring at the edge of an overflow-hidden box is clipped where CSS clips it", async () => {
+  core = await bootCore({ classes: BOOT });
+  const c = core;
+  const refs: { a?: NodeMirror } = {};
+  unmount = mount(
+    <View className={ROOT}>
+      <View className={CLIP} style={{ position: "absolute", left: 20, top: 100, width: 200, height: 100, overflow: "hidden" } as never}>
+        <button ref={at((n) => { refs.a = n; })} className={CLIP_BTN}>
+          <Text className={TXT}>Clip</Text>
+        </button>
+      </View>
+    </View>,
+  );
+  c.step(0);
+  c.step(0);
+  const a = refs.a!;
+  focusOn(c, a);
+  const box = measureBox(a)!;
+  // The box sits on the clip's top line: the band above it lies outside the clip, so it is cut.
+  const top = [px(c, box.x + 20, box.y - 1), px(c, box.x + 20, box.y - 2)];
+  expect(top).toEqual([LIGHT, LIGHT]);
+  // The band to the left is inside the clip (its left edge is 20px left of the box): it is drawn.
+  expect(leftBand(c, box, 2)).toEqual([BLUE, BLUE]);
 });
 
 test("focus-visible:ring-[3px] draws a 3px band", async () => {

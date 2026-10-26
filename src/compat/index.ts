@@ -32,6 +32,7 @@ import {
   unknownTagMessage,
 } from "./tags.ts";
 import { heldBy, holdRun, markTextual } from "./text-wrap.ts";
+import { setClipper, clipsOverflow } from "../focus/ring.ts";
 import { ownsFocusBorder } from "./focus.ts";
 import { DEFAULT_RING, parseRing, setRingTarget } from "./ring.ts";
 import { rewriteLiteral } from "./tokens.ts";
@@ -79,6 +80,7 @@ export function installCompat(opts: CompatOptions = {}): void {
       return compatProps(tag, props, INTERACTIVE_TAGS.has(tag), count);
     },
     bind(node, tag, props, count) {
+      setClipper(node, clipsOverflow(props.className, props.style));
       if (TEXTUAL_FLEX_TAGS.has(tag) && node.type === NODE_TYPE.view)
         markTextual(node, props.className);
       // C8: a [&_svg]:text-* rule colours the icons below this node (its own icons keep their own colour).
