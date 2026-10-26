@@ -74,14 +74,6 @@ export function hoverMove(target: NodeMirror | null, pressing: boolean): void {
   light(null, null);
 }
 
-/**
- * True while a hover row is lit. A lit row is the one highlight on screen, so the focus ring yields to
- * it: a ring on a compat control and a blue row must never show together.
- */
-export function hoverClaimsHighlight(): boolean {
-  return litHover !== null;
-}
-
 /** Clear both: the pointer left, a press began, or focus moved. */
 export function hoverClear(): void {
   light(null, null);

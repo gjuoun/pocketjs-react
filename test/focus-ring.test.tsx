@@ -241,7 +241,7 @@ test("an unmounted focused target leaves no ring node behind", async () => {
   expect(rootMirror.children.length).toBe(before);
 });
 
-test("hover claims the highlight: the ring yields to a lit row, and returns when the pointer leaves", async () => {
+test("a lit menu row does not take the focused control's ring: two different indicators show together", async () => {
   gate.__pocketHover = true;
   core = await bootCore({ classes: BOOT });
   const c = core;
@@ -275,8 +275,9 @@ test("hover claims the highlight: the ring yields to a lit row, and returns when
   const hy = rb.y + Math.floor(rb.h / 2);
   pointer(hx, hy, true);
   expect(px(c, hx, hy)).toBe(BLUE);
-  expect(leftBand(c, box, 2)).toEqual([LIGHT, LIGHT]);
+  expect(leftBand(c, box, 2)).toEqual([BLUE, BLUE]);
   pointer(0, 0, false);
+  expect(px(c, hx, hy)).toBe("#0f172a"); // the row back at rest: slate-900
   expect(leftBand(c, box, 2)).toEqual([BLUE, BLUE]);
 });
 

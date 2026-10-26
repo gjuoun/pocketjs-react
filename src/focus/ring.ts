@@ -13,7 +13,6 @@
 // MISS_FRAMES while the target is unmeasurable, since the search is expensive).
 import { getOps } from "@pocketjs/framework/host";
 import { getFocused } from "@pocketjs/framework/input";
-import { hoverClaimsHighlight } from "../input/hover.ts";
 import { ringTargetOf } from "../compat/ring.ts";
 import {
   createElement,
@@ -143,8 +142,6 @@ export function installFocusRing(pump: (fn: () => void) => () => void): () => vo
       box = null;
       return hide();
     }
-    // Hover owns the highlight while a row is lit: the ring waits (the target and its box are kept).
-    if (hoverClaimsHighlight()) return hide();
     if (focus !== target) {
       target = focus;
       box = null;
