@@ -101,7 +101,9 @@ test("batch A: a tap on the Label focuses the Input its htmlFor names", async ()
   q.push({ x, y, down: false });
   c.step(0);
   c.step(0);
-  expect(getFocused()).toBe(find((n) => n.debugName === "input"));
+  const input = find((n) => n.debugName === "input");
+  if (!input) throw new Error("no input node");
+  expect(getFocused()).toBe(input);
 });
 
 test("batch A: the horizontal separator is one full-width row of slate-200, the vertical one a full-height column", async () => {
