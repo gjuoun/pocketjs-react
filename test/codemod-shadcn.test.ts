@@ -12,13 +12,18 @@ const TMP = "/tmp/pocketjs-react-test/compat-c3/codemod";
 test("C3: the committed ui/ tree is exactly the codemod output", async () => {
   const report = await codemod(UPSTREAM);
   expect(report.files.map((f) => f.name)).toEqual([
+    "aspect-ratio.tsx",
+    "avatar.tsx",
     "badge.tsx",
     "button.tsx",
     "card.tsx",
     "dialog.tsx",
     "dropdown-menu.tsx",
     "input.tsx",
+    "label.tsx",
+    "progress.tsx",
     "select.tsx",
+    "separator.tsx",
   ]);
   for (const file of report.files) {
     const committed = await Bun.file(UI + "/" + file.name).text();
@@ -63,7 +68,8 @@ test("C3: the report names what it dropped, substituted and flattened", async ()
   expect(totals.reasons.animation).toBeGreaterThan(0);
   expect(totals.compilerDropped["col-start-2"]).toBeGreaterThanOrEqual(1);
   // "Equivalent subset" substitutions and the C2 mapping.
-  expect(totals.substituted["rounded-full"]).toBe(1);
+  // badge (1), progress (1) and avatar's four size-keyed circles (4) round to a pixel radius.
+  expect(totals.substituted["rounded-full"]).toBe(6);
   expect(totals.substituted.grid).toBeGreaterThanOrEqual(2);
   expect(totals.substituted["sr-only"]).toBe(1);
   expect(totals.mapped).toBeGreaterThan(40);
@@ -158,8 +164,8 @@ test("C5: R6/R7 move the radix-ui and lucide-react edges, and a second run chang
   expect(dialog.after).toContain('from "pocketjs-react/glyph-icons"');
   expect(dialog.after).not.toContain('from "radix-ui"');
   expect(dialog.after).not.toContain('from "lucide-react"');
-  // button and badge (Slot), dialog, dropdown-menu and select each import the radix-ui edge.
-  expect(totals.substituted["import:radix-ui"]).toBe(5);
+  // Every component that reaches radix-ui: button and badge (Slot), and the other eight.
+  expect(totals.substituted["import:radix-ui"]).toBe(10);
   expect(totals.substituted["import:lucide-react"]).toBe(3);
   // Slot is a member of the radix-ui edge like the others: R6 rewrites its import too.
   const button = files.find((f) => f.name === "button.tsx")!;
