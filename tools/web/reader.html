@@ -56,6 +56,19 @@
   let inst = null;
   let keys = 0; // keyboard
   let virtual = 0; // window.__host.press
+  // Each change of the level (keys | virtual) queues one sample: the level right after the change.
+  // The rAF loop takes one sample per step, so every press reaches the guest as a raise then a fall, even
+  // when keydown and keyup land between two rAF callbacks or 2-6 ms apart. A steady level queues nothing:
+  // a key held across frames stays one hold. Not used in manual mode (the driver passes buttons itself).
+  const samples = [];
+  const SAMPLE_CAP = 256; // a backlog never replays more than this many steps of old input
+  const level = () => keys | virtual;
+  const sampleChange = (before) => {
+    if (manual || level() === before) return;
+    samples.push(level());
+    if (samples.length > SAMPLE_CAP) samples.shift();
+  };
+  const nextSample = () => (samples.length ? samples.shift() : level());
 
   const draw = () => {
     if (!inst) return;
@@ -94,7 +107,7 @@
     createMs: 0,
     starts: 0,
     get instance() { return inst; },
-    press(bit, down) { virtual = down ? virtual | bit : virtual & ~bit; },
+    press(bit, down) { const before = level(); virtual = down ? virtual | bit : virtual & ~bit; sampleChange(before); },
     step,
     draw,
     /** Text runs the core draws, as "x,y,w,h<TAB>text" lines. */
@@ -113,11 +126,11 @@
     const r = routeKey(e, globalThis.__pocketTextEntry === true, globalThis.__pocketTextMultiline === true);
     if (!r) return;
     e.preventDefault();
-    if (r.to === "button") keys |= r.bit;
+    if (r.to === "button") { const before = level(); keys |= r.bit; sampleChange(before); }
     else (globalThis.__pocketText ??= []).push(r.to === "text" ? { t: "ch", s: r.ch } : { t: "key", k: r.key });
   });
-  window.addEventListener("keyup", (e) => { const bit = KEYMAP[e.code]; if (bit === undefined) return; e.preventDefault(); keys &= ~bit; });
-  window.addEventListener("blur", () => { keys = 0; });
+  window.addEventListener("keyup", (e) => { const bit = KEYMAP[e.code]; if (bit === undefined) return; e.preventDefault(); const before = level(); keys &= ~bit; sampleChange(before); });
+  window.addEventListener("blur", () => { const before = level(); keys = 0; sampleChange(before); });
   document.getElementById("pick").addEventListener("change", async (event) => {
     await fs.addFiles(event.target.files);
     await start(); // reload the app so its library lists the new files
@@ -177,7 +190,7 @@
       acc += Math.min(250, now - last);
       last = now;
       let steps = 0;
-      while (acc >= 1000 / 60 && steps < 4) { step(); acc -= 1000 / 60; steps++; }
+      while (acc >= 1000 / 60 && steps < 4) { step(nextSample()); acc -= 1000 / 60; steps++; }
       if (steps > 0) draw();
     };
     requestAnimationFrame(loop);
