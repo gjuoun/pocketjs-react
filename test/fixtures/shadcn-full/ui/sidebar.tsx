@@ -170,7 +170,7 @@ function Sidebar({
       <div
         data-slot="sidebar"
         className={cn(
-          "flex h-full flex-col",
+          "flex h-full w-(--sidebar-width) flex-col",
           className
         )}
         {...props}
@@ -187,7 +187,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="p-0"
+          className="w-(--sidebar-width) p-0"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -218,7 +218,7 @@ function Sidebar({
       <div
         data-slot="sidebar-gap"
         className={cn(
-          "relative bg-transparent duration-200 ease-linear",
+          "relative w-(--sidebar-width) bg-transparent duration-200 ease-linear",
           "",
           "",
           variant === "floating" || variant === "inset"
@@ -229,7 +229,7 @@ function Sidebar({
       <div
         data-slot="sidebar-container"
         className={cn(
-          "z-10 hidden duration-200 ease-linear",
+          "z-10 hidden w-(--sidebar-width) duration-200 ease-linear",
           side === "left"
             ? "left-0"
             : "right-0",
@@ -625,7 +625,7 @@ function SidebarMenuSkeleton({
         />
       )}
       <Skeleton
-        className="h-4 flex-1"
+        className="h-4 max-w-(--skeleton-width) flex-1"
         data-sidebar="menu-skeleton-text"
         style={
           {

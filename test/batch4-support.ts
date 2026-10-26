@@ -1,10 +1,13 @@
 // Shared mount helper for the batch-4 tests: boots the core with the class table of the whole library plus the
 // given files, mounts one tree in compat strict mode, and hands back the laid-out nodes.
 import { readdirSync } from "node:fs";
-import { createElement, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { mount } from "../src/index.ts";
 import { type NodeMirror, rootMirror } from "../src/internal/pocket.ts";
-import { compileClasses, unknownUtilities } from "../src/internal/pocket-build.ts";
+import {
+  compileClasses,
+  unknownUtilities,
+} from "../src/internal/pocket-build.ts";
 import { bodiesOnly } from "../src/compat/selectors.ts";
 import { rewriteLiteral } from "../src/compat/tokens.ts";
 import { installBuildStyles } from "../src/style/build-styles.ts";
@@ -32,29 +35,52 @@ export interface Mounted {
 }
 
 /** Mount one element tree on a fresh core. `files` are extra source files whose classes must be in the table. */
-export async function mountTree(element: ReactNode, files: string[] = []): Promise<Mounted> {
+export async function mountTree(
+  element: ReactNode,
+  files: string[] = [],
+): Promise<Mounted> {
   const classes = await classLiterals(files);
   const core = await bootCore({ classes });
   const compiled = compileClasses(classes);
-  const tokens = [...new Set(classes.flatMap((l) => l.split(/\s+/)))].filter((t) => t && unknownUtilities(t).length === 0);
+  const tokens = [...new Set(classes.flatMap((l) => l.split(/\s+/)))].filter(
+    (t) => t && unknownUtilities(t).length === 0,
+  );
   installBuildStyles(compiled.ids, compiled.bin, tokens);
-  const unmount = mount(createElement(element as never), { compat: { classMiss: "throw", unknownProps: "drop", tokenMap: true } as never });
+  const unmount = mount(element, {
+    compat: {
+      classMiss: "throw",
+      unknownProps: "drop",
+      tokenMap: true,
+    } as never,
+  });
   core.step(0);
   core.step(0);
   core.render();
-  const walk = (n: NodeMirror, out: NodeMirror[] = []): NodeMirror[] => { out.push(n); for (const c of n.children) walk(c, out); return out; };
+  const walk = (n: NodeMirror, out: NodeMirror[] = []): NodeMirror[] => {
+    out.push(n);
+    for (const c of n.children) walk(c, out);
+    return out;
+  };
   return {
     core,
     root: rootMirror,
     nodes: () => walk(rootMirror),
     box: (node) => measureBox(node),
     dispose() {
-      try { unmount(); } catch {}
+      try {
+        unmount();
+      } catch {}
       core.dispose();
       installBuildStyles({}, new Uint8Array(0), []);
     },
   };
 }
 
-export const dirOfUi = new URL("../test/fixtures/shadcn-full/ui", import.meta.url).pathname;
-export const uiFiles = () => readdirSync(dirOfUi).filter((f) => /\.tsx?$/.test(f)).map((f) => dirOfUi + "/" + f);
+export const dirOfUi = new URL(
+  "../test/fixtures/shadcn-full/ui",
+  import.meta.url,
+).pathname;
+export const uiFiles = () =>
+  readdirSync(dirOfUi)
+    .filter((f) => /\.tsx?$/.test(f))
+    .map((f) => dirOfUi + "/" + f);

@@ -90,7 +90,6 @@ const VARIANTS: Readonly<Record<string, string>> = {
   active: "active",
 };
 
-
 // C8 Step 5: every dropped token names why. The reasons are the policy, not the gap: a token in
 // "animation" is a deliberate omission (no transitions in scope), "dark" is the light-only
 // policy, "owned-by-primitive" is a layout the native primitive already performs, and the
@@ -119,22 +118,42 @@ export function dropReason(tok: string): DropReason {
   const base = parts[parts.length - 1];
   const variants = parts.slice(0, -1);
   if (variants.some((v) => v === "dark")) return "dark";
-  if (variants.some((v) => v === "[&_svg]" || v === "[&>svg]" || v.startsWith("[&_svg:")))
+  if (
+    variants.some(
+      (v) => v === "[&_svg]" || v === "[&>svg]" || v.startsWith("[&_svg:"),
+    )
+  )
     return "noop";
   if (variants.some((v) => /^(sm|md|lg|xl|2xl)$/.test(v))) return "responsive";
-  if (variants.some((v) => /^(placeholder|file|selection)$/.test(v))) return "pseudo";
-  if (/^ring(-|$)/.test(base) || base === "border-ring") return "focus-indicator";
+  if (variants.some((v) => /^(placeholder|file|selection)$/.test(v)))
+    return "pseudo";
+  if (/^ring(-|$)/.test(base) || base === "border-ring")
+    return "focus-indicator";
   if (variants.some((v) => VARIANT_STRUCTURE.test(v))) return "no-core-feature";
-  if (/^(outline|select-none|pointer-events|cursor-|fill-current|whitespace-nowrap|w-fit|@container|shrink)/.test(base))
+  if (
+    /^(outline|select-none|pointer-events|cursor-|fill-current|whitespace-nowrap|w-fit|@container|shrink)/.test(
+      base,
+    )
+  )
     return "noop";
-  if (/^(animate-|fade-|zoom-|slide-|origin-\(|duration-)/.test(base)) return "animation";
-  if (/^(grid$|grid-(cols|rows)-|auto-rows-|col-(start|span)-|row-(start|span)-|self-|justify-self-)/.test(base))
+  if (/^(animate-|fade-|zoom-|slide-|origin-\(|duration-)/.test(base))
+    return "animation";
+  if (
+    /^(grid$|grid-(cols|rows)-|auto-rows-|col-(start|span)-|row-(start|span)-|self-|justify-self-)/.test(
+      base,
+    )
+  )
     return "grid";
-  if (/^(overflow-y-|overflow-x-|max-h-\(|max-h-\[var|scroll-)/.test(base)) return "scroll";
+  if (/^(overflow-y-|overflow-x-|max-h-\(|max-h-\[var|scroll-)/.test(base))
+    return "scroll";
   if (base === "aspect-square") return "owned-by-primitive";
   // A named group or peer marker (group/avatar) carries no style of its own: its variants do the work.
   if (/^(group|peer)\/[\w-]+$/.test(base)) return "noop";
-  if (/^(fixed$|top-\[50%\]|left-\[50%\]|translate-[xy]-\[-50%\]|h-\[var\(--radix|min-w-\[var\(--radix)/.test(base))
+  if (
+    /^(fixed$|top-\[50%\]|left-\[50%\]|translate-[xy]-\[-50%\]|h-\[var\(--radix|min-w-\[var\(--radix)/.test(
+      base,
+    )
+  )
     return "owned-by-primitive";
   // rounded-full draws only with a pinned size in the same literal (the core's [R] rule).
   if (base === "rounded-full") return "no-core-feature";
@@ -152,6 +171,42 @@ export interface RewriteResult {
   dropped: number;
   /** The dropped tokens themselves, so the caller can count each by its reason (C8 Step 11). */
   droppedTokens: string[];
+  /** Var-bound lengths (w-(--x)): kept out of the text, applied per node from the custom properties. */
+  bindings: Binding[];
+}
+
+export type BindingProp =
+  | "width"
+  | "height"
+  | "minW"
+  | "minH"
+  | "maxW"
+  | "maxH";
+export interface Binding {
+  prop: BindingProp;
+  /** The custom property name, with its leading dashes (--sidebar-width). */
+  name: string;
+}
+
+const BINDING =
+  /^(w|h|min-w|min-h|max-w|max-h)-(?:\(--([\w-]+)\)|\[--([\w-]+)\]|\[var\(--([\w-]+)\)\])$/;
+const BINDING_PROP: Record<string, BindingProp> = {
+  w: "width",
+  h: "height",
+  "min-w": "minW",
+  "min-h": "minH",
+  "max-w": "maxW",
+  "max-h": "maxH",
+};
+
+/** A bare length utility whose value is a custom property, or null. Radix's own --radix-* positions are owned by
+ *  the primitive (dropped, as before), not bound. */
+export function parseBinding(tok: string): Binding | null {
+  const m = BINDING.exec(tok);
+  if (!m) return null;
+  const name = "--" + (m[2] ?? m[3] ?? m[4]);
+  if (name.startsWith("--radix-")) return null;
+  return { prop: BINDING_PROP[m[1]], name };
 }
 
 /** shadcn's focus ring border: dropped, because the compat default focus border is the
@@ -180,7 +235,8 @@ export function rewriteToken(tok: string): string {
   if (selector) {
     // Descendant rules keep only their icon colour: size and shrink are the icon default here,
     // and pointer-events has no pointer (no-op), so they drop.
-    if (selector.selector.kind === "svg" && !selector.body.startsWith("text-")) return "";
+    if (selector.selector.kind === "svg" && !selector.body.startsWith("text-"))
+      return "";
     const body = rewriteToken(selector.body);
     return body === "" ? "" : prefixEach(selector.prefix, body);
   }
@@ -202,7 +258,8 @@ export function rewriteToken(tok: string): string {
   if (size) return "w-" + size[1] + " h-" + size[1];
   // C8 Step 6: rem arbitrary lengths are px (1rem = 16px, the core's root size).
   const rem = /^(-?)([a-z-]+)-\[(\d+(?:\.\d+)?)rem\]$/.exec(tok);
-  if (rem) return rem[1] + rem[2] + "-[" + Math.round(Number(rem[3]) * 16) + "px]";
+  if (rem)
+    return rem[1] + rem[2] + "-[" + Math.round(Number(rem[3]) * 16) + "px]";
   // ring-* draws an outline the core does not have (C10); ring-offset-* likewise.
   if (tok === "ring" || tok.startsWith("ring-")) return "";
   if (NEEDS_SIZE.test(tok)) return "";
@@ -214,8 +271,14 @@ export function rewrite(cls: string): RewriteResult {
   const tokens = cls.trim().split(/\s+/).filter(Boolean);
   const out: string[] = [];
   const droppedTokens: string[] = [];
+  const bindings: Binding[] = [];
   let mapped = 0;
   for (const tok of tokens) {
+    const bind = parseBinding(tok);
+    if (bind) {
+      bindings.push(bind);
+      continue;
+    }
     const next = rewriteToken(tok);
     if (next === "") {
       droppedTokens.push(tok);
@@ -224,9 +287,14 @@ export function rewrite(cls: string): RewriteResult {
       out.push(next);
     }
   }
-  return { text: out.join(" "), mapped, dropped: droppedTokens.length, droppedTokens };
+  return {
+    text: out.join(" "),
+    mapped,
+    dropped: droppedTokens.length,
+    droppedTokens,
+    bindings,
+  };
 }
-
 
 export function rewriteLiteral(cls: string): string {
   return rewrite(cls).text;

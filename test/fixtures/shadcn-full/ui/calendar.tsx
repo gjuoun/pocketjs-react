@@ -66,11 +66,11 @@ function Calendar({
           defaultClassNames.button_next
         ),
         month_caption: cn(
-          "flex w-full items-center justify-center",
+          "flex h-(--cell-size) w-full items-center justify-center",
           defaultClassNames.month_caption
         ),
         dropdowns: cn(
-          "flex w-full items-center justify-center gap-1.5 text-sm font-bold",
+          "flex h-(--cell-size) w-full items-center justify-center gap-1.5 text-sm font-bold",
           defaultClassNames.dropdowns
         ),
         dropdown_root: cn(
@@ -96,7 +96,7 @@ function Calendar({
         ),
         week: cn("mt-2 flex w-full", defaultClassNames.week),
         week_number_header: cn(
-          "",
+          "w-(--cell-size)",
           defaultClassNames.week_number_header
         ),
         week_number: cn(
@@ -208,7 +208,7 @@ function CalendarDayButton({
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
       className={cn(
-        "flex w-full flex-col gap-1 leading-[1] data-[range-end=true]:rounded-md data-[range-end=true]:bg-slate-900 data-[range-end=true]:text-white data-[range-middle=true]:bg-slate-200 data-[range-middle=true]:text-slate-900 data-[range-start=true]:rounded-md data-[range-start=true]:bg-slate-900 data-[range-start=true]:text-white data-[selected-single=true]:bg-slate-900 data-[selected-single=true]:text-white",
+        "flex w-full min-w-(--cell-size) flex-col gap-1 leading-[1] data-[range-end=true]:rounded-md data-[range-end=true]:bg-slate-900 data-[range-end=true]:text-white data-[range-middle=true]:bg-slate-200 data-[range-middle=true]:text-slate-900 data-[range-start=true]:rounded-md data-[range-start=true]:bg-slate-900 data-[range-start=true]:text-white data-[selected-single=true]:bg-slate-900 data-[selected-single=true]:text-white",
         defaultClassNames.day,
         className
       )}

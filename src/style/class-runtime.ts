@@ -16,6 +16,7 @@ import { getHost, getOps } from "@pocketjs/framework/host";
 import { bakedTimelines } from "@pocket-internal/framework/compiler/animation.ts";
 import type { AnimTimeline } from "@pocket-internal/contracts/spec/spec.ts";
 import { dropReason, rewrite } from "../compat/tokens.ts";
+import { setBindings } from "./vars.ts";
 import {
   decodeStyleTable,
   encodeStyleTable,
@@ -80,11 +81,13 @@ export function resetClassMissStats(): void {
   classRuntimeStats.droppedLiterals = 0;
   classRuntimeStats.mappedTokens = 0;
   classRuntimeStats.mapDroppedTokens = 0;
-  for (const key of Object.keys(classRuntimeStats.unsupported)) delete classRuntimeStats.unsupported[key];
+  for (const key of Object.keys(classRuntimeStats.unsupported))
+    delete classRuntimeStats.unsupported[key];
 }
 
 function countUnsupported(reason: string, n = 1): void {
-  classRuntimeStats.unsupported[reason] = (classRuntimeStats.unsupported[reason] ?? 0) + n;
+  classRuntimeStats.unsupported[reason] =
+    (classRuntimeStats.unsupported[reason] ?? 0) + n;
 }
 
 /** The C2 token map: rewrite shadcn vocabulary into PocketJS vocabulary before resolving.
@@ -150,7 +153,9 @@ function recordsOf(
   anims: readonly AnimTimeline[],
 ): Uint8Array<ArrayBuffer> {
   const full = body(encodeStyleTable(styles, anims));
-  return new Uint8Array(full.subarray(0, full.length - animSection(anims).length));
+  return new Uint8Array(
+    full.subarray(0, full.length - animSection(anims).length),
+  );
 }
 
 /** Take in any timelines the compiler has baked since the table was last read (ids only grow). */
@@ -265,14 +270,16 @@ export function resolveClass(cls: string): number | null {
 /** Apply a node's className (called by the host config on create and update). */
 export function applyClassName(node: NodeMirror, cls: unknown): void {
   const raw = typeof cls === "string" ? cls : "";
+  if (applied.get(node) === raw) return;
+  applied.set(node, raw);
   const rewritten = tokenMapEnabled ? rewrite(raw) : undefined;
+  setBindings(node, rewritten?.bindings ?? []);
   const next = rewritten ? rewritten.text : raw;
-  if (applied.get(node) === next) return;
-  applied.set(node, next);
   if (rewritten) {
     classRuntimeStats.mappedTokens += rewritten.mapped;
     classRuntimeStats.mapDroppedTokens += rewritten.dropped;
-    for (const tok of rewritten.droppedTokens) countUnsupported(dropReason(tok));
+    for (const tok of rewritten.droppedTokens)
+      countUnsupported(dropReason(tok));
   }
   if (next.trim() === "") {
     appliedId.delete(node);
@@ -327,7 +334,10 @@ export function classVariantOwns(node: NodeMirror, prop: PropName): boolean {
 
 /** The base-variant value the node's current class record sets for `prop`, in setProp form. */
 /** The base-variant value a class string sets for `prop`, read from the record it compiles to. */
-export function classStringValue(cls: string, prop: PropName): number | undefined {
+export function classStringValue(
+  cls: string,
+  prop: PropName,
+): number | undefined {
   const id = resolveClass(cls);
   if (id === null) return undefined;
   const entry = records[id]?.base?.find((p) => PROP_NAMES[p.prop] === prop);
