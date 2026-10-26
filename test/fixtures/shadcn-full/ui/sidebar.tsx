@@ -207,7 +207,7 @@ function Sidebar({
 
   return (
     <div
-      className="hidden"
+      className="hidden md:flex"
       data-state={state}
       data-collapsible={state === "collapsed" ? collapsible : ""}
       data-variant={variant}

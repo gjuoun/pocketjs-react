@@ -1,3 +1,4 @@
+import { installDomStandIns } from "./dom-stand-ins.ts";
 // The C1 DOM compat layer: maps JSX DOM tags onto PocketJS host types and gives DOM-only
 // props a counted policy. mount() calls installCompat(); until then the host config runs
 // with an identity hook and behaves exactly as before. Everything silently accepted shows
@@ -64,6 +65,7 @@ export function installCompat(opts: CompatOptions = {}): void {
   setUnknownPropsPolicy(opts.unknownProps ?? "throw");
   setClassMissPolicy(opts.classMiss ?? "throw");
   setTokenMapEnabled(opts.tokenMap ?? true);
+  installDomStandIns();
   setTextInheritance(opts.textColor === undefined ? "#0f172a" : opts.textColor);
   setHostCompat({
     type(tag, props) {
@@ -111,7 +113,9 @@ export function installCompat(opts: CompatOptions = {}): void {
       // The focus ring of a DOM-mapped focusable: its own ring tokens, or the default ring.
       setRingTarget(
         node,
-        isMapped(tag) && node.focusable && !ownsFocusBorder(props.className as string | undefined, props.style)
+        isMapped(tag) &&
+          node.focusable &&
+          !ownsFocusBorder(props.className as string | undefined, props.style)
           ? focusRingOf(props.className, props.style)
           : null,
       );

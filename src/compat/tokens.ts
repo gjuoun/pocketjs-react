@@ -239,7 +239,12 @@ export function rewriteToken(tok: string): string {
     // and pointer-events has no pointer (no-op), so they drop.
     if (selector.selector.kind === "svg" && !selector.body.startsWith("text-"))
       return "";
-    const body = rewriteToken(selector.body);
+    // At a breakpoint, block is a flex row (the core has no block display): the desktop sidebar root.
+    const inner =
+      selector.selector.kind === "breakpoint" && selector.body === "block"
+        ? "flex"
+        : selector.body;
+    const body = rewriteToken(inner);
     return body === "" ? "" : prefixEach(selector.prefix, body);
   }
   const colon = tok.indexOf(":");
@@ -247,7 +252,9 @@ export function rewriteToken(tok: string): string {
     const variant = tok.slice(0, colon);
     // D4: a breakpoint variant is a selector the compat layer resolves per node (selectors.ts): kept as written.
     if (variant in BREAKPOINTS) {
-      const body = rewriteToken(tok.slice(colon + 1));
+      // The core has no block display: at a breakpoint, block is a flex row (the desktop sidebar root: gap and container side by side).
+      const inner = tok.slice(colon + 1);
+      const body = rewriteToken(inner === "block" ? "flex" : inner);
       return body === "" ? "" : prefixEach(variant, body);
     }
     const mapped = VARIANTS[variant];
