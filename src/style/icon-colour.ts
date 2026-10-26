@@ -6,7 +6,7 @@
 import { getOps } from "@pocketjs/framework/host";
 import { getFocused } from "@pocketjs/framework/input";
 import { countIconMiss } from "../compat/stats.ts";
-import { NODE_TYPE, type NodeMirror } from "../internal/pocket.ts";
+import { NODE_TYPE, type NodeMirror, setProp } from "../internal/pocket.ts";
 import { classBaseValue, classVariantValue } from "./class-runtime.ts";
 import { ICON_COLOUR_NAMES, ICON_COLOURS, ICON_NAME, type IconColour, iconName } from "./icon-names.ts";
 import { abgr } from "./text-color.ts";
@@ -69,7 +69,7 @@ let focusSeen: NodeMirror | null | undefined;
 /** One pass over the tree: every icon Image takes the variant of the colour it inherits. */
 export function sweepIconColour(root: NodeMirror, inlineOf: InlineOf, inherited: number): void {
   focusSeen = getFocused();
-  visit(root, inherited, focusSeen, inlineOf, undefined);
+  visit(root, inherited, focusSeen, inlineOf, undefined, 0);
 }
 
 /** Run the pass only when focus moved since the last one (focus changes between React commits). */
@@ -84,12 +84,28 @@ export function setIconRule(node: NodeMirror, colour: number | undefined): void 
   else descendantRule.set(node, colour);
 }
 
+/** C8: the rotation (degrees) a node's [&[data-…]>svg]:rotate-N rule gives its icon descendants (compat sets it on bind). */
+const turnRule = new WeakMap<NodeMirror, number>();
+export function setIconTurn(node: NodeMirror, degrees: number | undefined): void {
+  if (degrees === undefined) turnRule.delete(node);
+  else turnRule.set(node, degrees);
+}
+
+/** The rotation each icon Image was last given, so an unchanged turn is not written again. */
+const turned = new WeakMap<NodeMirror, number>();
+function wantTurn(node: NodeMirror, degrees: number): void {
+  if ((turned.get(node) ?? 0) === degrees) return;
+  turned.set(node, degrees);
+  setProp(node, "style", { rotate: degrees }, {});
+}
+
 function visit(
   node: NodeMirror,
   inherited: number,
   focused: NodeMirror | null | undefined,
   inlineOf: InlineOf,
   rule: number | undefined,
+  turn: number,
 ): void {
   const inline = inlineOf(node);
   let own: number | undefined;
@@ -98,10 +114,14 @@ function visit(
   else own = classBaseValue(node, "textColor");
   const colour = own ?? inherited;
   // An icon's own colour (inline, focus, class) wins over an ancestor's [&_svg] rule.
-  if (node.type === NODE_TYPE.image) want(node, own ?? rule ?? inherited);
+  if (node.type === NODE_TYPE.image) {
+    want(node, own ?? rule ?? inherited);
+    wantTurn(node, turn);
+  }
   // A nearer colour (this node's own) wins over an ancestor's rule for everything below it.
   const childRule = descendantRule.get(node) ?? (own !== undefined ? undefined : rule);
-  for (const child of node.children) visit(child, colour, focused, inlineOf, childRule);
+  const childTurn = turnRule.get(node) ?? turn;
+  for (const child of node.children) visit(child, colour, focused, inlineOf, childRule, childTurn);
 }
 
 function want(node: NodeMirror, colour: number): void {

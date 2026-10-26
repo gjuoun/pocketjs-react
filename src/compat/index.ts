@@ -15,7 +15,7 @@ import {
   setClassMissPolicy,
   setTokenMapEnabled,
 } from "../style/class-runtime.ts";
-import { setIconRule } from "../style/icon-colour.ts";
+import { setIconRule, setIconTurn } from "../style/icon-colour.ts";
 import { setTextInheritance } from "../style/text-color.ts";
 import {
   compatProps,
@@ -23,7 +23,7 @@ import {
   textFieldInput,
   type UnknownPropsPolicy,
 } from "./props.ts";
-import { iconTextRule } from "./selectors.ts";
+import { iconTextRule, iconTurnRule } from "./selectors.ts";
 import { countUnknownTag } from "./stats.ts";
 import {
   hostTypeOf,
@@ -110,6 +110,8 @@ export function installCompat(opts: CompatOptions = {}): void {
           ? undefined
           : classStringValue(rewriteLiteral(iconClass), "textColor"),
       );
+      // C8: a [&[data-state=open]>svg]:rotate-N rule turns the icons below this node while it holds.
+      setIconTurn(node, iconTurnRule(props));
       // The focus ring of a DOM-mapped focusable: its own ring tokens, or the default ring.
       setRingTarget(
         node,
