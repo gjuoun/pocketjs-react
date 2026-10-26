@@ -5,8 +5,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { FIELD_FONT_SLOT } from "../../src/input/text-field.ts";
 import {
-  FRAMEWORK_ROOT,
   HeadlessChrome,
+  WEB_HOST_SEARCH,
+  WEB_WASM_PATH,
 } from "../../src/internal/pocket-build.ts";
 import { build } from "../build.ts";
 import { serveReader } from "../web/serve.ts";
@@ -65,9 +66,9 @@ export async function prepare(): Promise<Record<string, unknown>> {
         readerHtml: join(ROOT, "tools/web/reader.html"),
         fsShim: join(ROOT, "tools/web/fs-shim.js"),
         textEntryHost: join(ROOT, "tools/web/text-entry-host.js"),
-        wasm: join(FRAMEWORK_ROOT, "hosts/web/pocketjs.wasm"),
+        wasm: WEB_WASM_PATH,
       },
-      hostDir: join(FRAMEWORK_ROOT, "hosts/web"),
+      hostDirs: [...WEB_HOST_SEARCH],
       screen: { width: 480, height: 272 },
       fieldFontSlot: FIELD_FONT_SLOT,
       fieldA: { x: hit[0], y: hit[1] },
