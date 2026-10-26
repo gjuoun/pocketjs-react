@@ -132,6 +132,8 @@ export function dropReason(tok: string): DropReason {
     return "grid";
   if (/^(overflow-y-|overflow-x-|max-h-\(|max-h-\[var|scroll-)/.test(base)) return "scroll";
   if (base === "aspect-square") return "owned-by-primitive";
+  // A named group or peer marker (group/avatar) carries no style of its own: its variants do the work.
+  if (/^(group|peer)\/[\w-]+$/.test(base)) return "noop";
   if (/^(fixed$|top-\[50%\]|left-\[50%\]|translate-[xy]-\[-50%\]|h-\[var\(--radix|min-w-\[var\(--radix)/.test(base))
     return "owned-by-primitive";
   // rounded-full draws only with a pinned size in the same literal (the core's [R] rule).

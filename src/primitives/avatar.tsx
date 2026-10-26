@@ -43,7 +43,8 @@ function srcOf(node: ReactNode): string | undefined {
   }
   if (!isValidElement(node)) return undefined;
   const props = node.props as { src?: unknown; children?: ReactNode };
-  if (node.type === Image && typeof props.src === "string") return props.src;
+  // The image is our Image, or a vendored wrapper around it (AvatarImage): any component with a src.
+  if (typeof node.type !== "string" && typeof props.src === "string") return props.src;
   return srcOf(props.children);
 }
 
@@ -59,7 +60,11 @@ export function Root(props: AvatarProps) {
   const loaded = src !== undefined && hasTexture(src);
   return (
     <AvatarContext.Provider value={{ size, loaded }}>
-      <View className={cn("relative flex overflow-hidden", props.className)} style={{ borderRadius: RADIUS[size] }}>
+      <View
+        data-size={size}
+        className={cn("relative flex overflow-hidden", props.className)}
+        style={{ borderRadius: RADIUS[size] }}
+      >
         {props.children}
       </View>
     </AvatarContext.Provider>
