@@ -16,3 +16,5 @@ export * as Popover from "./popover.tsx";
 export * as Tooltip from "./tooltip.tsx";
 export * as HoverCard from "./hover-card.tsx";
 export * as AlertDialog from "./alert-dialog.tsx";
+export * as ContextMenu from "./context-menu.tsx";
+export * as Menubar from "./menubar.tsx";
