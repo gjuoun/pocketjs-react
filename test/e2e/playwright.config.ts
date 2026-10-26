@@ -1,4 +1,4 @@
-// JG-155 engine matrix: chromium desktop, chromium with iPhone 15 emulation (trusted page.tap), and
+// Engine matrix: chromium desktop, chromium with iPhone 15 emulation (trusted page.tap), and
 // real WebKit with the same iPhone 15 emulation. Run with `bun run test:e2e` (prepare, then this).
 import { defineConfig, devices } from "@playwright/test";
 

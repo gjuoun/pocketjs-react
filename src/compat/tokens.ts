@@ -9,7 +9,7 @@ import { splitSelector, splitVariants } from "./selectors.ts";
 //   - class-runtime rewrites an incoming className before resolving it (compat only).
 // A rewrite is idempotent: no mapped target is itself a map key.
 //
-// Variants follow the JG-145 L3 prototype: hover: -> active: (PocketJS has no pointer, so a
+// Variants follow the earlier prototype: hover: -> active: (PocketJS has no pointer, so a
 // press is the hover cue), focus-visible: -> focus:. Every other prefix (dark:, disabled:,
 // aria-*, data-*, sm:/md:, file:, placeholder:, has-[...], [&...], [a&]) maps to nothing and
 // (C4) placeholder: stays dropped at class level: the placeholder color is fixed by the field,
@@ -146,7 +146,7 @@ export interface RewriteResult {
   droppedTokens: string[];
 }
 
-/** shadcn's focus ring border (JG-157): dropped, because the compat default focus border is the
+/** shadcn's focus ring border: dropped, because the compat default focus border is the
  *  focus indicator. Mapped to focus:border-slate-900 it would be the button's own colour. */
 const FOCUS_RING_BORDER = "focus-visible:border-ring";
 

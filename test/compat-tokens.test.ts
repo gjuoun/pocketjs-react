@@ -88,7 +88,7 @@ test("token cases: semantic colors, aliases, variants, opacity and drops", () =>
     expect({ from, to: rewriteToken(from) }).toEqual({ from, to });
 });
 
-test("the button base decomposes: 5 mapped + 14 dropped = 19 (focus ring border dropped, JG-157)", () => {
+test("the button base decomposes: 5 mapped + 14 dropped = 19 (focus ring border dropped)", () => {
   // The cva literal the fixture renders: base 22 + default 3 + size-default 4 tokens.
   const full = [BUTTON_BASE, BUTTON_DEFAULT, BUTTON_SIZE].join(" ");
   const whole = rewrite(full);

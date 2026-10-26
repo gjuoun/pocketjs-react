@@ -1,4 +1,4 @@
-// JG-157 default focus indicator (compat only). A DOM-mapped focusable draws a 2px blue border
+// Default focus indicator (compat only). A DOM-mapped focusable draws a 2px blue border
 // while it has focus: the core applies and removes the focus: variant itself, so no JS focus hook
 // is involved. An author focus border (a focus:border* class after the token map, or an inline
 // borderColor/borderWidth) keeps its own. The order matters: a colour class also pushes

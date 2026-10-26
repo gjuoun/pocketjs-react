@@ -1,4 +1,4 @@
-// JG-155 smoke: one test per matrix tier. The page boots and the pure OSK helpers import under node.
+// Smoke: one test per matrix tier. The page boots and the pure OSK helpers import under node.
 import { expect, test } from "@playwright/test";
 import { layoutRows, oskLayer } from "../../src/input/osk-layout.ts";
 import { manifest, openHost, type Server, serve } from "./helpers.ts";

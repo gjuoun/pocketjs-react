@@ -1,4 +1,4 @@
-// JG-155 e2e static server (node, no Bun APIs): the browser host page, the app bundle and the host
+// e2e static server (node, no Bun APIs): the browser host page, the app bundle and the host
 // files, routed the way tools/web/serve.ts routes them. Serves only what dist/e2e/manifest.json names.
 
 import { readFile } from "node:fs/promises";

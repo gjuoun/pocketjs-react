@@ -184,7 +184,7 @@ test("C2: every Badge variant paints its mapped surface or border", async () => 
   expect(hasColor(c, runOf(c, "BOutline"), "#e2e8f0")).toBe(true);
   expect(surface(c, runOf(c, "BGhost"))).toBe("#f1f5f9");
   expect(surface(c, runOf(c, "BLink"))).toBe("#f1f5f9");
-  // JG-156 Step 3: was "#ffffff" (the core default). The inheritance pass gives the ghost label the
+  // Inheritance pass: was "#ffffff" (the core default). The inheritance pass gives the ghost label the
   // mount's slate-900 default, the colour shadcn's body text gives it.
   expect(hasColor(c, runOf(c, "BGhost"), "#0f172a")).toBe(true);
   expect(hasColor(c, runOf(c, "BGhost"), "#ffffff")).toBe(false);

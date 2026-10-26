@@ -1,4 +1,4 @@
-// JG-156 textual views. A DOM text tag (span, p, label, ...) that carries flex is mapped to a view
+// Textual views. A DOM text tag (span, p, label, ...) that carries flex is mapped to a view
 // (its layout is the point: the badge's label centres in it). A view draws no text, and a text size or
 // weight on a view does not reach a run under it (a text-2xl view's run keeps the default size). So a
 // run under such a view is placed in a text element that carries the view's size and weight.

@@ -1,4 +1,4 @@
-// JG-157 focus indicator: a DOM-mapped focusable draws a default focus border with no explicit
+// Focus indicator: a DOM-mapped focusable draws a default focus border with no explicit
 // focus: border style; an author focus: border keeps its own colour. Real wasm core, pixel asserts.
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { BTN, getFocused } from "@pocketjs/framework/input";
@@ -165,9 +165,9 @@ test("unfocused siblings keep their pixels and boxes when focus moves", async ()
   console.log("unfocused pixels identical");
 });
 
-// --- d-pad end to end on the built shadcn demo (JG-157 Step 7) -----------------------------
+// --- d-pad end to end on the built shadcn demo (compat focus pass) -----------------------------
 const VENDOR = "test/fixtures/shadcn-vendor";
-const SHOTS = "/tmp/pocketjs-react-test/jg157";
+const SHOTS = "/tmp/pocketjs-react-test/focus";
 
 async function bootBuilt(entry: string, name: string, app: unknown): Promise<Core> {
   const built = await build(entry, { outdir: SHOTS, name });
@@ -192,7 +192,7 @@ function focusables(node: NodeMirror, out: NodeMirror[] = []): NodeMirror[] {
 }
 
 test("d-pad moves focus through every mapped focusable, each showing the border", async () => {
-  const c = await bootBuilt(VENDOR + "/main.tsx", "jg157-demo", <Demo />);
+  const c = await bootBuilt(VENDOR + "/main.tsx", "focus-demo", <Demo />);
   const nodes = focusables(rootMirror);
   expect(nodes.length).toBeGreaterThan(2);
   const idle = nodes.map((n) => edge(c, n));
@@ -241,12 +241,12 @@ async function snapshot(c: Core, name: string): Promise<void> {
 }
 
 test("screenshot: idle", async () => {
-  const c = await bootBuilt(VENDOR + "/overlays-main.tsx", "jg157-overlays", <Overlays />);
+  const c = await bootBuilt(VENDOR + "/overlays-main.tsx", "focus-overlays", <Overlays />);
   await snapshot(c, "idle");
 });
 
 test("screenshot: menu-open", async () => {
-  const c = await bootBuilt(VENDOR + "/overlays-main.tsx", "jg157-overlays", <Overlays />);
+  const c = await bootBuilt(VENDOR + "/overlays-main.tsx", "focus-overlays", <Overlays />);
   focusOnLabel(c, "Menu");
   c.press(BTN.CIRCLE, 4);
   expect(c.texts().map((t) => t.text)).toContain("Edit");
@@ -254,7 +254,7 @@ test("screenshot: menu-open", async () => {
 });
 
 test("screenshot: select-open", async () => {
-  const c = await bootBuilt(VENDOR + "/overlays-main.tsx", "jg157-overlays", <Overlays />);
+  const c = await bootBuilt(VENDOR + "/overlays-main.tsx", "focus-overlays", <Overlays />);
   focusOnLabel(c, "Pick fruit");
   c.press(BTN.CIRCLE, 4);
   expect(c.texts().map((t) => t.text)).toContain("Apple");
@@ -262,7 +262,7 @@ test("screenshot: select-open", async () => {
 });
 
 test("screenshot: focus-moved", async () => {
-  const c = await bootBuilt(VENDOR + "/main.tsx", "jg157-demo", <Demo />);
+  const c = await bootBuilt(VENDOR + "/main.tsx", "focus-demo", <Demo />);
   c.press(BTN.DOWN, 4);
   settle(c);
   expect(edge(c, getFocused() as NodeMirror)).toBe(BLUE);

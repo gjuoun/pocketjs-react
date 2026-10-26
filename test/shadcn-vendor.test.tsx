@@ -64,7 +64,7 @@ test("C3: the vendored surfaces are the mapped PocketJS colors", async () => {
   expect(surface(c, runOf(c, "Save"))).toBe("#0f172a");
   expect(surface(c, runOf(c, "Delete"))).toBe("#dc2626");
   expect(surface(c, runOf(c, "Beta"))).toBe("#e2e8f0");
-  // JG-156 Step 7: the card is shadcn's own white (bg-card -> bg-white), no dark workaround. Its title
+  // Inheritance pass: the card is shadcn's own white (bg-card -> bg-white), no dark workaround. Its title
   // takes the card's slate-900 through the text-colour pass, so the title is dark ink on white.
   expect(surface(c, runOf(c, "Vendored card"))).toBe("#ffffff");
   expect(surface(c, runOf(c, "Open"))).toBe("#0f172a");
