@@ -28,7 +28,6 @@ const ALIAS: Record<string, string> = { onClick: "onPress" };
 
 const DROP_ATTRS = new Set([
   "role",
-  "id",
   "type",
   "disabled",
   "tabIndex",
@@ -186,6 +185,12 @@ export function compatProps(
     if (key === "children") continue;
     if (inputs.has(key)) {
       if (count) countMappedAttr(key);
+      continue;
+    }
+    // Batch A (R-L): an element's id is consumed by the label map (src/input/label-map.ts), which
+    // the compat bind hook registers; it never reaches the native node.
+    if (key === "id") {
+      if (count) countMappedAttr("id");
       continue;
     }
     if (

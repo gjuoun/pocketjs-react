@@ -28,7 +28,7 @@ async function boot(onGo?: () => void, onChild?: () => void): Promise<Core> {
     outdir: "/tmp/pocketjs-react-test/batch-a-slot",
     name: "batch-a-slot",
   });
-  core = await bootCore({ classes: built.tokens });
+  core = await bootCore({ classes: built.tokens, fontSlots: built.fontSlots });
   installBuildStyles({}, compileClasses([]).bin, built.tokens);
   unmount = mount(<SlotScreen onGo={onGo} onChild={onChild} />, {
     compat: { classMiss: "throw", tokenMap: false },

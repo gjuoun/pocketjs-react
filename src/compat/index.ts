@@ -34,6 +34,7 @@ import {
 import { heldBy, holdRun, markTextual } from "./text-wrap.ts";
 import { setClipper, clipsOverflow } from "../focus/ring.ts";
 import { ownsFocusBorder } from "./focus.ts";
+import { registerControl } from "../input/label-map.ts";
 import { focusRingOf, setRingTarget } from "./ring.ts";
 import { rewriteLiteral } from "./tokens.ts";
 
@@ -83,6 +84,8 @@ export function installCompat(opts: CompatOptions = {}): void {
       setClipper(node, clipsOverflow(props.className, props.style));
       if (TEXTUAL_FLEX_TAGS.has(tag) && node.type === NODE_TYPE.view)
         markTextual(node, props.className);
+      // Batch A (R-L): the element's DOM id names it for a Label's htmlFor (a tap focuses it).
+      if (typeof props.id === "string") registerControl(props.id, node);
       // C8: a [&_svg]:text-* rule colours the icons below this node (its own icons keep their own colour).
       const iconClass = iconTextRule(props.className);
       setIconRule(
