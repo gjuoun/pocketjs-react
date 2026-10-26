@@ -6,7 +6,7 @@ import { copyFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   createWasmUi,
-  FRAMEWORK_ROOT,
+  WEB_WASM_PATH,
 } from "../../src/internal/pocket-build.ts";
 import { OUT, PROFILES, wrapGuest } from "./common.ts";
 import { desktopHost } from "./desktop-host.ts";
@@ -33,7 +33,7 @@ const KEY: Record<string, string> = {
 
 async function wasmScreens(js: string, pak: string): Promise<Run[][]> {
   const core = await createWasmUi(
-    await Bun.file(FRAMEWORK_ROOT + "hosts/web/pocketjs.wasm").arrayBuffer(),
+    await Bun.file(WEB_WASM_PATH).arrayBuffer(),
   );
   const ops = core.ops as Record<string, any>;
   const g = globalThis as Record<string, any>;

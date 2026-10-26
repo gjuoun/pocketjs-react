@@ -10,7 +10,7 @@ import { join } from "node:path";
 import {
   createWasmUi,
   FB_W,
-  FRAMEWORK_ROOT,
+  WEB_WASM_PATH,
 } from "../../src/internal/pocket-build.ts";
 import { OUT, PROFILES, profileFromArgs, wrapGuest } from "./common.ts";
 import { desktopHost } from "./desktop-host.ts";
@@ -27,7 +27,7 @@ const built = await PROFILES["list-dialog"].build();
 
 // ---- 1. layout from the wasm core ---------------------------------------------------
 const core = await createWasmUi(
-  await Bun.file(FRAMEWORK_ROOT + "hosts/web/pocketjs.wasm").arrayBuffer(),
+  await Bun.file(WEB_WASM_PATH).arrayBuffer(),
 );
 const ops = core.ops as Record<string, any>;
 const g = globalThis as Record<string, any>;
