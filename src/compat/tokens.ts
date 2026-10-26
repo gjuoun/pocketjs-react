@@ -57,6 +57,11 @@ export const TOKEN_MAP: Readonly<Record<string, string>> = {
   "transition-[color,box-shadow]": "transition-colors",
   "leading-none": "leading-[1]",
   "h-px": "h-[1px]",
+  "w-px": "w-[1px]",
+  // Batch A (B2, B3): size-full is both axes; shadcn's bg-primary/20 track is slate-300 (the 20%
+  // tint of slate-900 on white), not the alpha-stripped slate-900 the /NN branch would give.
+  "size-full": "w-full h-full",
+  "bg-primary/20": "bg-slate-300",
   "-mx-1": "mx-[-4px]",
   "overflow-x-hidden": "overflow-hidden",
   "tracking-tight": "tracking-wide",
@@ -126,6 +131,7 @@ export function dropReason(tok: string): DropReason {
   if (/^(grid$|grid-(cols|rows)-|auto-rows-|col-(start|span)-|row-(start|span)-|self-|justify-self-)/.test(base))
     return "grid";
   if (/^(overflow-y-|overflow-x-|max-h-\(|max-h-\[var|scroll-)/.test(base)) return "scroll";
+  if (base === "aspect-square") return "owned-by-primitive";
   if (/^(fixed$|top-\[50%\]|left-\[50%\]|translate-[xy]-\[-50%\]|h-\[var\(--radix|min-w-\[var\(--radix)/.test(base))
     return "owned-by-primitive";
   // rounded-full draws only with a pinned size in the same literal (the core's [R] rule).
@@ -150,6 +156,18 @@ export interface RewriteResult {
  *  focus indicator. Mapped to focus:border-slate-900 it would be the button's own colour. */
 const FOCUS_RING_BORDER = "focus-visible:border-ring";
 
+/**
+ * A variant prefix on every utility of a body. One source token can expand to several (size-N is
+ * w-N h-N), and each of them must keep the variant: data-[size=lg]:size-10 is two prefixed tokens.
+ */
+function prefixEach(prefix: string, body: string): string {
+  return body
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => prefix + ":" + part)
+    .join(" ");
+}
+
 /** One token -> its PocketJS form, or "" when the map drops it. Pass-through otherwise. */
 export function rewriteToken(tok: string): string {
   if (tok === FOCUS_RING_BORDER) return "";
@@ -162,7 +180,7 @@ export function rewriteToken(tok: string): string {
     // and pointer-events has no pointer (no-op), so they drop.
     if (selector.selector.kind === "svg" && !selector.body.startsWith("text-")) return "";
     const body = rewriteToken(selector.body);
-    return body === "" ? "" : selector.prefix + ":" + body;
+    return body === "" ? "" : prefixEach(selector.prefix, body);
   }
   const colon = tok.indexOf(":");
   if (colon > 0) {
@@ -170,7 +188,7 @@ export function rewriteToken(tok: string): string {
     const mapped = VARIANTS[variant];
     if (mapped === undefined) return ""; // dark:, disabled:, aria-*, data-*, [&...], has-[...], ...
     const body = rewriteToken(tok.slice(colon + 1));
-    return body === "" ? "" : mapped + ":" + body;
+    return body === "" ? "" : prefixEach(mapped, body);
   }
   const hit = TOKEN_MAP[tok];
   if (hit !== undefined) return hit;

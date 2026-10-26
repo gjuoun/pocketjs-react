@@ -60,6 +60,9 @@ function roundedFullRadius(tokens: string[]): string {
   const size = tokens
     .map((t) => /^text-(2xs|xs|sm|base|lg|xl|2xl|4xl|5xl)$/.exec(t))
     .find(Boolean);
+  const square = tokens.map((t) => /^size-(\d+(?:\.\d+)?)$/.exec(t)).find(Boolean);
+  // Batch A (B4): size-N is the same w and h as h-N, so the radius is N * 2 px.
+  if (square) return "rounded-[" + Number(square[1]) * 2 + "px]";
   const height =
     (py ? Number(py[1]) * 8 : 0) + (size ? FONT_PX[size[1]] * 1.25 : 16);
   return "rounded-[" + Math.round(height / 2) + "px]";

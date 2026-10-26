@@ -104,6 +104,7 @@ test("C3: rules R0-R3 in isolation (rounded-full derivation, aliases, opacity, e
     "export const b = cn('rounded-full py-0.5 text-xs')",
     "export const c = cn('inline-flex size-9 hover:bg-primary/90 shadow-sm grid')",
     "export const d = cn('sr-only')",
+    "export const f = cn('rounded-full size-8')",
     "export const e = cn(`p-${4} text-sm`)",
     "",
   ].join("\n");
@@ -116,6 +117,8 @@ test("C3: rules R0-R3 in isolation (rounded-full derivation, aliases, opacity, e
     'cn("flex w-9 h-9 active:bg-slate-900 shadow flex flex-col")',
   );
   expect(after).toContain('cn("hidden")');
+  // Batch A (B4): a size-N avatar is N * 2 px of radius, the same as its h-N twin.
+  expect(after).toContain('cn("rounded-[16px] w-8 h-8")');
   // A template literal with expressions is reported, not guessed at.
   expect(report.files[0].skipped).toBe(1);
   expect(report.files[0].after).toContain("p-${4} text-sm");
