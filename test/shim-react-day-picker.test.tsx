@@ -56,7 +56,9 @@ test("a pointer click on 26 selects 26 October once", async () => {
     createElement(DayPicker, {
       month: oct,
       selected: undefined,
-      onSelect: (d: Date) => picked.push(d),
+      onSelect: (d: Date | undefined) => {
+        if (d) picked.push(d);
+      },
     }),
     [import.meta.path],
     { width: 480, height: 272 },
