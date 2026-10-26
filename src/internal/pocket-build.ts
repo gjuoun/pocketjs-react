@@ -63,7 +63,9 @@ export const WEB_HOST_DIR = FRAMEWORK_ROOT + webHostRel;
 /** The core's prebuilt wasm, beside its binding. */
 export const WEB_WASM_PATH = WEB_HOST_DIR + "pocketjs.wasm";
 /** The host page's own assets: upstream keeps app-instance.js in programs/web, the npm package beside the binding. */
-export const WEB_PAGE_DIR = existsSync(FRAMEWORK_ROOT + "programs/web/app-instance.js")
+export const WEB_PAGE_DIR = existsSync(
+  FRAMEWORK_ROOT + "programs/web/app-instance.js",
+)
   ? FRAMEWORK_ROOT + "programs/web/"
   : WEB_HOST_DIR;
 
@@ -72,7 +74,11 @@ export const WEB_PAGE_DIR = existsSync(FRAMEWORK_ROOT + "programs/web/app-instan
  * programs/web, or the npm package's hosts/web), the binding directory (the wasm), then the core root
  * (the binding imports its modules from the root, e.g. /engine/guest-web/).
  */
-export const WEB_HOST_SEARCH: readonly string[] = [WEB_PAGE_DIR, WEB_HOST_DIR, FRAMEWORK_ROOT];
+export const WEB_HOST_SEARCH: readonly string[] = [
+  WEB_PAGE_DIR,
+  WEB_HOST_DIR,
+  FRAMEWORK_ROOT,
+];
 
 /**
  * The playground page the stock browser run drives (its demo picker and virtual buttons): upstream keeps it under
@@ -81,7 +87,10 @@ export const WEB_HOST_SEARCH: readonly string[] = [WEB_PAGE_DIR, WEB_HOST_DIR, F
 export const WEB_PLAYGROUND: { page: string; engine: string } = existsSync(
   FRAMEWORK_ROOT + "programs/web/dev/engine.js",
 )
-  ? { page: "programs/web/dev/index.html", engine: "/programs/web/dev/engine.js" }
+  ? {
+      page: "programs/web/dev/index.html",
+      engine: "/programs/web/dev/engine.js",
+    }
   : { page: "index.html", engine: "/engine.js" };
 
 /** The file a host-page URL path (relative, no leading slash) resolves to; the first existing candidate wins. */

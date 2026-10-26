@@ -26,9 +26,7 @@ const host = desktopHost();
 const built = await PROFILES["list-dialog"].build();
 
 // ---- 1. layout from the wasm core ---------------------------------------------------
-const core = await createWasmUi(
-  await Bun.file(WEB_WASM_PATH).arrayBuffer(),
-);
+const core = await createWasmUi(await Bun.file(WEB_WASM_PATH).arrayBuffer());
 const ops = core.ops as Record<string, any>;
 const g = globalThis as Record<string, any>;
 g.ui = ops;

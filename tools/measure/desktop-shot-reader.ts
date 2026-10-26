@@ -32,9 +32,7 @@ const KEY: Record<string, string> = {
 };
 
 async function wasmScreens(js: string, pak: string): Promise<Run[][]> {
-  const core = await createWasmUi(
-    await Bun.file(WEB_WASM_PATH).arrayBuffer(),
-  );
+  const core = await createWasmUi(await Bun.file(WEB_WASM_PATH).arrayBuffer());
   const ops = core.ops as Record<string, any>;
   const g = globalThis as Record<string, any>;
   g.ui = ops;

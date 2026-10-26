@@ -91,7 +91,9 @@ const rustPin = readFileSync(
   "utf8",
 ).match(/STABLE_RUST_TOOLCHAIN = "([^"]+)"/)?.[1];
 if (!rustPin) {
-  console.error("core-overlay: no STABLE_RUST_TOOLCHAIN in tools/build/toolchains/rust.ts");
+  console.error(
+    "core-overlay: no STABLE_RUST_TOOLCHAIN in tools/build/toolchains/rust.ts",
+  );
   process.exit(1);
 }
 
@@ -132,7 +134,10 @@ run(
   ],
   { env: { ...env, CARGO_TARGET_DIR: join(CACHE, "target-text") } },
 );
-const textBuilt = join(CACHE, "target-text/wasm32-unknown-unknown/release/pocket_text.wasm");
+const textBuilt = join(
+  CACHE,
+  "target-text/wasm32-unknown-unknown/release/pocket_text.wasm",
+);
 if (!existsSync(textBuilt)) {
   console.error("core-overlay: cargo did not produce " + textBuilt);
   process.exit(1);

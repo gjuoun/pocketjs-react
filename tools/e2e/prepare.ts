@@ -35,10 +35,13 @@ export async function prepare(): Promise<Record<string, unknown>> {
     },
   );
   // The C9 sub-menu page: its own bundle and manifest entry (see submenu.e2e.ts).
-  const submenu = await build(join(ROOT, "test/fixtures/shadcn-vendor/submenu-main.tsx"), {
-    outdir: OUT,
-    name: "submenu",
-  });
+  const submenu = await build(
+    join(ROOT, "test/fixtures/shadcn-vendor/submenu-main.tsx"),
+    {
+      outdir: OUT,
+      name: "submenu",
+    },
+  );
   const server = serveReader(app);
   const chrome = await HeadlessChrome.start({
     port: PORT,

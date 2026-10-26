@@ -34,11 +34,11 @@ export function serveReader(
             ? HERE + "fs-shim.js"
             : path === "/text-entry-host.js"
               ? HERE + "text-entry-host.js"
-            : path === "/dist/app.js"
-              ? app.js
-              : path === "/dist/app.pak"
-                ? app.pak
-                : webHostFile(path.slice(1));
+              : path === "/dist/app.js"
+                ? app.js
+                : path === "/dist/app.pak"
+                  ? app.pak
+                  : webHostFile(path.slice(1));
       if (path === "/ws" || !existsSync(file))
         return new Response("not found", { status: 404 });
       return new Response(Bun.file(file), {
