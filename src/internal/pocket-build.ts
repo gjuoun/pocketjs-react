@@ -67,6 +67,21 @@ export const WEB_PAGE_DIR = existsSync(FRAMEWORK_ROOT + "programs/web/app-instan
   ? FRAMEWORK_ROOT + "programs/web/"
   : WEB_HOST_DIR;
 
+/**
+ * Directories a browser host page is served from, in lookup order: the page's own assets (upstream
+ * programs/web, or the npm package's hosts/web), the binding directory (the wasm), then the core root
+ * (the binding imports its modules from the root, e.g. /engine/guest-web/).
+ */
+export const WEB_HOST_SEARCH: readonly string[] = [WEB_PAGE_DIR, WEB_HOST_DIR, FRAMEWORK_ROOT];
+
+/** The file a host-page URL path (relative, no leading slash) resolves to; the first existing candidate wins. */
+export function webHostFile(rel: string): string {
+  return (
+    WEB_HOST_SEARCH.map((dir) => dir + rel).find((file) => existsSync(file)) ??
+    WEB_PAGE_DIR + rel
+  );
+}
+
 const host = (await import(
   pathToFileURL(WEB_HOST_DIR + "wasm-ops.js").href
 )) as typeof WebOps;
