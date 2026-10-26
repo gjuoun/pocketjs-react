@@ -11,3 +11,10 @@ export * as Avatar from "./avatar.tsx";
 export * as AspectRatio from "./aspect-ratio.tsx";
 export * as Separator from "./separator.tsx";
 export * as Slot from "./slot.tsx";
+// Batch 2 members: one block, kept at the end of the file.
+export * as Popover from "./popover.tsx";
+export * as Tooltip from "./tooltip.tsx";
+export * as HoverCard from "./hover-card.tsx";
+export * as AlertDialog from "./alert-dialog.tsx";
+export * as ContextMenu from "./context-menu.tsx";
+export * as Menubar from "./menubar.tsx";

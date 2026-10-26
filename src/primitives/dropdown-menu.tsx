@@ -3,7 +3,7 @@
 // and is placed beside its trigger (C6). Item runs onSelect and closes the menu unless the handler
 // calls preventDefault(). Sub-menus (C9) open by RIGHT or CIRCLE and close one level per CROSS or LEFT.
 
-import { pushFocusController } from "@pocketjs/framework/input";
+import { type FocusDirection, pushFocusController } from "@pocketjs/framework/input";
 import { createContext, type ReactNode, useContext, useEffect, useRef } from "react";
 import { Text, View } from "../elements.ts";
 import { cn } from "../style/cn.ts";
@@ -15,14 +15,14 @@ import { ownItem, ownSurface, ownText } from "./surface.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
 import { addFramePump } from "../renderer/mount.ts";
 
-interface MenuContextValue {
+export interface MenuContextValue {
   open: boolean;
   setOpen: (open: boolean) => void;
   /** The trigger's box, measured as the menu opens (C6). Cleared on close. */
   anchor: { current: Box | null };
 }
 
-const MenuContext = createContext<MenuContextValue | null>(null);
+export const MenuContext = createContext<MenuContextValue | null>(null);
 
 function useMenu(part: string): MenuContextValue {
   const ctx = useContext(MenuContext);
@@ -124,18 +124,27 @@ export interface ContentProps {
   forceMount?: true;
 }
 
+/**
+ * A menu's d-pad hook for its panel's LEFT and RIGHT (Menubar moves to the neighbouring menu). Unset for
+ * every other menu, so their panels register no controller.
+ */
+export const MenuDirectionContext = createContext<((direction: FocusDirection) => boolean) | undefined>(undefined);
+
 /** The menu panel: focus is trapped and CROSS closes it (ModalLayer). */
 export function Content(props: ContentProps) {
   const ctx = useMenu("DropdownMenu.Content");
+  const onDirection = useContext(MenuDirectionContext);
   return (
     <ModalLayer
       open={ctx.open}
       onClose={() => ctx.setOpen(false)}
+      onDirection={onDirection}
       anchoring={{
         anchor: ctx.anchor.current,
         side: props.side,
         align: props.align,
         sideOffset: props.sideOffset,
+        alignOffset: props.alignOffset,
         collisionPadding: props.collisionPadding,
       }}
       panelClassName={cn(
@@ -440,6 +449,7 @@ export function SubContent(props: SubContentProps) {
         side: props.side ?? "right",
         align: props.align,
         sideOffset: props.sideOffset,
+        alignOffset: props.alignOffset,
         collisionPadding: props.collisionPadding,
       }}
       panelClassName={cn(

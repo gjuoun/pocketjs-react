@@ -119,11 +119,20 @@ export interface ContentProps {
 
 /** The centered panel; it traps focus and closes on CROSS (ModalLayer). */
 export function Content(props: ContentProps) {
+  return <ModalContent {...props} />;
+}
+
+/**
+ * The modal panel behind Dialog.Content and AlertDialog.Content. `dismissOutside` false (AlertDialog) keeps
+ * an outside tap from closing it; the tap is still swallowed.
+ */
+export function ModalContent(props: ContentProps & { dismissOutside?: boolean }) {
   const ctx = useDialogContext("Dialog.Content");
   return (
     <ModalLayer
       open={ctx.open}
       onClose={() => ctx.setOpen(false)}
+      dismissOutside={props.dismissOutside}
       panelClassName={cn(
         "flex-col gap-2 p-3 rounded-xl bg-slate-800 text-white w-[300px]",
         ownSurface(props.className),

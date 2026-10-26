@@ -1,41 +1,25 @@
 // <ModalLayer>: the modal core shared by <Dialog> and the native dialog/menu/select primitives.
 // While open it portals a full-screen shell into the overlay layer above the app, traps d-pad
 // focus (FocusScope), and closes on CROSS (back) or a tap outside its panel (C6). The shell and panel
-// classes are the caller's; the trap and the close are not.
+// classes are the caller's; the trap and the close are not. dismissOutside=false (AlertDialog) keeps a
+// tap outside from closing; the tap is still swallowed.
 //
-// Anchoring (C6): when the caller passes a trigger box, the panel is placed beside it. It first
-// mounts at the top-left corner, invisible (opacity 0.01), so the core lays it out and its box can
-// be measured (a hit test, no paint). Then placePopper picks the spot, and the panel is shown there.
+// Anchoring (C6): when the caller passes a trigger box, the panel is placed beside it (usePlacedStyle).
 // Without an anchor the panel stays centred.
 
-import { getOps, hostViewport } from "@pocketjs/framework/host";
 import { BTN, type FocusDirection, pushFocusController } from "@pocketjs/framework/input";
-import { type ReactNode, type Ref, useEffect, useRef, useState } from "react";
+import { type ReactNode, type Ref, useEffect, useRef } from "react";
 import { View } from "../elements.ts";
 import { FocusScope } from "../focus/FocusScope.tsx";
 import { useButton } from "../input/buttons.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
 import { reconciler } from "../renderer/host-config.ts";
-import { addFramePump, getOverlayLayer } from "../renderer/mount.ts";
+import { getOverlayLayer } from "../renderer/mount.ts";
 import { cn } from "../style/cn.ts";
-import {
-  type Align,
-  type Box,
-  measureBox,
-  type Placement,
-  placePopper,
-  type Side,
-} from "./anchor.ts";
+import { type Anchoring, usePlacedStyle } from "./anchored.tsx";
 import { pushLayer } from "./layer-stack.ts";
 
-/** Where a panel goes: the trigger's box (null: centred) and the placement options. */
-export interface Anchoring {
-  anchor: Box | null;
-  side?: Side;
-  align?: Align;
-  sideOffset?: number;
-  collisionPadding?: number;
-}
+export type { Anchoring } from "./anchored.tsx";
 
 export interface ModalLayerProps {
   open: boolean;
@@ -46,6 +30,8 @@ export interface ModalLayerProps {
   panelClassName?: string;
   /** Trigger box and placement: the panel anchors beside it, else it is centred. */
   anchoring?: Anchoring;
+  /** A tap outside the panel closes the layer (default). false: the tap is swallowed and nothing closes. */
+  dismissOutside?: boolean;
   /** The panel's own d-pad hook (C9 sub-menus): return true to take the direction, false to fall through. */
   onDirection?: (direction: FocusDirection) => boolean;
   children?: ReactNode;
@@ -64,6 +50,7 @@ export function ModalLayer(props: ModalLayerProps) {
       <Panel
         className={props.panelClassName}
         anchoring={props.anchoring}
+        dismissOutside={props.dismissOutside}
         onClose={props.onClose}
         onDirection={props.onDirection}
       >
@@ -79,6 +66,7 @@ export function ModalLayer(props: ModalLayerProps) {
 function Panel(props: {
   className?: string;
   anchoring?: Anchoring;
+  dismissOutside?: boolean;
   onClose: () => void;
   onDirection?: (direction: FocusDirection) => boolean;
   children?: ReactNode;
@@ -98,46 +86,18 @@ function Panel(props: {
   // The layer registers once per open; the close it calls is always the latest prop.
   const onClose = useRef(props.onClose);
   onClose.current = props.onClose;
+  const dismissOutside = props.dismissOutside;
   useEffect(
     () =>
-      pushLayer({ panel: () => node.current, close: () => onClose.current() }),
+      pushLayer({
+        panel: () => node.current,
+        close: () => onClose.current(),
+        dismissOutside,
+      }),
     [],
   );
 
-  const [placed, setPlaced] = useState<Placement | null>(null);
-  const anchor = props.anchoring?.anchor ?? null;
-  const side = props.anchoring?.side;
-  const align = props.anchoring?.align;
-  const sideOffset = props.anchoring?.sideOffset;
-  const collisionPadding = props.anchoring?.collisionPadding;
-
-  useEffect(() => {
-    if (!anchor || placed) return;
-    return addFramePump(() => {
-      const current = node.current;
-      const box = current ? measureBox(current) : null;
-      const viewport = hostViewport(getOps());
-      if (!box || !viewport) return; // not laid out yet: try the next frame
-      setPlaced(
-        placePopper({
-          anchor,
-          panel: { w: box.w, h: box.h },
-          viewport,
-          side,
-          align,
-          sideOffset,
-          collisionPadding,
-        }),
-      );
-    });
-  }, [anchor, placed, side, align, sideOffset, collisionPadding]);
-
-  const style =
-    anchor === null
-      ? undefined
-      : placed
-        ? { position: "absolute" as const, left: placed.x, top: placed.y }
-        : { position: "absolute" as const, left: 0, top: 0, opacity: 0.01 };
+  const style = usePlacedStyle(node, props.anchoring);
   return (
     <FocusScope
       className={props.className}

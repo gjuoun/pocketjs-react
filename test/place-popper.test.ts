@@ -131,3 +131,27 @@ test("collisionPadding keeps the panel off the viewport edge", () => {
     }).x,
   ).toBe(8);
 });
+
+test("alignOffset shifts a start-aligned panel along the cross axis", () => {
+  expect(
+    placePopper({
+      anchor: at(40, 60),
+      panel: PANEL,
+      viewport: VP,
+      align: "start",
+      alignOffset: -4,
+    }).x,
+  ).toBe(36);
+});
+
+test("alignOffset moves an end-aligned panel inward", () => {
+  expect(
+    placePopper({
+      anchor: at(300, 60),
+      panel: PANEL,
+      viewport: VP,
+      align: "end",
+      alignOffset: 4,
+    }).x,
+  ).toBe(176);
+});

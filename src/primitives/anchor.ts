@@ -133,6 +133,8 @@ export interface PlaceInput {
   side?: Side;
   align?: Align;
   sideOffset?: number;
+  /** Shifts the panel along the cross axis, inward for start and end (Radix alignOffset). */
+  alignOffset?: number;
   collisionPadding?: number;
 }
 
@@ -159,6 +161,7 @@ export function placePopper(input: PlaceInput): Placement {
   const requested = input.side ?? "bottom";
   const align = input.align ?? "start";
   const offset = input.sideOffset ?? 0;
+  const shift = input.alignOffset ?? 0;
   const pad = input.collisionPadding ?? 0;
 
   const room = (side: Side): number => {
@@ -188,8 +191,8 @@ export function placePopper(input: PlaceInput): Placement {
     panelSize: number,
   ): number => {
     if (align === "center") return anchorStart + anchorSize / 2 - panelSize / 2;
-    if (align === "end") return anchorStart + anchorSize - panelSize;
-    return anchorStart;
+    if (align === "end") return anchorStart + anchorSize - panelSize - shift;
+    return anchorStart + shift;
   };
   let x: number;
   let y: number;

@@ -18,7 +18,10 @@
     "./test/harness": "./test/harness.ts",
     "./pak-cook": "./src/pak-cook.ts",
     "./radix": "./src/primitives/radix.ts",
-    "./glyph-icons": "./src/primitives/glyph-icons.tsx"
+    "./glyph-icons": "./src/primitives/glyph-icons.tsx",
+    "./vaul": "./src/primitives/vaul.ts",
+    "./sonner": "./src/primitives/sonner.tsx",
+    "./next-themes": "./src/primitives/next-themes.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

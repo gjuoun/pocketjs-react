@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { cn } from "pocketjs-react"
-import { Drawer as DrawerPrimitive } from "vaul"
+import { Drawer as DrawerPrimitive } from "pocketjs-react/vaul"
 
 function Drawer({
   ...props

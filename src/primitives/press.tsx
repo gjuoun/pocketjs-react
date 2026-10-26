@@ -29,6 +29,16 @@ interface PressableProps {
   children?: ReactNode;
 }
 
+/** Hands one node to every ref it is given: the child's own ref and the primitive's. */
+function mergeRefs(...refs: (Ref<NodeMirror> | undefined)[]): (node: NodeMirror | null) => void {
+  return (node) => {
+    for (const ref of refs) {
+      if (typeof ref === "function") ref(node);
+      else if (ref) (ref as { current: NodeMirror | null }).current = node;
+    }
+  };
+}
+
 interface ChildProps {
   className?: string;
   onClick?: () => void;
@@ -36,8 +46,10 @@ interface ChildProps {
 
 export function Pressable(props: PressableProps) {
   if (props.asChild && isValidElement(props.children)) {
-    const child = props.children as ReactElement<ChildProps>;
+    const child = props.children as ReactElement<ChildProps & { ref?: Ref<NodeMirror> }>;
     return cloneElement(child, {
+      // The node reaches the caller through nodeRef too (a Popover or Tooltip Trigger reads its box).
+      ...(props.nodeRef ? { ref: mergeRefs(child.props.ref, props.nodeRef) } : {}),
       className: cn(child.props.className, props.className),
       onClick: () => {
         child.props.onClick?.();

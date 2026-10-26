@@ -7,8 +7,8 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "pocketjs-react/glyph-icons"
-import { useTheme } from "next-themes"
-import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { useTheme } from "pocketjs-react/next-themes"
+import { Toaster as Sonner, type ToasterProps } from "pocketjs-react/sonner"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()

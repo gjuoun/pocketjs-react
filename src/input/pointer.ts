@@ -67,6 +67,34 @@ function drain(): PointerEvent[] {
   return events;
 }
 
+/** Web hover subscribers: called with the pointer point on a move, and with nulls when it leaves. */
+type MoveListener = (x: number | null, y: number | null) => void;
+const moveListeners: MoveListener[] = [];
+
+export function onPointerMove(fn: MoveListener): () => void {
+  moveListeners.push(fn);
+  return () => {
+    const i = moveListeners.indexOf(fn);
+    if (i >= 0) moveListeners.splice(i, 1);
+  };
+}
+
+/** Frames a press must be held on a registered node before its long-press handler runs (about 500 ms). */
+export const LONG_PRESS_FRAMES = 30;
+
+const longPresses = new Map<NodeMirror, (x: number, y: number) => void>();
+
+/**
+ * A long press on `node` (held LONG_PRESS_FRAMES frames without a drift off it) calls `fn` at the press
+ * point, and the release presses nothing (ContextMenu's open gesture). Returns the teardown.
+ */
+export function registerLongPress(node: NodeMirror, fn: (x: number, y: number) => void): () => void {
+  longPresses.set(node, fn);
+  return () => {
+    if (longPresses.get(node) === fn) longPresses.delete(node);
+  };
+}
+
 let pressing = false;
 
 /** True while the pointer pump presses a node (a tap or click), not a CIRCLE press. */
@@ -96,6 +124,10 @@ export function installPointer(): () => void {
   let armedFocused = false;
   // A press that began outside the top layer's panel: its release outside closes that layer.
   let armedOutside: Layer | null = null;
+  // The held press: frames it has been down, and where it went down (a long press reports that point).
+  let isDown = false;
+  let held = 0;
+  let downAt = { x: 0, y: 0 };
   // A focus move the pump did not make (a d-pad move) clears the hover highlight.
   let seenFocus: unknown = null;
   return addFramePump(() => {
@@ -108,10 +140,14 @@ export function installPointer(): () => void {
       // Hover never touches `armed`, focus or presses: it only lights the row overlay.
       if (event.leave) {
         hoverClear();
+        for (const fn of [...moveListeners]) fn(null, null);
         continue;
       }
       if (event.move) {
         hoverMove(hitFocusable(event.x, event.y), armed !== null);
+        // A held press that drifts off its node is no longer a long press on it.
+        if (armed !== null && hitFocusable(event.x, event.y) !== armed) armed = null;
+        for (const fn of [...moveListeners]) fn(event.x, event.y);
         continue;
       }
       if (event.down) {
@@ -119,6 +155,9 @@ export function installPointer(): () => void {
         const top = topLayer();
         armed = null;
         armedFocused = false;
+        isDown = true;
+        held = 0;
+        downAt = { x: event.x, y: event.y };
         armedOutside = top && outsideLayer(top, event.x, event.y) ? top : null;
         if (armedOutside) continue;
         const target = hitFocusable(event.x, event.y);
@@ -128,9 +167,14 @@ export function installPointer(): () => void {
         // Batch A (R-L): no focusable under the tap, but a label is: its control takes the focus.
         else focusLabelControlAt(event.x, event.y);
       } else if (armedOutside) {
+        isDown = false;
         const layer = armedOutside;
         armedOutside = null;
-        if (topLayer() === layer && outsideLayer(layer, event.x, event.y))
+        if (
+          layer.dismissOutside !== false &&
+          topLayer() === layer &&
+          outsideLayer(layer, event.x, event.y)
+        )
           layer.close();
       } else {
         const target = hitFocusable(event.x, event.y);
@@ -150,6 +194,18 @@ export function installPointer(): () => void {
         }
         armed = null;
         armedFocused = false;
+        isDown = false;
+      }
+    }
+    // A press still held on its node counts toward the long press; the frame it reaches the count, it fires.
+    if (armed !== null && isDown) {
+      held++;
+      if (held === LONG_PRESS_FRAMES) {
+        const fn = longPresses.get(armed as NodeMirror);
+        if (fn) {
+          armed = null;
+          fn(downAt.x, downAt.y);
+        }
       }
     }
   });
