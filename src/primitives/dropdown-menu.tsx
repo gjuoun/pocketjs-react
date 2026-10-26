@@ -15,14 +15,14 @@ import { ownItem, ownSurface, ownText } from "./surface.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
 import { addFramePump } from "../renderer/mount.ts";
 
-interface MenuContextValue {
+export interface MenuContextValue {
   open: boolean;
   setOpen: (open: boolean) => void;
   /** The trigger's box, measured as the menu opens (C6). Cleared on close. */
   anchor: { current: Box | null };
 }
 
-const MenuContext = createContext<MenuContextValue | null>(null);
+export const MenuContext = createContext<MenuContextValue | null>(null);
 
 function useMenu(part: string): MenuContextValue {
   const ctx = useContext(MenuContext);
@@ -136,6 +136,7 @@ export function Content(props: ContentProps) {
         side: props.side,
         align: props.align,
         sideOffset: props.sideOffset,
+        alignOffset: props.alignOffset,
         collisionPadding: props.collisionPadding,
       }}
       panelClassName={cn(
@@ -440,6 +441,7 @@ export function SubContent(props: SubContentProps) {
         side: props.side ?? "right",
         align: props.align,
         sideOffset: props.sideOffset,
+        alignOffset: props.alignOffset,
         collisionPadding: props.collisionPadding,
       }}
       panelClassName={cn(

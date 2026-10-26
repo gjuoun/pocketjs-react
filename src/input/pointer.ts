@@ -130,7 +130,11 @@ export function installPointer(): () => void {
       } else if (armedOutside) {
         const layer = armedOutside;
         armedOutside = null;
-        if (topLayer() === layer && outsideLayer(layer, event.x, event.y))
+        if (
+          layer.dismissOutside !== false &&
+          topLayer() === layer &&
+          outsideLayer(layer, event.x, event.y)
+        )
           layer.close();
       } else {
         const target = hitFocusable(event.x, event.y);
