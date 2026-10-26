@@ -22,3 +22,5 @@ export * as Menubar from "./menubar.tsx";
 export * as Checkbox from "./checkbox.tsx";
 export * as Switch from "./switch.tsx";
 export * as RadioGroup from "./radio-group.tsx";
+export * as Toggle from "./toggle.tsx";
+export * as ToggleGroup from "./toggle-group.tsx";
