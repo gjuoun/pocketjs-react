@@ -18,6 +18,7 @@
 //   R5  a literal that maps to nothing stays as "" (cn("", className) is harmless)
 //   R6  the radix-ui import edge -> pocketjs-react/radix (native Dialog/DropdownMenu/Select, C5)
 //   R7  the lucide-react import edge -> pocketjs-react/glyph-icons (text glyph stubs until C7, C5)
+//   R8  the vaul, sonner and next-themes import edges -> pocketjs-react/vaul, /sonner, /next-themes (batch 2)
 //
 // Only string spans are rewritten - the rest of the file stays byte-identical, which keeps the
 // diff reviewable and makes idempotency checkable. Regexes are not used on class strings; every
@@ -124,6 +125,10 @@ const COMPARISON_OPS = new Set(["===", "!==", "==", "!=", "<", ">", "<=", ">=", 
 const IMPORT_EDGE: Record<string, string> = {
   "radix-ui": "pocketjs-react/radix",
   "lucide-react": "pocketjs-react/glyph-icons",
+  // R8: the overlay packages that render through react-dom have a native shape in PocketJS (batch 2).
+  vaul: "pocketjs-react/vaul",
+  sonner: "pocketjs-react/sonner",
+  "next-themes": "pocketjs-react/next-themes",
 };
 
 type Node = Record<string, any>;
