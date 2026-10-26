@@ -70,7 +70,7 @@ export function clipAxes(cls: string): ClipAxes {
   if (has("overflow-y-hidden")) out.clipY = true;
   if (has("overflow-auto") || has("overflow-scroll")) { out.scrollX = true; out.scrollY = true; }
   if (has("overflow-x-auto") || has("overflow-x-scroll")) out.scrollX = true;
-  if (has("overflow-y-auto") || has("overflow-y-scroll")) out.scrollY = true;
+  if (has("overflow-y-auto") || has("overflow-y-scroll")) { out.scrollY = true; out.scrollX = true; }
   return out;
 }
 

@@ -12,11 +12,16 @@ import { build } from "../../build.ts";
 
 export const ROOT = resolve(import.meta.dir, "../../..");
 export const OUT = join(ROOT, "dist/qa/screens");
-export type Target = { kind: "section"; name: string } | { kind: "mutant"; name: string };
+export type Target =
+  | { kind: "section"; name: string }
+  | { kind: "mutant"; name: string }
+  | { kind: "fixture"; name: string };
 export const targetId = (t: Target): string => t.kind + "-" + t.name;
 
 /** The generated entry: the gallery Frame around a section body, or around a mutant body. */
 function entrySource(t: Target): string {
+  if (t.kind === "fixture")
+    return 'import Screen from "' + ROOT + '/test/fixtures/acceptance-defects/' + t.name + '.tsx";\nexport default Screen;\n';
   const head = 'import { View } from "pocketjs-react";\nimport { Frame } from "' + ROOT + '/test/fixtures/shadcn-gallery/frame.tsx";\n';
   if (t.kind === "section")
     return (
