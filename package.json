@@ -23,7 +23,8 @@
     "./sonner": "./src/primitives/sonner.tsx",
     "./next-themes": "./src/primitives/next-themes.tsx",
     "./cmdk": "./src/primitives/cmdk.tsx",
-    "./react-resizable-panels": "./src/primitives/react-resizable-panels.tsx"
+    "./react-resizable-panels": "./src/primitives/react-resizable-panels.tsx",
+    "./react-hook-form": "./src/primitives/react-hook-form.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

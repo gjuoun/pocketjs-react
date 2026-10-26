@@ -149,6 +149,7 @@ const IMPORT_EDGE: Record<string, string> = {
   // R9 (batch 4): the npm-backed modules are native shims, never the packages.
   cmdk: "pocketjs-react/cmdk",
   "react-resizable-panels": "pocketjs-react/react-resizable-panels",
+  "react-hook-form": "pocketjs-react/react-hook-form",
 };
 
 type Node = Record<string, any>;
