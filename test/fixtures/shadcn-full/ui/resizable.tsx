@@ -35,7 +35,7 @@ function ResizableHandle({
     <ResizablePrimitive.Separator
       data-slot="resizable-handle"
       className={cn(
-        "relative flex items-center justify-center bg-slate-200",
+        "relative flex w-[1px] items-center justify-center bg-slate-200",
         className
       )}
       {...props}

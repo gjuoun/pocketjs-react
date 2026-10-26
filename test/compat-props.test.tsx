@@ -28,7 +28,6 @@ test("data-*/aria-*/DOM attrs drop and count; the element still mounts", async (
   expect(compatStats().droppedAttrs).toEqual({
     "data-slot": 1,
     "aria-label": 1,
-    tabIndex: 1,
     role: 1,
   });
 });

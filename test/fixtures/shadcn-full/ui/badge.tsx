@@ -1,6 +1,7 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "pocketjs-react"
+import { Slot } from "pocketjs-react/radix"
 
 const badgeVariants = cva(
   "flex shrink-0 items-center justify-center gap-1 overflow-hidden rounded-[10px] border border-transparent px-2 py-0.5 text-xs font-bold transition-colors aria-invalid:border-red-600",
@@ -27,10 +28,11 @@ const badgeVariants = cva(
 function Badge({
   className,
   variant = "default",
+  asChild = false,
   ...props
 }: React.ComponentProps<"span"> &
-  VariantProps<typeof badgeVariants>) {
-  const Comp = "span"
+  VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot.Root : "span"
 
   return (
     <Comp

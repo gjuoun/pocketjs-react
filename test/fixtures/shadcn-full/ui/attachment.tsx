@@ -1,6 +1,7 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "pocketjs-react"
+import { Slot } from "pocketjs-react/radix"
 
 import { Button } from "./button.tsx"
 
@@ -159,10 +160,13 @@ function AttachmentAction({
 
 function AttachmentTrigger({
   className,
+  asChild = false,
   type,
   ...props
-}: React.ComponentProps<"button">) {
-  const Comp = "button"
+}: React.ComponentProps<"button"> & {
+  asChild?: boolean
+}) {
+  const Comp = asChild ? Slot.Root : "button"
 
   return (
     <Comp

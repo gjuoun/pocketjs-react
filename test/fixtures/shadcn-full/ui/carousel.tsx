@@ -185,7 +185,7 @@ function CarouselPrevious({
       variant={variant}
       size={size}
       className={cn(
-        "absolute w-8 h-8 rounded-[8px]",
+        "absolute w-8 h-8 rounded-[16px]",
         orientation === "horizontal"
           ? "top-1"
           : "left-1 rotate-90",
@@ -215,7 +215,7 @@ function CarouselNext({
       variant={variant}
       size={size}
       className={cn(
-        "absolute w-8 h-8 rounded-[8px]",
+        "absolute w-8 h-8 rounded-[16px]",
         orientation === "horizontal"
           ? "top-1"
           : "left-1 rotate-90",

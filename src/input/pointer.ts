@@ -95,6 +95,19 @@ export function registerLongPress(node: NodeMirror, fn: (x: number, y: number) =
   };
 }
 
+/** A held drag on a registered node: `fn` gets the press point and every held point after it ("move"), and the
+ *  release ("done"). A drag press presses nothing on release. */
+export type DragListener = (x: number, y: number, phase: "move" | "done") => void;
+const drags = new Map<NodeMirror, DragListener>();
+
+/** Register a held-drag listener on a node (Slider's track). Returns the teardown. */
+export function registerDrag(node: NodeMirror, fn: DragListener): () => void {
+  drags.set(node, fn);
+  return () => {
+    if (drags.get(node) === fn) drags.delete(node);
+  };
+}
+
 let pressing = false;
 
 /** True while the pointer pump presses a node (a tap or click), not a CIRCLE press. */
@@ -130,6 +143,8 @@ export function installPointer(): () => void {
   let downAt = { x: 0, y: 0 };
   // A focus move the pump did not make (a d-pad move) clears the hover highlight.
   let seenFocus: unknown = null;
+  // A held drag: the listener of the node the press began on, until the release.
+  let dragging: DragListener | null = null;
   return addFramePump(() => {
     const focus = getFocused();
     if (focus !== seenFocus) {
@@ -137,6 +152,20 @@ export function installPointer(): () => void {
       hoverClear();
     }
     for (const event of drain()) {
+      // A held drag: while the press is down every point is a move; the release ends the drag and presses nothing.
+      if (dragging !== null) {
+        if (event.down && !event.leave) {
+          dragging(event.x, event.y, "move");
+          continue;
+        }
+        const done = dragging;
+        dragging = null;
+        isDown = false;
+        armed = null;
+        armedFocused = false;
+        done(event.x, event.y, "done");
+        continue;
+      }
       // Hover never touches `armed`, focus or presses: it only lights the row overlay.
       if (event.leave) {
         hoverClear();
@@ -166,6 +195,13 @@ export function installPointer(): () => void {
         if (target) focusNode(target);
         // Batch A (R-L): no focusable under the tap, but a label is: its control takes the focus.
         else focusLabelControlAt(event.x, event.y);
+        // A registered drag starts here: its first point is the press point, and nothing is pressed on release.
+        const drag = target ? drags.get(target) : undefined;
+        if (drag) {
+          armed = null;
+          dragging = drag;
+          drag(event.x, event.y, "move");
+        }
       } else if (armedOutside) {
         isDown = false;
         const layer = armedOutside;

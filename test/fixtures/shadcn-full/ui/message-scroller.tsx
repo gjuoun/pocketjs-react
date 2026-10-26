@@ -26,7 +26,7 @@ function MessageScroller({
     <MessageScrollerPrimitive.Root
       data-slot="message-scroller"
       className={cn(
-        "relative flex min-h-0 flex-col overflow-hidden",
+        "relative flex w-full h-full min-h-0 flex-col overflow-hidden",
         className
       )}
       {...props}
@@ -42,7 +42,7 @@ function MessageScrollerViewport({
     <MessageScrollerPrimitive.Viewport
       data-slot="message-scroller-viewport"
       className={cn(
-        "min-h-0 min-w-0",
+        "w-full h-full min-h-0 min-w-0",
         className
       )}
       {...props}

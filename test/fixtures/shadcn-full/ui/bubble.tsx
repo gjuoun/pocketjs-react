@@ -1,6 +1,7 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "pocketjs-react"
+import { Slot } from "pocketjs-react/radix"
 
 function BubbleGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
@@ -60,10 +61,13 @@ function Bubble({
 }
 
 function BubbleContent({
+  asChild = false,
   className,
   ...props
-}: React.ComponentProps<"div">) {
-  const Comp = "div"
+}: React.ComponentProps<"div"> & {
+  asChild?: boolean
+}) {
+  const Comp = asChild ? Slot.Root : "div"
 
   return (
     <Comp

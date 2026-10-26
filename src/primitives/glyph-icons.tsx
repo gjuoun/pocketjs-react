@@ -4,6 +4,7 @@
 // re-exported below. Each draws its baked texture variant (tools/icon-bake.ts, pak key ui:img.icon.*).
 
 import { GlyphIcon, type GlyphProps } from "./glyph-icon.tsx";
+import { MoreHorizontalIcon } from "./glyph-icons.gen.tsx";
 
 export { GlyphIcon, type GlyphIconProps, type GlyphProps } from "./glyph-icon.tsx";
 
@@ -24,6 +25,14 @@ export function ChevronUpIcon(props: GlyphProps) {
 }
 export function ChevronRightIcon(props: GlyphProps) {
   return <GlyphIcon {...props} name="chevron-right" px={16} char=">" />;
+}
+
+// lucide's bare names (codemod R7): the vendored breadcrumb imports these, not the *Icon forms.
+export function ChevronRight(props: GlyphProps) {
+  return <ChevronRightIcon {...props} />;
+}
+export function MoreHorizontal(props: GlyphProps) {
+  return <MoreHorizontalIcon {...props} />;
 }
 
 export * from "./glyph-icons.gen.tsx";

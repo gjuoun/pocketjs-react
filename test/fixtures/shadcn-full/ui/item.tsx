@@ -1,6 +1,7 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "pocketjs-react"
+import { Slot } from "pocketjs-react/radix"
 
 import { Separator } from "./separator.tsx"
 
@@ -54,10 +55,11 @@ function Item({
   className,
   variant = "default",
   size = "default",
+  asChild = false,
   ...props
 }: React.ComponentProps<"div"> &
-  VariantProps<typeof itemVariants>) {
-  const Comp = "div"
+  VariantProps<typeof itemVariants> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot.Root : "div"
   return (
     <Comp
       data-slot="item"

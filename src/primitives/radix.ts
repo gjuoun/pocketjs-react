@@ -18,3 +18,14 @@ export * as HoverCard from "./hover-card.tsx";
 export * as AlertDialog from "./alert-dialog.tsx";
 export * as ContextMenu from "./context-menu.tsx";
 export * as Menubar from "./menubar.tsx";
+// Batch 3 members: one block, kept at the end of the file.
+export * as Checkbox from "./checkbox.tsx";
+export * as Switch from "./switch.tsx";
+export * as RadioGroup from "./radio-group.tsx";
+export * as Toggle from "./toggle.tsx";
+export * as ToggleGroup from "./toggle-group.tsx";
+export * as Accordion from "./accordion.tsx";
+export * as Collapsible from "./collapsible.tsx";
+export * as Tabs from "./tabs.tsx";
+export * as Slider from "./slider.tsx";
+export * as Direction from "./direction.tsx";

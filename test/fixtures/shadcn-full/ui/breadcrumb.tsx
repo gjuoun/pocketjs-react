@@ -1,6 +1,7 @@
 import * as React from "react"
 import { cn } from "pocketjs-react"
 import { ChevronRight, MoreHorizontal } from "pocketjs-react/glyph-icons"
+import { Slot } from "pocketjs-react/radix"
 
 function Breadcrumb({ ...props }: React.ComponentProps<"nav">) {
   return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />
@@ -30,10 +31,13 @@ function BreadcrumbItem({ className, ...props }: React.ComponentProps<"li">) {
 }
 
 function BreadcrumbLink({
+  asChild,
   className,
   ...props
-}: React.ComponentProps<"a">) {
-  const Comp = "a"
+}: React.ComponentProps<"a"> & {
+  asChild?: boolean
+}) {
+  const Comp = asChild ? Slot.Root : "a"
 
   return (
     <Comp
