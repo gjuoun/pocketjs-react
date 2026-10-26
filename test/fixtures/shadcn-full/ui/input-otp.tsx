@@ -58,7 +58,7 @@ function InputOTPSlot({
       {char}
       {hasFakeCaret && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="h-4 duration-1000" />
+          <div className="h-4 w-[1px] duration-1000" />
         </div>
       )}
     </div>

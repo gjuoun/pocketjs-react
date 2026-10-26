@@ -17,7 +17,7 @@ function ScrollArea({
     >
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
-        className="transition-colors"
+        className="w-full h-full transition-colors"
       >
         {children}
       </ScrollAreaPrimitive.Viewport>

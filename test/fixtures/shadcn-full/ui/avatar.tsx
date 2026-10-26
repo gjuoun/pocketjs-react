@@ -16,7 +16,7 @@ function Avatar({
       data-slot="avatar"
       data-size={size}
       className={cn(
-        "relative flex w-8 h-8 shrink-0 overflow-hidden rounded-[8px] data-[size=lg]:w-10 h-10 data-[size=sm]:w-6 h-6",
+        "relative flex w-8 h-8 shrink-0 overflow-hidden rounded-[16px] data-[size=lg]:w-10 data-[size=lg]:h-10 data-[size=sm]:w-6 data-[size=sm]:h-6",
         className
       )}
       {...props}
@@ -31,7 +31,7 @@ function AvatarImage({
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
-      className={cn("", className)}
+      className={cn("w-full h-full", className)}
       {...props}
     />
   )
@@ -45,7 +45,7 @@ function AvatarFallback({
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
       className={cn(
-        "flex items-center justify-center rounded-[9px] bg-slate-100 text-sm text-slate-500",
+        "flex w-full h-full items-center justify-center rounded-[9px] bg-slate-100 text-sm text-slate-500",
         className
       )}
       {...props}
@@ -90,7 +90,7 @@ function AvatarGroupCount({
     <div
       data-slot="avatar-group-count"
       className={cn(
-        "relative flex w-8 h-8 shrink-0 items-center justify-center rounded-[9px] bg-slate-100 text-sm text-slate-500",
+        "relative flex w-8 h-8 shrink-0 items-center justify-center rounded-[16px] bg-slate-100 text-sm text-slate-500",
         className
       )}
       {...props}

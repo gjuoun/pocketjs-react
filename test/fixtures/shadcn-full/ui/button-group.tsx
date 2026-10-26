@@ -1,5 +1,6 @@
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "pocketjs-react"
+import { Slot } from "pocketjs-react/radix"
 
 import { Separator } from "./separator.tsx"
 
@@ -38,9 +39,12 @@ function ButtonGroup({
 
 function ButtonGroupText({
   className,
+  asChild = false,
   ...props
-}: React.ComponentProps<"div">) {
-  const Comp = "div"
+}: React.ComponentProps<"div"> & {
+  asChild?: boolean
+}) {
+  const Comp = asChild ? Slot.Root : "div"
 
   return (
     <Comp

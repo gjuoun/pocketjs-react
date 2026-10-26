@@ -1,6 +1,7 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "pocketjs-react"
+import { Slot } from "pocketjs-react/radix"
 
 const buttonVariants = cva(
   "flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-bold transition-all disabled:opacity-50 aria-invalid:border-red-600",
@@ -40,10 +41,13 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  asChild = false,
   ...props
 }: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants>) {
-  const Comp = "button"
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean
+  }) {
+  const Comp = asChild ? Slot.Root : "button"
 
   return (
     <Comp

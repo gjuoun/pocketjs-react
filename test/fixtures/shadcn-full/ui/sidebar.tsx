@@ -4,6 +4,7 @@ import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "pocketjs-react"
 import { PanelLeftIcon } from "pocketjs-react/glyph-icons"
+import { Slot } from "pocketjs-react/radix"
 
 import { useIsMobile } from "./use-mobile.ts"
 import { Button } from "./button.tsx"
@@ -394,9 +395,10 @@ function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
 
 function SidebarGroupLabel({
   className,
+  asChild = false,
   ...props
-}: React.ComponentProps<"div">) {
-  const Comp = "div"
+}: React.ComponentProps<"div"> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot.Root : "div"
 
   return (
     <Comp
@@ -414,9 +416,10 @@ function SidebarGroupLabel({
 
 function SidebarGroupAction({
   className,
+  asChild = false,
   ...props
-}: React.ComponentProps<"button">) {
-  const Comp = "button"
+}: React.ComponentProps<"button"> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot.Root : "button"
 
   return (
     <Comp
@@ -493,6 +496,7 @@ const sidebarMenuButtonVariants = cva(
 )
 
 function SidebarMenuButton({
+  asChild = false,
   isActive = false,
   variant = "default",
   size = "default",
@@ -500,11 +504,11 @@ function SidebarMenuButton({
   className,
   ...props
 }: React.ComponentProps<"button"> & {
-  
+  asChild?: boolean
   isActive?: boolean
   tooltip?: string | React.ComponentProps<typeof TooltipContent>
 } & VariantProps<typeof sidebarMenuButtonVariants>) {
-  const Comp = "button"
+  const Comp = asChild ? Slot.Root : "button"
   const { isMobile, state } = useSidebar()
 
   const button = (
@@ -543,13 +547,14 @@ function SidebarMenuButton({
 
 function SidebarMenuAction({
   className,
+  asChild = false,
   showOnHover = false,
   ...props
 }: React.ComponentProps<"button"> & {
-  
+  asChild?: boolean
   showOnHover?: boolean
 }) {
-  const Comp = "button"
+  const Comp = asChild ? Slot.Root : "button"
 
   return (
     <Comp
@@ -662,16 +667,17 @@ function SidebarMenuSubItem({
 }
 
 function SidebarMenuSubButton({
+  asChild = false,
   size = "md",
   isActive = false,
   className,
   ...props
 }: React.ComponentProps<"a"> & {
-  
+  asChild?: boolean
   size?: "sm" | "md"
   isActive?: boolean
 }) {
-  const Comp = "a"
+  const Comp = asChild ? Slot.Root : "a"
 
   return (
     <Comp

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { cn } from "pocketjs-react"
 import type { Label as LabelPrimitive } from "pocketjs-react/radix"
+import { Slot } from "pocketjs-react/radix"
 import {
   Controller,
   FormProvider,
