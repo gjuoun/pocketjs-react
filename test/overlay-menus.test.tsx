@@ -3,7 +3,7 @@
 // alignOffset -4 and sideOffset 8).
 import { afterEach, describe, expect, test } from "bun:test";
 import { BTN } from "../src/index.ts";
-import { Text, View } from "../src/elements.ts";
+import { View } from "../src/elements.ts";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -21,7 +21,6 @@ import {
 import { type Booted, bootScene, frames, hold, press, tap, textAt } from "./overlay-scene.ts";
 import type { Core } from "./harness.ts";
 
-const TXT = "text-sm text-white";
 const ROW = "w-[100px] h-[30px] bg-slate-800";
 
 let booted: Booted | undefined;

@@ -5,7 +5,7 @@
 // Parked (Risk R2): the Arrow draws nothing; skipDelay is not implemented.
 
 import { getFocused } from "@pocketjs/framework/input";
-import { createContext, type MutableRefObject, type ReactNode, useContext, useLayoutEffect, useRef, useState } from "react";
+import { createContext, type MutableRefObject, type ReactNode, useContext, useLayoutEffect, useRef } from "react";
 import { Text } from "../elements.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
 import { cn } from "../style/cn.ts";

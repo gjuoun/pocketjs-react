@@ -5,7 +5,7 @@
 // the DropdownMenu parts, unchanged.
 
 import { BTN, getFocused } from "@pocketjs/framework/input";
-import { type MutableRefObject, type ReactNode, useLayoutEffect, useRef, useContext } from "react";
+import { type ReactNode, useContext, useLayoutEffect, useRef } from "react";
 import type { NodeMirror } from "../internal/pocket.ts";
 import { type Box, measureBox } from "./anchor.ts";
 import { pointBox } from "./anchored.tsx";
