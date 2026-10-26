@@ -34,6 +34,8 @@ async function boot(): Promise<Core> {
   core = await bootCore({ pak });
   const styles = unpack(new Uint8Array(pak)).find((b) => b.key === "ui:styles")!;
   installBuildStyles({}, styles.data, built.tokens);
+  // Counters are process-wide: start from zero, so another file's intentional unknown tags cannot count here.
+  resetCompatStats();
   // Strict classMiss, the default token map: the glyph primitive's own "size-4" is mapped to w-4 h-4 (C2),
   // as in every compat mount, so nothing is dropped.
   unmount = mount(<TagsScreen />, { compat: { classMiss: "throw" } });
