@@ -26,7 +26,8 @@
     "./react-resizable-panels": "./src/primitives/react-resizable-panels.tsx",
     "./react-hook-form": "./src/primitives/react-hook-form.tsx",
     "./input-otp": "./src/primitives/input-otp.tsx",
-    "./react-day-picker": "./src/primitives/react-day-picker.tsx"
+    "./react-day-picker": "./src/primitives/react-day-picker.tsx",
+    "./embla-carousel-react": "./src/primitives/embla-carousel-react.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -152,6 +152,7 @@ const IMPORT_EDGE: Record<string, string> = {
   "react-hook-form": "pocketjs-react/react-hook-form",
   "input-otp": "pocketjs-react/input-otp",
   "react-day-picker": "pocketjs-react/react-day-picker",
+  "embla-carousel-react": "pocketjs-react/embla-carousel-react",
 };
 
 type Node = Record<string, any>;

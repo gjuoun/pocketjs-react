@@ -4,7 +4,7 @@ import * as React from "react"
 import { cn } from "pocketjs-react"
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
-} from "embla-carousel-react"
+} from "pocketjs-react/embla-carousel-react"
 import { ArrowLeft, ArrowRight } from "pocketjs-react/glyph-icons"
 
 import { Button } from "./button.tsx"
