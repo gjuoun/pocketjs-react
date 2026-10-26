@@ -1,6 +1,8 @@
 // e2e static server (node, no Bun APIs): the browser host page, the app bundle and the host
 // files, routed the way tools/web/serve.ts routes them. Serves only what dist/e2e/manifest.json names.
+// The host directories come from the manifest (WEB_HOST_SEARCH in src/internal/pocket-build.ts).
 
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { join, normalize, sep } from "node:path";
@@ -28,8 +30,11 @@ export async function start(manifest) {
     let file = routes[path];
     if (!file && path !== "/ws" && path.startsWith("/")) {
       const rel = normalize(path.slice(1));
+      // The core's host page, searched in the order prepare resolved (page assets, binding dir, core root).
       if (!rel.startsWith("..") && !rel.includes(sep + ".."))
-        file = join(manifest.hostDir, rel);
+        file = manifest.hostDirs
+          .map((dir) => join(dir, rel))
+          .find((candidate) => existsSync(candidate));
     }
     try {
       if (!file || path === "/ws") throw new Error("not found");

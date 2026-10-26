@@ -200,3 +200,44 @@ test("a Dialog stays centred: no anchor, no placement", async () => {
   expect(Math.abs(box.x - (vp.w - 300) / 2)).toBeLessThanOrEqual(1);
   expect(Math.abs(box.y + box.h / 2 - vp.h / 2)).toBeLessThanOrEqual(1);
 });
+
+// The panel mounts hidden (opacity 0.01, at the corner) because its size needs one layout pass. The
+// first frame it is drawn visibly must already be at its placed spot.
+const PANEL_FILL = "#1e293b"; // bg-slate-800, the panel's fill; the padding row below the items shows it
+
+test("the panel is first drawn visibly at its placed spot, not at the corner", async () => {
+  scene = { kind: "menu", x: 40, y: 60, sideOffset: 4 };
+  core = await bootCore({ classes: CLASSES });
+  unmount = mount(<App />);
+  core.step(0);
+  core.step(0);
+  const g = globalThis as {
+    __pocketPointer?: { x: number; y: number; down: boolean }[];
+  };
+  g.__pocketPointer ??= [];
+  const q = g.__pocketPointer;
+  q.push({ x: 40 + 50, y: 60 + 15, down: true });
+  core.step(0);
+  q.push({ x: 40 + 50, y: 60 + 15, down: false });
+  core.step(0);
+  const frames: { box: ReturnType<typeof measureBox>; visible: boolean }[] = [];
+  for (let f = 0; f < 4; f++) {
+    core.step(0);
+    core.render();
+    const box = measureBox(panelOf());
+    const visible =
+      box !== null &&
+      core.pixel(box.x + Math.floor(box.w / 2), box.y + box.h - 2) ===
+        PANEL_FILL;
+    frames.push({ box, visible });
+  }
+  const first = frames.findIndex((f) => f.visible);
+  expect(first).toBeGreaterThanOrEqual(0);
+  expect(frames[first].box).toMatchObject({ x: 40, y: 94 });
+  // No frame shows the panel anywhere else: the corner placement is never visible.
+  expect(
+    frames
+      .filter((f) => f.visible)
+      .every((f) => f.box?.x === 40 && f.box?.y === 94),
+  ).toBe(true);
+});

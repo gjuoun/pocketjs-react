@@ -1,5 +1,6 @@
-// bun run measure:web — the example on the browser WASM host (the npm package's hosts/web,
-// headless Chrome). Serves hosts/web plus the wrapped guest, plays the d-pad script through
+// bun run measure:web — the example on the browser WASM host (the selected core's web host: upstream
+// programs/web + platforms/web, or the npm package's hosts/web; headless Chrome). Serves the host page
+// plus the wrapped guest, plays the d-pad script through
 // the host's virtual buttons, prints the measurement lines and a summary over RUNS runs.
 // A profile with webPage "app-instance" runs on tools/web/reader.html instead: app-instance.js
 // with runtime glyphs, its own 60 Hz loop, buttons through window.__host.press.
@@ -9,8 +10,9 @@
 import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import {
-  FRAMEWORK_ROOT,
   HeadlessChrome,
+  WEB_PLAYGROUND,
+  webHostFile,
 } from "../../src/internal/pocket-build.ts";
 import {
   OUT,
@@ -48,13 +50,14 @@ export async function runWeb(
   const built = await profile.build();
   const shots = profile.shots ?? {};
   const guest = await wrapGuest(built.js, join(out, "web-guest.js"));
-  const HOST = FRAMEWORK_ROOT + "hosts/web/";
   const WEB = import.meta.dir + "/../web/";
   const appInstance = profile.webPage === "app-instance";
   const pressJs = (bit: number, down: boolean) =>
     appInstance
       ? "window.__host.press(" + bit + ", " + down + ")"
-      : "import('/engine.js').then(m => m.pressVirtual(" +
+      : "import('" +
+        WEB_PLAYGROUND.engine +
+        "').then(m => m.pressVirtual(" +
         bit +
         ", " +
         down +
@@ -81,10 +84,11 @@ export async function runWeb(
             },
           },
         );
-      const file = path === "/" ? "index.html" : path.slice(1);
-      if (!existsSync(HOST + file))
+      const file = path === "/" ? WEB_PLAYGROUND.page : path.slice(1);
+      const hostFile = webHostFile(file);
+      if (!existsSync(hostFile))
         return new Response("not found", { status: 404 });
-      return new Response(Bun.file(HOST + file), {
+      return new Response(Bun.file(hostFile), {
         headers: {
           "content-type":
             TYPES[file.split(".").pop() ?? ""] ?? "application/octet-stream",

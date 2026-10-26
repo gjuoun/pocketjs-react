@@ -1,6 +1,7 @@
-// C6 anchor measurement. The core has no node-rect query, so a node's border box is recovered from
-// the layout bounds hit test (op 42, hitTestBounds): a point inside the node seeds a binary search
-// per edge. Hit ids are native node ids, so 'inside the node' is a walk of its subtree.
+// C6 anchor measurement. A host that exposes HostOps.nodeRect (spec op 57) answers a node's
+// root-space border box in one call. Other hosts recover it from the layout bounds hit test (op 42,
+// hitTestBounds): a point inside the node seeds a binary search per edge. Hit ids are native node
+// ids, so 'inside the node' is a walk of its subtree.
 import { getOps, hostViewport } from "@pocketjs/framework/host";
 import { getFocused } from "@pocketjs/framework/input";
 import type { NodeMirror } from "../internal/pocket.ts";
@@ -30,14 +31,44 @@ export function hitsWithin(node: NodeMirror, x: number, y: number): boolean {
   return id !== 0 && containsId(node, id);
 }
 
+/** HostOps.nodeRect (spec op 57). Optional: the pinned 0.15.0 host types do not declare it yet. */
+interface NodeRectOps {
+  nodeRect?: (
+    id: number,
+  ) => { x: number; y: number; w: number; h: number } | null;
+}
+
 /**
- * The border box of a node in screen pixels, or null when it is not visible in the viewport. An
- * overflow clip or a higher sibling trims it: the result is the part a tap can reach. Coordinates
- * are whole pixels (the hit test is integer-addressed).
+ * The border box of a node in screen pixels, or null when it is not visible in the viewport. On a
+ * host with nodeRect the box is the untrimmed root-space rect (overflow clips and higher siblings do
+ * not apply) clamped to the viewport. Without it, the hit-test search trims the box to the part a
+ * tap can reach. Coordinates are whole pixels.
  */
 export function measureBox(node: NodeMirror): Box | null {
-  const vp = hostViewport(getOps());
+  const ops = getOps();
+  const vp = hostViewport(ops);
   if (!vp || vp.w <= 0 || vp.h <= 0) return null;
+  const nodeRect = (ops as NodeRectOps).nodeRect;
+  if (typeof nodeRect === "function")
+    return clampRect(nodeRect.call(ops, node.id), vp);
+  return searchBox(node, vp);
+}
+
+/** A root-space rect clamped to the viewport, in whole pixels; null when nothing is left on screen. */
+function clampRect(
+  rect: { x: number; y: number; w: number; h: number } | null,
+  vp: { w: number; h: number },
+): Box | null {
+  if (!rect) return null;
+  const x0 = Math.max(0, Math.round(rect.x));
+  const y0 = Math.max(0, Math.round(rect.y));
+  const x1 = Math.min(vp.w, Math.round(rect.x + rect.w));
+  const y1 = Math.min(vp.h, Math.round(rect.y + rect.h));
+  return x1 > x0 && y1 > y0 ? { x: x0, y: y0, w: x1 - x0, h: y1 - y0 } : null;
+}
+
+/** The fallback: a binary search of the layout hit test per edge (the box a tap can reach). */
+function searchBox(node: NodeMirror, vp: { w: number; h: number }): Box | null {
   const inside = (x: number, y: number): boolean =>
     x >= 0 && y >= 0 && x < vp.w && y < vp.h && hitsWithin(node, x, y);
 

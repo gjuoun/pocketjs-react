@@ -17,8 +17,8 @@ import {
   compileClasses,
   createWasmUi,
   FB_W,
-  FRAMEWORK_ROOT,
   pack,
+  WEB_WASM_PATH,
 } from "../src/internal/pocket-build.ts";
 import { loadPack } from "@pocketjs/framework/pak";
 
@@ -34,9 +34,7 @@ let wasmBytes: ArrayBuffer | undefined;
 const fontCache = new Map<number, Uint8Array>();
 
 async function wasm(): Promise<ArrayBuffer> {
-  return (wasmBytes ??= await Bun.file(
-    FRAMEWORK_ROOT + "hosts/web/pocketjs.wasm",
-  ).arrayBuffer());
+  return (wasmBytes ??= await Bun.file(WEB_WASM_PATH).arrayBuffer());
 }
 
 /**

@@ -3,7 +3,7 @@
 // the app bundle at /dist/app.{js,pak}.
 //   bun tools/web/serve.ts --js <bundle.js> --pak <bundle.pak> [--port 8140]
 import { existsSync } from "node:fs";
-import { FRAMEWORK_ROOT } from "../../src/internal/pocket-build.ts";
+import { webHostFile } from "../../src/internal/pocket-build.ts";
 
 const HERE = import.meta.dir + "/";
 const TYPES: Record<string, string> = {
@@ -22,7 +22,6 @@ export function serveReader(
   app: { js: string; pak: string },
   port = 0,
 ): ReaderServer {
-  const host = FRAMEWORK_ROOT + "hosts/web/";
   const server = Bun.serve({
     hostname: process.env.HOST ?? "127.0.0.1",
     port,
@@ -35,11 +34,11 @@ export function serveReader(
             ? HERE + "fs-shim.js"
             : path === "/text-entry-host.js"
               ? HERE + "text-entry-host.js"
-            : path === "/dist/app.js"
-              ? app.js
-              : path === "/dist/app.pak"
-                ? app.pak
-                : host + path.slice(1);
+              : path === "/dist/app.js"
+                ? app.js
+                : path === "/dist/app.pak"
+                  ? app.pak
+                  : webHostFile(path.slice(1));
       if (path === "/ws" || !existsSync(file))
         return new Response("not found", { status: 404 });
       return new Response(Bun.file(file), {

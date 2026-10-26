@@ -15,7 +15,7 @@ export const manifest = JSON.parse(
   fieldFontSlot: number;
   apps: Record<AppName, { js: string; pak: string }>;
   files: Record<string, string>;
-  hostDir: string;
+  hostDirs: string[];
 };
 export type Server = { url: string; stop(): Promise<void> };
 /** The host page serving one built app (its bundle and pak come from the manifest). */
