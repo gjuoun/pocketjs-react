@@ -25,7 +25,8 @@
     "./cmdk": "./src/primitives/cmdk.tsx",
     "./react-resizable-panels": "./src/primitives/react-resizable-panels.tsx",
     "./react-hook-form": "./src/primitives/react-hook-form.tsx",
-    "./input-otp": "./src/primitives/input-otp.tsx"
+    "./input-otp": "./src/primitives/input-otp.tsx",
+    "./react-day-picker": "./src/primitives/react-day-picker.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

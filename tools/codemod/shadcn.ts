@@ -151,6 +151,7 @@ const IMPORT_EDGE: Record<string, string> = {
   "react-resizable-panels": "pocketjs-react/react-resizable-panels",
   "react-hook-form": "pocketjs-react/react-hook-form",
   "input-otp": "pocketjs-react/input-otp",
+  "react-day-picker": "pocketjs-react/react-day-picker",
 };
 
 type Node = Record<string, any>;

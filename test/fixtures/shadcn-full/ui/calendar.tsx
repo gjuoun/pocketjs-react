@@ -11,7 +11,7 @@ import {
   DayPicker,
   getDefaultClassNames,
   type DayButton,
-} from "react-day-picker"
+} from "pocketjs-react/react-day-picker"
 
 import { Button, buttonVariants } from "./button.tsx"
 
