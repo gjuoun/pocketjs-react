@@ -27,11 +27,13 @@ import { isMapped, TAG_DEFAULTS, TEXT_ENTRY_TAGS } from "./tags.ts";
 
 const ALIAS: Record<string, string> = { onClick: "onPress" };
 
+/** Batch 3: `disabled` and `tabIndex` are wired, not dropped. disabled takes focus and the press away;
+ *  a negative tabIndex takes the node out of the d-pad order (a non-negative one keeps it in). */
+const WIRED = new Set(["disabled", "tabIndex"]);
+
 const DROP_ATTRS = new Set([
   "role",
   "type",
-  "disabled",
-  "tabIndex",
   "href",
   "alt",
   "placeholder",
@@ -211,6 +213,15 @@ export function compatProps(
     )
       continue;
     if (text && key === "onClick") continue;
+    if (WIRED.has(key)) {
+      if (count) countMappedAttr(key);
+      continue;
+    }
+    // A disabled node takes no press: its onClick is not aliased to onPress.
+    if (key === "onClick" && props.disabled) {
+      if (count) countDroppedAttr(key);
+      continue;
+    }
     // Batch 1: an option's selected prop is what makes it the one a closed native select shows.
     if (tag === "option" && key === "selected") {
       if (count) countMappedAttr("selected");
@@ -267,9 +278,13 @@ export function compatProps(
   // Focus defaults: interactive tags and any onClick/onPointerDown carrier join the d-pad
   // traversal; an explicit focusable prop always wins; plain elements stay untouched so the
   // native View/Text surface behaves exactly as before.
-  const focusable =
+  let focusable =
     props.focusable ??
     (interactive || text || "onClick" in props || "onPointerDown" in props);
+  if (props.focusable === undefined) {
+    if (props.disabled) focusable = false;
+    else if (typeof props.tabIndex === "number") focusable = props.tabIndex >= 0;
+  }
   if (focusable) {
     out.focusable = true;
     // Only DOM-mapped tags: a native View/Text keeps its own focus surface.
