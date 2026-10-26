@@ -19,6 +19,7 @@ import {
   setProp,
 } from "../internal/pocket.ts";
 import { type Box, hitsWithin, measureBox } from "../primitives/anchor.ts";
+import { hoverClaimsHighlight } from "../input/hover.ts";
 import { cssToCore } from "../style/css.ts";
 
 /** Default-core frames between re-measures of a target that measured as absent. */
@@ -44,10 +45,13 @@ export function installFocusRing(pump: (fn: () => void) => () => void): () => vo
   let box: Box | null = null;
   let missed = 0;
 
+  // Hiding keeps the node in the root and sets display none: a removed node is swept (destroyed), so
+  // it cannot come back. Only the teardown removes it.
+  const hidden = JSON.stringify(cssToCore({ display: "none" }));
   const hide = (): void => {
-    if (attached) removeNode(rootMirror, node);
-    attached = false;
-    lastStyle = "";
+    if (!attached || lastStyle === hidden) return;
+    setProp(node, "style", cssToCore({ display: "none" }) as never);
+    lastStyle = hidden;
   };
 
   const tick = (): void => {
@@ -58,6 +62,8 @@ export function installFocusRing(pump: (fn: () => void) => () => void): () => vo
       box = null;
       return hide();
     }
+    // Hover owns the highlight while a row is lit: the ring waits (the target and its box are kept).
+    if (hoverClaimsHighlight()) return hide();
     if (focus !== target) {
       target = focus;
       box = null;
@@ -76,6 +82,7 @@ export function installFocusRing(pump: (fn: () => void) => () => void): () => vo
     const style = {
       ...cssToCore({
         position: "absolute",
+        display: "flex", // explicit: an inline display:none written earlier must not stick
         left: box.x - w,
         top: box.y - w,
         width: box.w + 2 * w,
@@ -102,6 +109,8 @@ export function installFocusRing(pump: (fn: () => void) => () => void): () => vo
     removePump();
     target = null;
     box = null;
-    hide();
+    if (attached) removeNode(rootMirror, node);
+    attached = false;
+    lastStyle = "";
   };
 }
