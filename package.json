@@ -27,7 +27,8 @@
     "./react-hook-form": "./src/primitives/react-hook-form.tsx",
     "./input-otp": "./src/primitives/input-otp.tsx",
     "./react-day-picker": "./src/primitives/react-day-picker.tsx",
-    "./embla-carousel-react": "./src/primitives/embla-carousel-react.ts"
+    "./embla-carousel-react": "./src/primitives/embla-carousel-react.ts",
+    "./recharts": "./src/primitives/recharts.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

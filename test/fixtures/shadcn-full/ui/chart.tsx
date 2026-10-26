@@ -2,8 +2,8 @@
 
 import * as React from "react"
 import { cn } from "pocketjs-react"
-import * as RechartsPrimitive from "recharts"
-import type { TooltipValueType } from "recharts"
+import * as RechartsPrimitive from "pocketjs-react/recharts"
+import type { TooltipValueType } from "pocketjs-react/recharts"
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const

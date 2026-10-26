@@ -32,6 +32,8 @@ const ALIAS: Record<string, string> = { onClick: "onPress" };
 const WIRED = new Set(["disabled", "tabIndex"]);
 
 const DROP_ATTRS = new Set([
+  // batch 4: raw HTML has no core meaning (chart's <style> carries CSS the core does not read).
+  "dangerouslySetInnerHTML",
   "role",
   "type",
   "href",
