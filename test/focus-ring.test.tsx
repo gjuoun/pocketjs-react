@@ -189,6 +189,21 @@ test("a ring at the edge of an overflow-hidden box is clipped where CSS clips it
   expect(leftBand(c, box, 2)).toEqual([BLUE, BLUE]);
 });
 
+test("the ring census: a focused control paints exactly 4(w+h)+16 blue pixels around its box, none idle", async () => {
+  const { c, a } = await start();
+  const box = measureBox(a)!;
+  const blue = (): number => {
+    c.render();
+    let n = 0;
+    for (let y = box.y - 4; y < box.y + box.h + 4; y++)
+      for (let x = box.x - 4; x < box.x + box.w + 4; x++) if (c.pixel(x, y) === BLUE) n++;
+    return n;
+  };
+  expect(blue()).toBe(0);
+  focusOn(c, a);
+  expect(blue()).toBe(4 * (box.w + box.h) + 16);
+});
+
 test("focus-visible:ring-[3px] draws a 3px band", async () => {
   const { c, a } = await start("ring3");
   focusOn(c, a);
