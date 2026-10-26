@@ -28,3 +28,4 @@ export * as Accordion from "./accordion.tsx";
 export * as Collapsible from "./collapsible.tsx";
 export * as Tabs from "./tabs.tsx";
 export * as Slider from "./slider.tsx";
+export * as Direction from "./direction.tsx";
