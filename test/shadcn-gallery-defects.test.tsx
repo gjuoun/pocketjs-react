@@ -56,6 +56,16 @@ function run(core: Core, text: string): TextRun {
   return r;
 }
 
+/** WCAG contrast ratio of two #rrggbb colours. */
+function contrast(a: string, b: string): number {
+  const lum = (hex: string) => {
+    const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  };
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
 /** The pixels of a rect, row by row, as #rrggbb. */
 function grab(core: Core, x0: number, y0: number, x1: number, y1: number): string[][] {
   core.render();
@@ -110,4 +120,26 @@ test("accordion: the chevron turns 180 degrees when its item opens", async () =>
   expect(changed(open, closed)).toBeGreaterThan(20);
   expect(Math.abs(a.cy - b.cy)).toBeGreaterThan(0.3);
   expect(changed(open, reopened)).toBe(0);
+}, 120_000);
+
+test("prompt: the alert's Cancel and Continue labels read on their own fills", async () => {
+  const core = await bootGallery();
+  await show(core, "alert-dialog");
+  await tap(core, run(core, "Delete project").x + 20, run(core, "Delete project").y + 5);
+  core.texts();
+  const labels = ["Cancel", "Continue"].map((text) => {
+    const r = run(core, text);
+    const fill = core.pixel(r.x - 6, r.y + 7);
+    const rows = grab(core, r.x - 2, r.y - 2, r.x + r.w + 2, r.y + r.h + 2);
+    const ink = new Map<string, number>();
+    let n = 0;
+    for (const row of rows) for (const p of row) if (p !== fill) { n++; ink.set(p, (ink.get(p) ?? 0) + 1); }
+    const label = [...ink.entries()].sort((x, y) => y[1] - x[1])[0]?.[0] ?? fill;
+    return { text, fill, label, n, ratio: contrast(label, fill) };
+  });
+  console.log(labels.map((l) => `${l.text}: fill ${l.fill} label ${l.label} ink ${l.n} px contrast ${l.ratio.toFixed(2)}`).join(" | "));
+  for (const l of labels) {
+    expect(l.n).toBeGreaterThan(20);
+    expect(l.ratio).toBeGreaterThanOrEqual(4.5);
+  }
 }, 120_000);
