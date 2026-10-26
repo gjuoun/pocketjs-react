@@ -22,7 +22,8 @@
     "./vaul": "./src/primitives/vaul.ts",
     "./sonner": "./src/primitives/sonner.tsx",
     "./next-themes": "./src/primitives/next-themes.tsx",
-    "./cmdk": "./src/primitives/cmdk.tsx"
+    "./cmdk": "./src/primitives/cmdk.tsx",
+    "./react-resizable-panels": "./src/primitives/react-resizable-panels.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

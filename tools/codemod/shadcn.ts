@@ -148,6 +148,7 @@ const IMPORT_EDGE: Record<string, string> = {
   "next-themes": "pocketjs-react/next-themes",
   // R9 (batch 4): the npm-backed modules are native shims, never the packages.
   cmdk: "pocketjs-react/cmdk",
+  "react-resizable-panels": "pocketjs-react/react-resizable-panels",
 };
 
 type Node = Record<string, any>;
