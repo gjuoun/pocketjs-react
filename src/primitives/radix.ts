@@ -6,4 +6,5 @@ export * as Dialog from "./dialog.tsx";
 export * as DropdownMenu from "./dropdown-menu.tsx";
 export * as Label from "./label.tsx";
 export * as Select from "./select.tsx";
+export * as Separator from "./separator.tsx";
 export * as Slot from "./slot.tsx";
