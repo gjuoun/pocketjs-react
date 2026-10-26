@@ -24,7 +24,8 @@
     "./next-themes": "./src/primitives/next-themes.tsx",
     "./cmdk": "./src/primitives/cmdk.tsx",
     "./react-resizable-panels": "./src/primitives/react-resizable-panels.tsx",
-    "./react-hook-form": "./src/primitives/react-hook-form.tsx"
+    "./react-hook-form": "./src/primitives/react-hook-form.tsx",
+    "./input-otp": "./src/primitives/input-otp.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

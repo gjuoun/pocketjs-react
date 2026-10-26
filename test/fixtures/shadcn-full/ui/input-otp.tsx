@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { cn } from "pocketjs-react"
-import { OTPInput, OTPInputContext } from "input-otp"
+import { OTPInput, OTPInputContext } from "pocketjs-react/input-otp"
 import { MinusIcon } from "pocketjs-react/glyph-icons"
 
 function InputOTP({

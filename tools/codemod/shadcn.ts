@@ -150,6 +150,7 @@ const IMPORT_EDGE: Record<string, string> = {
   cmdk: "pocketjs-react/cmdk",
   "react-resizable-panels": "pocketjs-react/react-resizable-panels",
   "react-hook-form": "pocketjs-react/react-hook-form",
+  "input-otp": "pocketjs-react/input-otp",
 };
 
 type Node = Record<string, any>;
