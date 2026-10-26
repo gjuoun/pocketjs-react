@@ -39,7 +39,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "inset-0 z-50 bg-black",
+        "absolute inset-0 z-50 bg-black",
         className
       )}
       {...props}
@@ -61,7 +61,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "z-50 flex flex-col w-full gap-4 rounded-lg border bg-white p-6 shadow-lg duration-200",
+          "absolute z-50 flex flex-col w-full gap-4 rounded-lg border bg-white p-6 shadow-lg duration-200",
           className
         )}
         {...props}

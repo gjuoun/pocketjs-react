@@ -38,9 +38,10 @@ export interface Mounted {
 export async function mountTree(
   element: ReactNode,
   files: string[] = [],
+  size: { width?: number; height?: number } = {},
 ): Promise<Mounted> {
   const classes = await classLiterals(files);
-  const core = await bootCore({ classes });
+  const core = await bootCore({ classes, ...size });
   const compiled = compileClasses(classes);
   const tokens = [...new Set(classes.flatMap((l) => l.split(/\s+/)))].filter(
     (t) => t && unknownUtilities(t).length === 0,

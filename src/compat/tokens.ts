@@ -1,4 +1,4 @@
-import { splitSelector, splitVariants } from "./selectors.ts";
+import { BREAKPOINTS, splitSelector, splitVariants } from "./selectors.ts";
 
 // C2: the fixed shadcn vocabulary -> PocketJS vocabulary map (Jun ruling: fixed values from
 // the existing 19-color Tailwind v3 palette; no build-time theme table, no dark theme).
@@ -75,6 +75,8 @@ export const TOKEN_MAP: Readonly<Record<string, string>> = {
   "fill-current": "",
   underline: "",
   "underline-offset-4": "",
+  // D5: a fixed layer leaves the flow; the sidebar container reserves its width in the gap.
+  fixed: "absolute",
 };
 
 /** rounded-full compiles only with a pinned w/h in the same literal (the [R] rule throws
@@ -243,6 +245,11 @@ export function rewriteToken(tok: string): string {
   const colon = tok.indexOf(":");
   if (colon > 0) {
     const variant = tok.slice(0, colon);
+    // D4: a breakpoint variant is a selector the compat layer resolves per node (selectors.ts): kept as written.
+    if (variant in BREAKPOINTS) {
+      const body = rewriteToken(tok.slice(colon + 1));
+      return body === "" ? "" : prefixEach(variant, body);
+    }
     const mapped = VARIANTS[variant];
     if (mapped === undefined) return ""; // dark:, disabled:, aria-*, data-*, [&...], has-[...], ...
     const body = rewriteToken(tok.slice(colon + 1));

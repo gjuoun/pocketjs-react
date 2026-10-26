@@ -47,7 +47,7 @@ function Calendar({
       classNames={{
         root: cn("", defaultClassNames.root),
         months: cn(
-          "relative flex flex-col gap-4",
+          "relative flex flex-col gap-4 md:flex-row",
           defaultClassNames.months
         ),
         month: cn("flex w-full flex-col gap-4", defaultClassNames.month),

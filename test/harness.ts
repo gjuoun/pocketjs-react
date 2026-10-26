@@ -42,9 +42,16 @@ async function wasm(): Promise<ArrayBuffer> {
  * slots they use are baked, so raw native-tree nodes can be styled and drawn.
  */
 export async function bootCore(
-  opts: { pak?: ArrayBuffer; classes?: string[]; fontSlots?: number[] } = {},
+  opts: {
+    pak?: ArrayBuffer;
+    classes?: string[];
+    fontSlots?: number[];
+    /** Canvas size in pixels (the default is the framebuffer size FB_W x FB_H). */
+    width?: number;
+    height?: number;
+  } = {},
 ) {
-  const core = await createWasmUi(await wasm());
+  const core = await createWasmUi(await wasm(), { width: opts.width, height: opts.height });
   const ops = core.ops as Record<string, any>;
   const g = globalThis as Record<string, unknown>;
   resetRendererState();

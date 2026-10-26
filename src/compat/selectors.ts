@@ -1,3 +1,4 @@
+import { getOps, hostViewport } from "@pocketjs/framework/host";
 // C8 selector tokens. shadcn writes node state and child rules as variant prefixes
 // (disabled:, aria-invalid:, data-[state=open]:, has-[>svg]:). The core has no per-node state,
 // so the compat layer resolves each one per node from the node's DOM props, before the class
@@ -7,6 +8,8 @@
 /** A variant prefix the compat layer resolves per node. */
 export type Selector =
   | { kind: "disabled" }
+  /** md:, lg:, xl:, 2xl: hold at or above the mount viewport width (D4). */
+  | { kind: "breakpoint"; min: number }
   | { kind: "invalid" }
   | { kind: "data"; name: string; value?: string }
   | { kind: "has-svg" }
@@ -43,8 +46,27 @@ export function splitVariants(tok: string): string[] {
   return parts;
 }
 
+/** Tailwind's breakpoints in px (sm: is not kept: it would need a second layout pass). */
+export const BREAKPOINTS: Readonly<Record<string, number>> = {
+  md: 768,
+  lg: 1024,
+  xl: 1280,
+  "2xl": 1536,
+};
+
+/** The mount viewport width: the host reports it (hostViewport); 0 when no host is installed. */
+export function viewportWidth(): number {
+  try {
+    return hostViewport(getOps())?.w ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 function selectorOf(prefix: string): Selector | null {
   if (prefix === "disabled") return { kind: "disabled" };
+  if (prefix in BREAKPOINTS)
+    return { kind: "breakpoint", min: BREAKPOINTS[prefix] };
   if (prefix === "aria-invalid") return { kind: "invalid" };
   if (prefix === "has-[>svg]") return { kind: "has-svg" };
   const slot = /^has-data-\[slot=([\w-]+)\]$/.exec(prefix);
@@ -109,6 +131,8 @@ export function holds(sel: Selector, node: SelectorNode): boolean {
   switch (sel.kind) {
     case "disabled":
       return truthy(node.props.disabled);
+    case "breakpoint":
+      return viewportWidth() >= sel.min;
     case "invalid":
       return truthy(node.props["aria-invalid"]);
     case "data": {

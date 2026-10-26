@@ -36,7 +36,7 @@ function DrawerOverlay({
     <DrawerPrimitive.Overlay
       data-slot="drawer-overlay"
       className={cn(
-        "inset-0 z-50 bg-black",
+        "absolute inset-0 z-50 bg-black",
         className
       )}
       {...props}
@@ -55,7 +55,7 @@ function DrawerContent({
       <DrawerPrimitive.Content
         data-slot="drawer-content"
         className={cn(
-          "z-50 flex flex-col bg-white",
+          "absolute z-50 flex flex-col bg-white",
           "data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24",
           "data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-24",
           "data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3",
@@ -76,7 +76,7 @@ function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="drawer-header"
       className={cn(
-        "flex flex-col gap-0.5 p-4",
+        "flex flex-col gap-0.5 p-4 md:gap-1.5 md:text-left",
         className
       )}
       {...props}

@@ -229,7 +229,7 @@ function Sidebar({
       <div
         data-slot="sidebar-container"
         className={cn(
-          "z-10 hidden w-(--sidebar-width) duration-200 ease-linear",
+          "absolute z-10 hidden w-(--sidebar-width) duration-200 ease-linear md:flex",
           side === "left"
             ? "left-0"
             : "right-0",
@@ -569,7 +569,7 @@ function SidebarMenuAction({
         "",
         "",
         showOnHover &&
-          "data-[state=open]:opacity-100",
+          "data-[state=open]:opacity-100 md:opacity-0",
         className
       )}
       {...props}
