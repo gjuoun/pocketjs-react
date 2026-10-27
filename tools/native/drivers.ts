@@ -16,6 +16,7 @@ export const PAGE_DRIVERS: Record<number, Driver[]> = {
   7: [{ kind: "static", reason: "a badge is a label; it has no focus, no press and no state" }],
   8: [{ kind: "static", reason: "a separator is a rule; it has no focus, no press and no state" }],
   9: [{ kind: "static", reason: "an avatar is a fallback circle; it has no focus, no press and no state" }],
+  10: [{ kind: "driven", trigger: "Add 10%", metrics: ["text"] }],
 };
 
 /** Pages whose gates 1-3 run again after a passing driver (the driver changes the page's state, e.g. a theme). */

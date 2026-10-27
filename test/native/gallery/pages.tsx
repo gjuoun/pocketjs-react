@@ -10,6 +10,7 @@ import { Label } from "../../../src/native/label.tsx";
 import { Badge } from "../../../src/native/badge.tsx";
 import { Separator } from "../../../src/native/separator.tsx";
 import { Avatar } from "../../../src/native/avatar.tsx";
+import { Progress } from "../../../src/native/progress.tsx";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
 
@@ -141,6 +142,17 @@ export function AvatarPage() {
         <Avatar size="lg">JG</Avatar>
       </View>
       <Label>Team</Label>
+    </View>
+  );
+}
+
+export function ProgressPage() {
+  const [value, setValue] = useState(30);
+  return (
+    <View className="flex-col gap-2">
+      <Progress value={value} />
+      <Label>{value + "%"}</Label>
+      <Button variant="outline" onPress={() => setValue(Math.min(100, value + 10))}>Add 10%</Button>
     </View>
   );
 }
