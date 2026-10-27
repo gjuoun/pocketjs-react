@@ -15,33 +15,42 @@ function paint(bg: string, ink: string) {
 }
 
 test("legibility: black text on white is 21:1 and passes", () => {
-  const r = checkRun(paint("#ffffff", "#000000"), { text: "Ok", rect: RUN, host: HOST });
+  const r = checkRun(paint("#ffffff", "#000000"), { text: "Ok", rect: RUN, candidates: [{ box: HOST, how: "test" }] });
   expect(r.status).toBe("pass");
   expect(r.ratio).toBeCloseTo(21, 0);
 });
 
 test("legibility: #bbbbbb on white is about 1.9:1 and fails", () => {
-  const r = checkRun(paint("#ffffff", "#bbbbbb"), { text: "Grey", rect: RUN, host: HOST });
+  const r = checkRun(paint("#ffffff", "#bbbbbb"), { text: "Grey", rect: RUN, candidates: [{ box: HOST, how: "test" }] });
   expect(r.status).toBe("fail");
   expect(r.ratio).toBeLessThan(3);
   expect(r.ratio).toBeGreaterThan(1.8);
 });
 
 test("legibility: white text on a white host is invisible and fails with no ink", () => {
-  const r = checkRun(paint("#ffffff", "#ffffff"), { text: "Save", rect: RUN, host: HOST });
+  const r = checkRun(paint("#ffffff", "#ffffff"), { text: "Save", rect: RUN, candidates: [{ box: HOST, how: "test" }] });
   expect(r.status).toBe("fail");
   expect(r.reason).toContain("no ink");
 });
 
-test("legibility: a host with a mixed background is unresolved, never a pass", () => {
+test("legibility: a backdrop with a mixed background is a could-not-judge FAIL, never a pass", () => {
   const mixed = source((x, y) => (x % 2 === 0 ? "#ffffff" : "#000000"));
-  const r = checkRun(mixed, { text: "Mixed", rect: RUN, host: HOST });
-  expect(r.status).toBe("unresolved");
+  const r = checkRun(mixed, { text: "Mixed", rect: RUN, candidates: [{ box: HOST, how: "test" }] });
+  expect(r.status).toBe("fail");
+  expect(r.cannotJudge).toBe("mixed background");
+  expect(r.reason).toContain("could not judge");
 });
 
-test("legibility: a run with no host box is unresolved", () => {
-  const r = checkRun(paint("#ffffff", "#000000"), { text: "Orphan", rect: RUN, host: null });
-  expect(r.status).toBe("unresolved");
+test("legibility: a run with no backdrop box is a could-not-judge FAIL", () => {
+  const r = checkRun(paint("#ffffff", "#000000"), { text: "Orphan", rect: RUN, candidates: [] });
+  expect(r.status).toBe("fail");
+  expect(r.cannotJudge).toBe("no backdrop");
+});
+
+test("legibility: a run off the screen is a could-not-judge FAIL", () => {
+  const r = checkRun(paint("#ffffff", "#000000"), { text: "Gone", rect: { x: 900, y: 900, w: 40, h: 12 }, candidates: [{ box: HOST, how: "test" }] });
+  expect(r.status).toBe("fail");
+  expect(r.cannotJudge).toBe("run off screen");
 });
 
 test("legibility: the WCAG formula matches its reference points", () => {

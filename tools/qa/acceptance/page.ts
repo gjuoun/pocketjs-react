@@ -75,7 +75,7 @@ export async function judgePage(): Promise<PageReport> {
       pages[i] = {
         name: SECTIONS[i].name,
         judged: true,
-        g1: judgeLegibility(core, f, geo, box),
+        g1: judgeLegibility(core, geo, box),
         g2: checkOverflow(f, geo),
         g3: checkAlignment(f, geo),
       };

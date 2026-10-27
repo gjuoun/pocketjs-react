@@ -1,7 +1,8 @@
 // Gate 1, legibility: each text run's ink against the colour under it, WCAG contrast, minimum 3:1.
-// The background is the dominant colour of the run's host box (the element that holds the text). A host
-// whose dominant colour covers less than 60% of its box is mixed and unresolved; a run with no host box is
-// unresolved too. Unresolved is never a pass.
+// The background is the dominant colour of the run's backdrop box (gates.ts picks it: the nearest enclosing
+// box at least twice the run's area, so a text box never stands for its own background). A backdrop whose
+// dominant colour covers less than 60% of it is mixed. There is no third state: a run the gate cannot judge
+// (mixed backdrop, off-screen run) FAILS with reason "could not judge: ..." and its cause, so it never reads as neither.
 export const SCREEN_W = 480;
 export const SCREEN_H = 272;
 export const MIN_CONTRAST = 3;
@@ -17,16 +18,28 @@ export interface Box {
   w: number;
   h: number;
 }
+export interface Candidate {
+  box: Box;
+  /** Where the box came from (written to gates.json): "text host", "ancestor +N", "containing box", "screen". */
+  how: string;
+}
 export interface RunInput {
   text: string;
   rect: Box;
-  host: Box | null;
+  /** Backdrop boxes to try, nearest first. The first one whose non-text pixels are at least 60% one colour is the backdrop. */
+  candidates: Candidate[];
+  /** Boxes whose pixels are text (every drawn run): excluded from the backdrop histogram so ink never counts as mixing. */
+  mask?: Box[];
 }
+/** Why a run could not be judged. Every value is a FAIL. */
+export type CannotJudge = "no backdrop" | "mixed background" | "run off screen";
 export interface LegibilityResult {
   text: string;
-  status: "pass" | "fail" | "unresolved";
+  status: "pass" | "fail";
   ratio: number;
   reason?: string;
+  cannotJudge?: CannotJudge;
+  attribution?: string;
 }
 
 function rgb(hex: string): [number, number, number] {
@@ -69,24 +82,50 @@ function histogram(px: Pixels, box: Box): Map<string, number> {
   return hist;
 }
 
-/** Judge one text run. */
+/** Judge one text run (see RunInput for the backdrop search). */
 export function checkRun(px: Pixels, run: RunInput, min = MIN_CONTRAST): LegibilityResult {
-  const base = { text: run.text };
-  if (!run.host) return { ...base, status: "unresolved", ratio: 0, reason: "no host box" };
-  const host = onScreen(run.host);
-  if (!host) return { ...base, status: "unresolved", ratio: 0, reason: "host box is off screen or zero area" };
-  const area = host.w * host.h;
-  const bgHist = histogram(px, host);
-  const [bg, bgCount] = [...bgHist.entries()].sort((a, b) => b[1] - a[1])[0];
-  if (bgCount / area < MIN_BG_SHARE)
-    return { ...base, status: "unresolved", ratio: 0, reason: "mixed background under the run" };
+  const base: { text: string; attribution?: string } = { text: run.text };
+  const cannot = (cause: CannotJudge, reason: string, attribution?: string): LegibilityResult => ({ ...base, status: "fail", ratio: 0, cannotJudge: cause, reason: "could not judge: " + reason, attribution });
   const ink = onScreen(run.rect);
-  if (!ink) return { ...base, status: "unresolved", ratio: 0, reason: "run is off screen" };
+  if (!ink) return cannot("run off screen", "the run is off screen");
+  if (run.candidates.length === 0) return cannot("no backdrop", "no backdrop box for the run");
+  const mask = (run.mask ?? []).map((m) => onScreen(m)).filter((m): m is Box => m !== null);
+  const masked = (x: number, y: number) => mask.some((m) => x >= m.x && x < m.x + m.w && y >= m.y && y < m.y + m.h);
+  let chosen: { box: Box; how: string; bg: string } | null = null;
+  let nearest = "";
+  for (const c of run.candidates) {
+    const box = onScreen(c.box);
+    if (!box) continue;
+    const hist = new Map<string, number>();
+    let n = 0;
+    for (let y = box.y; y < box.y + box.h; y++)
+      for (let x = box.x; x < box.x + box.w; x++) {
+        if (masked(x, y)) continue;
+        const col = px.pixel(x, y);
+        hist.set(col, (hist.get(col) ?? 0) + 1);
+        n++;
+      }
+    if (n === 0) continue;
+    const [bg, count] = [...hist.entries()].sort((a, b) => b[1] - a[1])[0];
+    const share = count / n;
+    if (!nearest) {
+      const top = [...hist.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([col, k]) => col + " " + Math.round((100 * k) / n) + "%").join(", ");
+      nearest = c.how + " " + box.w + "x" + box.h + " (" + top + ")";
+    }
+    if (share >= MIN_BG_SHARE) {
+      chosen = { box, how: c.how, bg };
+      break;
+    }
+  }
+  if (!chosen) return cannot("mixed background", "mixed background under the run (no enclosing box up to the screen is 60% one colour outside the text; nearest " + (nearest || "none") + ")", run.candidates[0]?.how);
+  const { bg, how } = chosen;
   const inkHist = histogram(px, ink);
   let best = 0;
   let bestColour = "";
+  // A one-character run is a thin glyph: its full-coverage colour can be only a few pixels, so the floor is one pixel there.
+  const floor = run.text.trim().length === 1 ? 1 : MIN_INK_PX;
   for (const [c, n] of inkHist) {
-    if (c === bg || n < MIN_INK_PX) continue;
+    if (c === bg || n < floor) continue;
     const r = contrast(c, bg);
     if (r > best) {
       best = r;
@@ -94,7 +133,7 @@ export function checkRun(px: Pixels, run: RunInput, min = MIN_CONTRAST): Legibil
     }
   }
   if (best === 0)
-    return { ...base, status: "fail", ratio: 1, reason: "no ink on its background (invisible text)" };
+    return { ...base, attribution: how, status: "fail", ratio: 1, reason: "no ink on its background (invisible text)" };
   const status = best >= min ? "pass" : "fail";
-  return { ...base, status, ratio: Math.round(best * 100) / 100, reason: status === "fail" ? "contrast " + best.toFixed(2) + " below " + min : bestColour };
+  return { ...base, attribution: how, status, ratio: Math.round(best * 100) / 100, reason: status === "fail" ? "contrast " + best.toFixed(2) + " below " + min + " (ink " + bestColour + " on " + bg + ")" : bestColour };
 }
