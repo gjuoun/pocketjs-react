@@ -64,8 +64,11 @@ export async function bootTarget(t: Target): Promise<Booted> {
   const entry = join(OUT, id + ".tsx");
   writeFileSync(entry, entrySource(t));
   const built = await build(entry, { outdir: OUT, name: id });
-  const core = await bootCore({ classes: built.tokens, fontSlots: built.fontSlots });
-  installBuildStyles({}, compileClasses([]).bin, built.tokens);
+  // The core and the style table come from the same compile (as judge.ts and the pak do). An empty table here
+  // left the framework's ids and the runtime table out of step: a `hidden` class took a stale id and drew its text.
+  const styles = compileClasses(built.literals);
+  const core = await bootCore({ classes: built.literals, fontSlots: built.fontSlots });
+  installBuildStyles(styles.ids, styles.bin, built.tokens);
   const mod = (await import(entry)) as { default: () => unknown };
   const unmount = mount(createElement(mod.default as never), { compat: { classMiss: "drop" } });
   core.step(0);
