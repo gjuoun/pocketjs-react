@@ -3,7 +3,7 @@
 //   bun tools/native/judge.ts --mutants    each defect must fail its gate; each control must pass it
 // Gates come unchanged from tools/qa/acceptance; this file only boots the native entries and drives them.
 import { mkdirSync, writeFileSync } from "node:fs";
-import { resolve, join } from "node:path";
+import { relative, resolve, join, sep } from "node:path";
 import { BTN } from "@pocketjs/framework/input";
 import { rootMirror, type NodeMirror } from "../../src/internal/pocket.ts";
 import { compatStats, resetCompatStats } from "../../src/index.ts";
@@ -134,6 +134,8 @@ function pageLine(channel: string, r: PageRow): string {
 }
 
 async function judgeMutants() {
+  const rel = relative(OUT, join(ROOT, "test/native/mutants.tsx")).split(sep).join("/");
+  const mutantsImport = rel.startsWith(".") ? rel : "./" + rel;
   const rows: Array<{ name: string; defect: boolean; gate: string; fails: boolean; expected: boolean; ok: boolean }> = [];
   mkdirSync(OUT, { recursive: true });
   for (const name of Object.keys(MUTANTS)) {
@@ -141,7 +143,8 @@ async function judgeMutants() {
     const entry = join(OUT, "mutant-" + name + ".tsx");
     writeFileSync(entry, [
       "import { mount } from " + JSON.stringify(ROOT + "/src/index.ts") + ";",
-      "import { MUTANTS } from " + JSON.stringify(ROOT + "/test/native/mutants.tsx") + ";",
+      // Relative, not absolute: the build scan follows relative imports only, so the mutant bodies' classes are collected.
+      "import { MUTANTS } from " + JSON.stringify(mutantsImport) + ";",
       "export const unmount = mount(MUTANTS[" + JSON.stringify(name) + "].render() as never, { compat: { classMiss: \"throw\", tokenMap: false } });",
       "",
     ].join("\n"));
