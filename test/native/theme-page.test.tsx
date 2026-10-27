@@ -39,13 +39,43 @@ function paintedHeight(c: Core, label: string, index = 0, up = 3, down = 3): num
   return bot - top + 1;
 }
 
-const COMPONENTS = ["Dark", "Edit", "Sheet", "More", "Hint", "Menu", "Notify", "Stable", "Beta", "Failed", "Per month", "60%", "Name", "Account", "Info", "Use", "AK", "Email", "Yes", "No", "Shipping", "Sync", "Plan", "Team"];
+const COMPONENTS = ["Dark", "Edit", "Sheet", "More", "?", "Menu", "Notify", "Stable", "Beta", "Failed", "Per month", "light 60%", "Name", "Account", "Info", "Use", "AK", "Email", "Yes", "No", "Shipping", "Sync", "Plan", "Team"];
 
-test("the theme page draws the labels of all twenty-four components (Button, Dialog, Sheet, Popover, Tooltip, DropdownMenu, Toast, Table, Badge, Select, Slider, Progress, Label, Input, Card, Tabs, Separator, Avatar, Spinner, Skeleton, Checkbox, RadioGroup, Accordion, Switch)", async () => {
+test("the theme page draws the labels of the first twenty-four components (Button, Dialog, Sheet, Popover, Tooltip, DropdownMenu, Toast, Table, Badge, Select, Slider, Progress, Label, Input, Card, Tabs, Separator, Avatar, Spinner, Skeleton, Checkbox, RadioGroup, Accordion, Switch)", async () => {
   const c = await bootTheme();
   const drawn = c.texts().map((t) => t.text);
   for (const l of COMPONENTS) expect(drawn).toContain(l);
   expect(drawn).toContain("40");
+});
+
+/** The labels each later section draws when it is the one shown (section 1 is the COMPONENTS list above). */
+const SECTIONS: Array<{ label: string; drawn: string[] }> = [
+  { label: "2/4", drawn: ["Products", "Support", "Home", "Update ready", "_"] },
+  { label: "3/4", drawn: ["Email", "Optional", "Sync failed", "Calendar", "Calculator", "Suggestions", "Tools"] },
+  { label: "4/4", drawn: ["No projects yet", "Create project", "Projects you create show up here."] },
+];
+const settleFrames = async (c: Core) => { await new Promise((r) => setTimeout(r, 0)); for (let i = 0; i < 6; i++) { c.step(0); c.render(); } };
+
+test("the section switch shows sections 2 to 4 in turn; each shows its own components and hides the rest", async () => {
+  const c = await bootTheme();
+  for (const sec of SECTIONS) {
+    focusNode(triggerNode(rootMirror, sec.label) as never);
+    c.step(BTN.CIRCLE);
+    await settleFrames(c);
+    const drawn = c.texts().map((t) => t.text);
+    for (const l of sec.drawn) expect(drawn).toContain(l);
+    expect(drawn).not.toContain("Stable");
+  }
+});
+
+test("the section switch wraps: section 4 leads back to section 1, which draws its badges again", async () => {
+  const c = await bootTheme();
+  for (const sec of [...SECTIONS, { label: "1/4", drawn: [] }]) {
+    focusNode(triggerNode(rootMirror, sec.label) as never);
+    c.step(BTN.CIRCLE);
+    await settleFrames(c);
+  }
+  expect(c.texts().map((t) => t.text)).toContain("Stable");
 });
 
 test("nothing is squeezed: a badge paints 20 px, an avatar 32 px", async () => {
@@ -66,5 +96,5 @@ test("the dark toggle re-renders the same labels in the dark table; the layout i
   const after = c.texts().map((t) => t.text + "@" + t.x + "," + t.y);
   expect(after.filter((s) => s.startsWith("Light@"))).toHaveLength(1);
   expect(after.length).toBe(before.length);
-  for (const l of COMPONENTS.filter((x) => x !== "Dark")) expect(after.some((s) => s.startsWith(l + "@"))).toBe(true);
+  for (const l of COMPONENTS.filter((x) => x !== "Dark")) expect(after.some((s) => s.startsWith((l === "light 60%" ? "dark 60%" : l) + "@"))).toBe(true);
 });

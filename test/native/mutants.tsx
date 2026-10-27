@@ -26,7 +26,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "../../src/native/popove
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "../../src/native/dropdown-menu.tsx";
 import { clearToasts, toast, Toaster } from "../../src/native/toast.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../src/native/table.tsx";
-import { ThemePage } from "./gallery/pages.tsx";
+import { Alert } from "../../src/native/alert.tsx";
+import { Empty } from "../../src/native/empty.tsx";
+import { ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage } from "./gallery/pages.tsx";
+import { Breadcrumb } from "../../src/native/breadcrumb.tsx";
 import type { Driver } from "../../tools/qa/acceptance/drivers.ts";
 
 const T = TOKENS as Record<string, string>;
@@ -124,6 +127,17 @@ function Live() {
     <View className="flex-col gap-2">
       <Button onPress={() => setN(n + 1)}>Live</Button>
       <Text className="text-sm text-slate-900">{"Live pressed " + n}</Text>
+    </View>
+  );
+}
+
+function LiveCrumb() {
+  const [picked, setPicked] = useState("none");
+  const items = ["Home", "Docs"];
+  return (
+    <View className="flex-col gap-2">
+      <Breadcrumb items={items} onSelect={(i) => setPicked(items[i])} />
+      <Label>{"Opened " + picked}</Label>
     </View>
   );
 }
@@ -547,5 +561,140 @@ export const MUTANTS: Record<string, Mutant> = {
         </Table>
       </View>
     ),
+  },
+  "breadcrumb-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={[T["breadcrumb.item"], T["breadcrumb.idle.rest"]].join(" ")}><Text className="text-sm text-slate-300">Home</Text></View></View>,
+  },
+  "breadcrumb-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><Breadcrumb items={["Home", "Docs"]} /></View>,
+  },
+  "dead-breadcrumb": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead crumb", metrics: ["text"] },
+    render: () => <View className={ROOT}><Focusable look={[T["breadcrumb.item"], T["breadcrumb.idle.rest"], T["breadcrumb.focus"]].join(" ")}><Text className={T["breadcrumb.link"]}>Dead crumb</Text></Focusable></View>,
+  },
+  "dead-breadcrumb-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Home", metrics: ["text"] },
+    render: () => <View className={ROOT}><LiveCrumb /></View>,
+  },
+  "alert-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={[T["alert.base"], T["alert.info.rest"]].join(" ")}><Text className="text-sm font-bold text-blue-300">Faint alert</Text></View></View>,
+  },
+  "alert-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><Alert variant="info" title="Live alert">Clear text.</Alert></View>,
+  },
+  "zero-size-alert": {
+    gate: "G2", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className="flex-col" style={{ width: 0, height: 0 }}><Text className={T["alert.title"]}>Hidden alert</Text></View></View>,
+  },
+  "zero-size-alert-control": {
+    gate: "G2", defect: false, driver: null,
+    render: () => <View className={ROOT}><Alert title="Shown alert" /></View>,
+  },
+  "empty-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={T["empty.base"]}><Text className="text-sm text-slate-300">Faint empty</Text></View></View>,
+  },
+  "empty-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><Empty title="Nothing yet">Clear text.</Empty></View>,
+  },
+  "dead-empty": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead action", metrics: ["text"] },
+    render: () => <View className={ROOT}><Empty title="Nothing yet" action={<Button>Dead action</Button>} /></View>,
+  },
+  "dead-empty-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Create project", metrics: ["text"] },
+    render: () => <View className={ROOT}><EmptyPage /></View>,
+  },
+  "field-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><Text className="text-xs text-slate-300">Faint hint</Text></View>,
+  },
+  "field-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><FormFieldPage /></View>,
+  },
+  "dead-field": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead validate", metrics: ["text"] },
+    render: () => <View className={ROOT}><Button>Dead validate</Button></View>,
+  },
+  "dead-field-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Validate", metrics: ["text"] },
+    render: () => <View className={ROOT}><FormFieldPage /></View>,
+  },
+  "pagination-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><Text className="text-sm text-slate-300">Faint page 4</Text></View>,
+  },
+  "pagination-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><PaginationPage /></View>,
+  },
+  "dead-pagination": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead next", metrics: ["text"] },
+    render: () => <View className={ROOT}><Focusable look={[T["pagination.wide"], T["pagination.idle.rest"], T["pagination.focus"]].join(" ")}><Text className={T["pagination.text"]}>Dead next</Text></Focusable></View>,
+  },
+  "dead-pagination-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Next", metrics: ["text"] },
+    render: () => <View className={ROOT}><PaginationPage /></View>,
+  },
+  "misaligned-otp": {
+    gate: "G3", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="flex-row items-center gap-2">
+          <View className={T["otp.cell"]} />
+          <View className={T["otp.cell"]} style={{ marginTop: 10 }} />
+        </View>
+      </View>
+    ),
+  },
+  "misaligned-otp-control": {
+    gate: "G3", defect: false, driver: null,
+    render: () => <View className={ROOT}><InputOTPPage /></View>,
+  },
+  "dead-otp": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "_", metrics: ["ink"] },
+    render: () => <View className={ROOT}><Focusable look={[T["otp.cell"], T["otp.focus"]].join(" ")}><Text className={T["field.placeholder"]}>_</Text></Focusable></View>,
+  },
+  "dead-otp-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "_", metrics: ["ink"] },
+    render: () => <View className={ROOT}><InputOTPPage /></View>,
+  },
+  "dead-menu": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead menu", metrics: ["layer"] },
+    render: () => <View className={ROOT}><Focusable look={[T["nav.trigger"], T["nav.focus"]].join(" ")}><Text className={T["nav.trigger.text"]}>Dead menu</Text></Focusable></View>,
+  },
+  "dead-menu-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Products", metrics: ["layer"] },
+    render: () => <View className={ROOT}><NavigationPage /></View>,
+  },
+  "nav-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><Focusable look={[T["nav.trigger"], T["nav.focus"]].join(" ")}><Text className="text-sm text-slate-300">Faint menu</Text></Focusable></View>,
+  },
+  "nav-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><NavigationPage /></View>,
+  },
+  "dead-command": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead item", metrics: ["text"] },
+    render: () => <View className={ROOT}><Focusable look={[T["command.item"], T["command.focus"]].join(" ")}><Text className={T["command.item.text"]}>Dead item</Text></Focusable></View>,
+  },
+  "dead-command-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Calendar", metrics: ["text"] },
+    render: () => <View className={ROOT}><CommandPage /></View>,
+  },
+  "command-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><Text className="text-xs font-bold text-slate-300">Faint heading</Text></View>,
+  },
+  "command-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><CommandPage /></View>,
   },
 };
