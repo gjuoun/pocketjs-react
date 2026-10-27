@@ -1,5 +1,6 @@
 // Gate 4, interaction response. A scripted input must change something measurable: a new layer that has text
 // (sheet, dialog), a text run added, ink changed in the trigger's box, or a node moved. Any one metric is enough.
+// "menu" is a new layer with ink and any drawn text, control text included (a menu of focusable items has no panel text).
 // Snapshots are taken after the frames settle (two identical samples in a row, at most 120 frames).
 import { BTN, focusNode } from "@pocketjs/framework/input";
 import type { NodeMirror } from "../../../src/internal/pocket.ts";
@@ -150,6 +151,23 @@ export function runDriver(core: Core, root: NodeMirror, geo: Geometry, driver: D
       const delta = Math.abs(inkIn(after.px, targetRect) - inkIn(before.px, targetRect));
       if (delta >= MIN_INK) return { status: "pass", metric: "ink", reason: "trigger ink changed by " + delta + " px" };
       reasons.push("trigger ink unchanged");
+    }
+    if (m === "menu") {
+      // A new layer whose drawn text counts, controls included: a menu's items are focusable, so their text is never panel text.
+      const fresh = [...after.ids]
+        .filter((id) => !before.ids.has(id))
+        .map((id) => after.rects.get(id))
+        .filter((r): r is Rect => !!r);
+      if (fresh.length === 0) {
+        reasons.push("no new layer");
+        continue;
+      }
+      const layer = fresh.reduce((a, b) => (b.w * b.h > a.w * a.h ? b : a));
+      const ink = inkIn(after.px, layer);
+      const drawn = after.texts.filter((t) => !before.texts.includes(t) && t.trim().length >= 2);
+      if (ink >= MIN_INK && drawn.length >= 1)
+        return { status: "pass", metric: "menu", reason: "menu layer ink " + ink + " px, text added: " + JSON.stringify(drawn) };
+      reasons.push("no menu layer with text (layer ink " + ink + " px, text added " + JSON.stringify(drawn) + ")");
     }
     if (m === "offset") {
       let moved = 0;

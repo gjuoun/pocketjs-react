@@ -122,7 +122,7 @@ export function LabelPage() {
     <View className="flex-col gap-2">
       <Label>Email address</Label>
       <Label disabled>Account number</Label>
-      <Label disabled={dimmed}>Nickname</Label>
+      <Label disabled={dimmed}>{dimmed ? "Nickname (dimmed)" : "Nickname"}</Label>
       <Button variant="outline" onPress={() => setDimmed(!dimmed)}>{dimmed ? "Restore nickname" : "Dim nickname"}</Button>
     </View>
   );

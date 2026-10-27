@@ -344,7 +344,7 @@ export const MUTANTS: Record<string, Mutant> = {
     render: () => <View className={ROOT}><LiveRadio /></View>,
   },
   "dead-select": {
-    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead select", metrics: ["text"] },
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead select", metrics: ["text"], keys: [BTN.CIRCLE, BTN.DOWN, BTN.CIRCLE] },
     render: () => (
       <View className={ROOT}>
         <Focusable look={[T["select.trigger"], T["select.focus"]].join(" ")}>
@@ -354,7 +354,7 @@ export const MUTANTS: Record<string, Mutant> = {
     ),
   },
   "dead-select-control": {
-    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live select", metrics: ["text"] },
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live select", metrics: ["text"], keys: [BTN.CIRCLE, BTN.DOWN, BTN.CIRCLE] },
     render: () => <View className={ROOT}><LiveSelect /></View>,
   },
   "dead-slider": {
@@ -460,7 +460,7 @@ export const MUTANTS: Record<string, Mutant> = {
     render: () => <View className={ROOT}><Button>Dead actions</Button></View>,
   },
   "dead-dropdown-control": {
-    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live actions", metrics: ["layer"] },
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live actions", metrics: ["menu"] },
     render: () => (
       <View className={ROOT}>
         <DropdownMenu>

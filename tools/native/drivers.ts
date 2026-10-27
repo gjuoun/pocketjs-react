@@ -28,7 +28,9 @@ const BY_NAME: Record<string, Driver[]> = {
   Checkbox: [{ kind: "driven", trigger: "Email me updates", metrics: ["ink"] }],
   Switch: [{ kind: "driven", trigger: "Airplane mode", metrics: ["offset"] }],
   RadioGroup: [{ kind: "driven", trigger: "Monthly", metrics: ["text"], keys: [BTN.RIGHT] }],
-  Select: [{ kind: "driven", trigger: "Per month", metrics: ["text"] }],
+  // CIRCLE opens the list (its options are controls, so opening alone adds no panel text), DOWN and CIRCLE choose the next
+  // option, and the page's billing label changes: that changed panel text is what G4 counts.
+  Select: [{ kind: "driven", trigger: "Per month", metrics: ["text"], keys: [BTN.CIRCLE, BTN.DOWN, BTN.CIRCLE] }],
   Slider: [{ kind: "driven", trigger: "Volume", metrics: ["offset"], keys: [BTN.RIGHT] }],
   Accordion: [{ kind: "driven", trigger: "Shipping", metrics: ["text"] }],
   Sheet: [{ kind: "driven", trigger: "Open sheet", metrics: ["layer"] }],
