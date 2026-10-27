@@ -2,11 +2,13 @@
 // 18 frames at 60 Hz, on the frame pump) and closes at once when focus moves elsewhere. It is not a layer and takes no focus:
 // its panel is not focusable and no pointer dismissal is registered, so a tap goes on to whatever is under it. Placed beside
 // the trigger by the shared placement (side top by default). Mounted only while open.
+// Open needs the trigger to be laid out, not only focused: a page that is hidden (display: none) keeps its focused trigger
+// (the core moves focus only when a node is removed), so focus alone would leave the panel drawn over the next page.
 import { createContext, type ReactNode, useContext, useRef, useState } from "react";
 import { getFocused } from "@pocketjs/framework/input";
 import { Text, View } from "../elements.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
-import { type Side } from "../primitives/anchor.ts";
+import { measureBox, type Side } from "../primitives/anchor.ts";
 import { PopperPanel, useAnchorBox } from "../primitives/anchored.tsx";
 import { framesFromMs, useOpenTiming } from "../primitives/open-timing.ts";
 import { Button } from "./button.tsx";
@@ -24,6 +26,12 @@ export interface TooltipProps {
   children?: ReactNode;
 }
 
+/** The trigger has focus and a box: a hidden or off-screen trigger (no box) cannot hold an open tooltip. */
+function isShowing(node: NodeMirror | null): boolean {
+  if (node === null || getFocused() !== (node as unknown as ReturnType<typeof getFocused>)) return false;
+  return measureBox(node) !== null;
+}
+
 export function Tooltip(props: TooltipProps) {
   const [open, setOpen] = useState(false);
   const trigger = useRef<NodeMirror | null>(null);
@@ -31,7 +39,7 @@ export function Tooltip(props: TooltipProps) {
     enabled: true,
     open,
     setOpen,
-    want: () => trigger.current !== null && getFocused() === (trigger.current as unknown as ReturnType<typeof getFocused>),
+    want: () => isShowing(trigger.current),
     openFrames: framesFromMs(props.delayMs ?? 300),
     closeFrames: 0,
   });
