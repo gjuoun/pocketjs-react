@@ -7,7 +7,7 @@ import { Button } from "../../src/native/button.tsx";
 import { Focusable } from "../../src/native/focusable.tsx";
 import { Card, CardTitle } from "../../src/native/card.tsx";
 import { TOKENS } from "../../src/native/tokens.ts";
-import type { Driver } from "../qa/acceptance/drivers.ts";
+import type { Driver } from "../../tools/qa/acceptance/drivers.ts";
 
 const T = TOKENS as Record<string, string>;
 const ROOT = "w-full h-full flex-col bg-white p-2 gap-2";
