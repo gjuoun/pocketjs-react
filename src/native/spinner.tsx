@@ -1,9 +1,9 @@
 // Spinner: a loading ring, a 270-degree arc in three sizes: sm 16 px, md 24 px, lg 32 px.
 // DECISION: rotate the arc geometry in steps, not a static ring. The core cannot animate arcStart (it is timeline-only, not in
-// the transition mask), and a rotating node paints its arc as a filled box, so the rotation is a closed set of eight arc-start
-// tokens (0 to 315 degrees, 45 apart). A frame pump advances one step every SPINNER_STEP_FRAMES frames: 12 steps a second,
-// one revolution every 8 steps (about 0.67 s). Each step is a class change React writes; the core only draws the new arc.
-// States: sm, md, lg, each at steps 0 to 7. No focus, no press.
+// the transition mask), and a rotating node paints its arc as a filled box, so the rotation is a closed set of eighteen arc-start
+// tokens (0 to 340 degrees, 20 apart). A frame pump advances one step every SPINNER_STEP_FRAMES frames: 12 steps a second,
+// one revolution every 18 steps, 90 frames (1.5 s at 60 Hz). Each step is a class change React writes; the core only draws the new arc.
+// States: sm, md, lg, each at steps 0 to 17. No focus, no press.
 import { useLayoutEffect, useState } from "react";
 import { View } from "../elements.ts";
 import { addFramePump } from "../renderer/mount.ts";
@@ -12,7 +12,7 @@ import { useTokens } from "./theme.tsx";
 export type SpinnerSize = "sm" | "md" | "lg";
 
 /** Arc-start steps in one revolution, and the frames each step holds. */
-export const SPINNER_STEPS = 8;
+export const SPINNER_STEPS = 18;
 export const SPINNER_STEP_FRAMES = 5;
 
 export interface SpinnerProps {

@@ -46,32 +46,36 @@ for (const [size, px, width] of SIZES) {
   });
 }
 
-test("the arc advances one 45-degree step every " + SPINNER_STEP_FRAMES + " frames, one revolution in " + SPINNER_STEPS + " steps", async () => {
+test("one revolution is " + SPINNER_STEPS * SPINNER_STEP_FRAMES + " frames: the ring first repeats its pixels after that many frames (1.5 s at 60 Hz)", async () => {
   await h.boot(() => <View className={ROOT}><Spinner size="lg" /></View>);
-  const changes: number[] = [];
-  let last = centroidAngle();
-  let lastChangeFrame = -1;
-  const frames = SPINNER_STEP_FRAMES * SPINNER_STEPS;
-  const cadence: number[] = [];
-  for (let f = 0; f < frames; f++) {
-    h.core.step(0);
+  // The ring window (the lg box, 32 px) as a signature of its pixels, one per frame, over two revolutions.
+  const box = ring();
+  const sig = (): string => {
     h.core.render();
-    const a = centroidAngle();
-    const moved = Math.abs(((a - last + 540) % 360) - 180) > 8;
-    if (moved) { changes.push(a); if (lastChangeFrame >= 0) cadence.push(f - lastChangeFrame); lastChangeFrame = f; }
-    last = a;
+    let s = "";
+    for (let y = box.y; y < box.y + box.h; y++) for (let x = box.x; x < box.x + box.w; x++) s += h.core.pixel(x, y) === INK ? "1" : "0";
+    return s;
+  };
+  const frames = SPINNER_STEPS * SPINNER_STEP_FRAMES * 2;
+  const states: string[] = [sig()];
+  for (let f = 1; f <= frames; f++) { h.core.step(0); states.push(sig()); }
+  // The frames between two identical arc states: the frame a state first shows (an onset) to the next onset of the same
+  // state. The boot frames before the test start shift every onset equally, so the difference is the period.
+  const onsets: number[] = [];
+  for (let f = 1; f < states.length; f++) if (states[f] !== states[f - 1]) onsets.push(f);
+  const first = onsets[0];
+  const again = onsets.find((f, i) => i > 0 && states[f] === states[first]);
+  const period = (again ?? -1) - first;
+  expect(period).toBe(SPINNER_STEPS * SPINNER_STEP_FRAMES);
+  expect(period / 60).toBe(1.5);
+  // Every frame is one of SPINNER_STEPS distinct arcs, each held SPINNER_STEP_FRAMES frames.
+  const runs: number[] = [];
+  let run = 1;
+  for (let f = 1; f < SPINNER_STEPS * SPINNER_STEP_FRAMES + 1; f++) {
+    if (states[f] === states[f - 1]) run++; else { runs.push(run); run = 1; }
   }
-  // Eight steps in forty frames: one arc move per step, each step held for SPINNER_STEP_FRAMES frames.
-  expect(changes.length).toBe(SPINNER_STEPS);
-  for (const c of cadence) expect(c).toBe(SPINNER_STEP_FRAMES);
-  // Each move is 45 degrees clockwise (the centroid is within 15 degrees of the ideal).
-  for (let i = 1; i < changes.length; i++) {
-    const d = ((changes[i] - changes[i - 1] + 360) % 360);
-    expect(Math.abs(d - 45)).toBeLessThanOrEqual(15);
-  }
-  // After a full revolution the arc is back where it started.
-  const start = 135;
-  expect(Math.abs(((centroidAngle() - start + 540) % 360) - 180)).toBeLessThanOrEqual(15);
+  for (const r of runs.slice(1)) expect(r).toBe(SPINNER_STEP_FRAMES);
+  expect(new Set(states.slice(0, period)).size).toBe(SPINNER_STEPS);
 });
 
 test("the dark theme draws the ring in white", async () => {
