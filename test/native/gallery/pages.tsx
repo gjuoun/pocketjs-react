@@ -19,6 +19,7 @@ import { Checkbox } from "../../../src/native/checkbox.tsx";
 import { Switch } from "../../../src/native/switch.tsx";
 import { RadioGroup, RadioItem } from "../../../src/native/radio.tsx";
 import { Select } from "../../../src/native/select.tsx";
+import { Slider } from "../../../src/native/slider.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
 import { useState } from "react";
 
@@ -255,6 +256,17 @@ export function SelectPage() {
         ]}
       />
       <Label>{"Billing " + plan}</Label>
+    </View>
+  );
+}
+
+export function SliderPage() {
+  const [volume, setVolume] = useState(40);
+  return (
+    <View className="flex-col gap-2">
+      <Slider value={volume} onValueChange={setVolume}>Volume</Slider>
+      <Slider value={70}>Brightness</Slider>
+      <Label>{"Volume at " + volume}</Label>
     </View>
   );
 }

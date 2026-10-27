@@ -14,6 +14,7 @@ import { Checkbox } from "../../src/native/checkbox.tsx";
 import { Switch } from "../../src/native/switch.tsx";
 import { RadioGroup, RadioItem } from "../../src/native/radio.tsx";
 import { Select } from "../../src/native/select.tsx";
+import { Slider } from "../../src/native/slider.tsx";
 import { Avatar } from "../../src/native/avatar.tsx";
 import { Progress } from "../../src/native/progress.tsx";
 import { Label } from "../../src/native/label.tsx";
@@ -72,6 +73,15 @@ function LiveSelect() {
     <View className="flex-col gap-2">
       <Select value={plan} onValueChange={setPlan} options={[{ value: "monthly", label: "Live select" }, { value: "yearly", label: "Yearly" }]} />
       <Label>{"Plan " + plan}</Label>
+    </View>
+  );
+}
+
+function LiveSlider() {
+  const [v, setV] = useState(30);
+  return (
+    <View className="flex-col gap-2">
+      <Slider value={v} onValueChange={setV}>Live slider</Slider>
     </View>
   );
 }
@@ -300,5 +310,13 @@ export const MUTANTS: Record<string, Mutant> = {
   "dead-select-control": {
     gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live select", metrics: ["text"] },
     render: () => <View className={ROOT}><LiveSelect /></View>,
+  },
+  "dead-slider": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead slider", metrics: ["offset"], keys: [BTN.RIGHT] },
+    render: () => <View className={ROOT}><Slider value={30}>Dead slider</Slider></View>,
+  },
+  "dead-slider-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live slider", metrics: ["offset"], keys: [BTN.RIGHT] },
+    render: () => <View className={ROOT}><LiveSlider /></View>,
   },
 };
