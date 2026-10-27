@@ -11,6 +11,8 @@ export const PAGE_DRIVERS: Record<number, Driver[]> = {
   3: [{ kind: "static", reason: "a card is a layout container; its buttons are judged on the Button page" }],
   4: [{ kind: "driven", trigger: "Open dialog", metrics: ["layer"] }],
   5: [{ kind: "driven", trigger: "Password", metrics: ["text"] }],
+  // The caption changes with the state; the ink is pinned by the label test (G4 reads the caption).
+  6: [{ kind: "driven", trigger: "Dim nickname", metrics: ["text"] }],
 };
 
 /** Pages whose gates 1-3 run again after a passing driver (the driver changes the page's state, e.g. a theme). */

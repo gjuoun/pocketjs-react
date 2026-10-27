@@ -44,3 +44,14 @@ export function harness() {
     },
   };
 }
+
+/** The ink of a drawn run: its most common colour that is not the box's own fill (the glyph colour). */
+export function inkOf(core: Core, run: { x: number; y: number; w: number; h: number }): string {
+  const m = new Map<string, number>();
+  for (let y = run.y; y < run.y + run.h; y++) for (let x = run.x; x < run.x + run.w; x++) {
+    const c = core.pixel(x, y);
+    m.set(c, (m.get(c) ?? 0) + 1);
+  }
+  const sorted = [...m.entries()].sort((a, b) => b[1] - a[1]);
+  return sorted[1]?.[0] ?? sorted[0][0];
+}

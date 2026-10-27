@@ -6,6 +6,8 @@ import { Button } from "../../../src/native/button.tsx";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../../src/native/card.tsx";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from "../../../src/native/dialog.tsx";
 import { Input, Textarea } from "../../../src/native/input.tsx";
+import { Label } from "../../../src/native/label.tsx";
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
 
 export function PageFrame(props: { index: number; total: number; name: string; active: boolean; children?: ReactNode }) {
@@ -83,5 +85,17 @@ export function TabsPage() {
       <TabsContent value="Password">Password settings here</TabsContent>
       <TabsContent value="Billing">Billing details here</TabsContent>
     </Tabs>
+  );
+}
+
+export function LabelPage() {
+  const [dimmed, setDimmed] = useState(false);
+  return (
+    <View className="flex-col gap-2">
+      <Label>Email address</Label>
+      <Label disabled>Account number</Label>
+      <Label disabled={dimmed}>Nickname</Label>
+      <Button variant="outline" onPress={() => setDimmed(!dimmed)}>{dimmed ? "Restore nickname" : "Dim nickname"}</Button>
+    </View>
   );
 }
