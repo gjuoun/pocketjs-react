@@ -179,6 +179,7 @@ export function SpinnerPage() {
       <View className="flex-row items-center gap-2"><Spinner size="sm" /><Label>Loading</Label></View>
       <View className="flex-row items-center gap-2"><Spinner /><Label>Saving</Label></View>
       <View className="flex-row items-center gap-2"><Spinner size="lg" /><Label>Syncing</Label></View>
+      <Label>Eight steps of 45 degrees, one step every 5 frames</Label>
     </View>
   );
 }
