@@ -15,6 +15,8 @@ import { Switch } from "../../src/native/switch.tsx";
 import { RadioGroup, RadioItem } from "../../src/native/radio.tsx";
 import { Select } from "../../src/native/select.tsx";
 import { Slider } from "../../src/native/slider.tsx";
+import { Accordion, AccordionItem } from "../../src/native/accordion.tsx";
+import { Chevron } from "../../src/native/chevron.tsx";
 import { Avatar } from "../../src/native/avatar.tsx";
 import { Progress } from "../../src/native/progress.tsx";
 import { Label } from "../../src/native/label.tsx";
@@ -82,6 +84,16 @@ function LiveSlider() {
   return (
     <View className="flex-col gap-2">
       <Slider value={v} onValueChange={setV}>Live slider</Slider>
+    </View>
+  );
+}
+
+function LiveAccordion() {
+  return (
+    <View className="flex-col gap-2">
+      <Accordion type="multiple">
+        <AccordionItem value="live" title="Live accordion">{"Live body."}</AccordionItem>
+      </Accordion>
     </View>
   );
 }
@@ -318,5 +330,20 @@ export const MUTANTS: Record<string, Mutant> = {
   "dead-slider-control": {
     gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live slider", metrics: ["offset"], keys: [BTN.RIGHT] },
     render: () => <View className={ROOT}><LiveSlider /></View>,
+  },
+  "dead-accordion": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead accordion", metrics: ["text"] },
+    render: () => (
+      <View className={ROOT}>
+        <Focusable look={[T["accordion.trigger"], T["accordion.focus"]].join(" ")}>
+          <Text className={T["accordion.trigger.text"]}>Dead accordion</Text>
+          <Chevron turn={0} />
+        </Focusable>
+      </View>
+    ),
+  },
+  "dead-accordion-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live accordion", metrics: ["text"] },
+    render: () => <View className={ROOT}><LiveAccordion /></View>,
   },
 };

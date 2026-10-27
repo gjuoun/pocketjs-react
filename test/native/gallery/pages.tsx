@@ -20,6 +20,7 @@ import { Switch } from "../../../src/native/switch.tsx";
 import { RadioGroup, RadioItem } from "../../../src/native/radio.tsx";
 import { Select } from "../../../src/native/select.tsx";
 import { Slider } from "../../../src/native/slider.tsx";
+import { Accordion, AccordionItem } from "../../../src/native/accordion.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
 import { useState } from "react";
 
@@ -267,6 +268,19 @@ export function SliderPage() {
       <Slider value={volume} onValueChange={setVolume}>Volume</Slider>
       <Slider value={70}>Brightness</Slider>
       <Label>{"Volume at " + volume}</Label>
+    </View>
+  );
+}
+
+export function AccordionPage() {
+  const [open, setOpen] = useState<string[]>([]);
+  return (
+    <View className="flex-col gap-2">
+      <Accordion type="multiple" value={open} onValueChange={(v) => setOpen(Array.isArray(v) ? v : [v])}>
+        <AccordionItem value="shipping" title="Shipping">{["Ships in 2 days.", "Free over $50."]}</AccordionItem>
+        <AccordionItem value="returns" title="Returns">{"30 days, unused items."}</AccordionItem>
+        <AccordionItem value="warranty" title="Warranty">{"One year on parts."}</AccordionItem>
+      </Accordion>
     </View>
   );
 }

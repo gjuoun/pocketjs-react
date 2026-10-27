@@ -193,6 +193,13 @@ export const TOKENS = {
   "slider.thumb.8": "absolute top-0 left-[144px] w-4 h-4 rounded-[8px] border-2 border-blue-600 bg-white transition-all duration-150",
   "slider.thumb.9": "absolute top-0 left-[162px] w-4 h-4 rounded-[8px] border-2 border-blue-600 bg-white transition-all duration-150",
   "slider.thumb.10": "absolute top-0 left-[180px] w-4 h-4 rounded-[8px] border-2 border-blue-600 bg-white transition-all duration-150",
+  "accordion.root": "flex-col border-2 border-slate-200 bg-white rounded-lg",
+  "accordion.item": "flex-col",
+  "accordion.trigger": "h-10 px-3 flex-row items-center justify-between border-2 border-transparent",
+  "accordion.focus": "focus:border-blue-600",
+  "accordion.trigger.text": "text-sm font-bold text-slate-900",
+  "accordion.content": "flex-col gap-1 px-3 pb-3",
+  "accordion.body": "text-sm text-slate-900",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -311,6 +318,9 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "slider.bar": "absolute left-0 top-[5px] w-[196px] h-[6px] rounded-[3px] bg-slate-700",
   "slider.label": "text-sm font-bold text-white",
   "slider.value": "text-sm text-white",
+  "accordion.root": "flex-col border-2 border-slate-600 bg-slate-800 rounded-lg",
+  "accordion.trigger.text": "text-sm font-bold text-white",
+  "accordion.body": "text-sm text-slate-200",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {
