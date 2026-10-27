@@ -89,8 +89,8 @@ label and steps through the visible items with wrap.
 - **Arcs paint axis-aligned only**, so the spinner steps its arc start (eighteen steps, 90 frames
   per revolution) rather than rotating smoothly.
 - **No ARIA tree, no blur.** Command, Combobox and NavigationMenu expose no roles; do not design around them.
-- **Scrolling is not built (blocked).** The core rejects `overflow-y-scroll`, and the judge counts a clipped
-  off-screen child as a gate 2 finding. So the carousel holds one slide in its clip at rest, and ScrollArea
+- **Scrolling is not built (blocked).** The core rejects `overflow-y-scroll`. G2 is clip-aware, so a child wholly
+  clipped away is not overflow; the native carousel still holds one slide in its clip at rest, and ScrollArea
   waits for a scroll region the core declares.
 - **Backspace on an empty InputOTP cell does nothing.** The text-entry seam reports a change only when
   the value changes, so an empty cell cannot step back; a filled cell clears and steps back one. The gap is
@@ -109,7 +109,19 @@ The page sweep covers 38 pages (37 components and the theme page): G1 0 fails an
 G3 0 fails, text-fit 0 outside. G4 passes on 31 pages, and 7 are static with a reason (Card, Badge, Separator, Avatar,
 Skeleton, Spinner, Table). The pages run 40 driver steps in all.
 
-G1 judges every drawn run: 248 text runs and 29 one-character glyphs. A run's backdrop is the 3 px ring around it
+The page sweep also prints, per page, the one-character ink floor (see the G1 paragraph below) and, for G2, how many
+nodes were clipped away (not overflow). A tooltip whose page is hidden closes itself; the judge no longer clears focus
+before paging, and the regression is pinned by test/native/tooltip.test.tsx (a mutant cannot model it: the ghost is a
+state change, and the gates only judge a settled screen).
+
+G2 is clip-aware. A node is judged on what is shown: wholly outside a clipping ancestor (or outside the intersection of
+all of them) it is clipped away and not reported; partly shown and cut by a clip edge it is a 2b finding, with the overshoot
+past that edge; an unclipped node keeps the 2a screen rule. `overflow-carousel` (a slide 128 px past its viewport) stays red.
+
+G1 judges every drawn run: 248 text runs and 29 one-character glyphs. The ink floor is 3 px for text and 1 px for a
+one-character run (an icon placeholder). The 1 px floor is accepted and counted: `floorRuns` is every run it judges, and
+`floorDecided` lists each run whose verdict flips at 3 px. Per page the sweep reports both. Breadcrumb's three "/"
+separators are decided by it (1 px of ink passes; at 3 px they read as no ink). A run's backdrop is the 3 px ring around it
 (text masked out), then each enclosing box at least twice its area, then the screen; the first that is 60% one colour
 is the background. A run the gate cannot judge fails with its cause ("could not judge: ..."), and gates.json records
 each one. There is no third state. Before this rule, 72 runs read as unresolved: 66 because the text's own box (mostly

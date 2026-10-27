@@ -2,7 +2,7 @@
 // Wrapping is explicit: with loop (the default) Next on the last slide goes to the first, and Prev on the first goes to the
 // last. With loop={false} the end control is disabled and does nothing. A move slides the new slide in from the side it comes
 // from: it is mounted one slide width off the viewport, and the core's layout transition (150 ms) moves it to offset 0.
-// The viewport clips and holds only the slide on screen, so no slide sits off the clip at rest (gate 2 counts clipped children).
+// The viewport clips and holds only the slide on screen, so no slide sits off the clip at rest (a child clipped away is not overflow to gate 2).
 // CIRCLE on Prev or Next moves; LEFT and RIGHT move focus between the controls.
 import { useRef, useState } from "react";
 import { Text, View } from "../elements.ts";
