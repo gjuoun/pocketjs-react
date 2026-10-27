@@ -582,10 +582,11 @@ export function CommandPage() {
   );
 }
 
-/** The theme page: all thirty-two native components on one 480 by 252 surface. The top row (the triggers and the section
- * switch) is shared; the body is one of four sections of 204 px, shown one at a time. All four are mounted together, so one
- * theme toggle re-renders all thirty-two. Section 1 is the first twenty-four (the layout the page always had); sections 2 to 4
- * hold the eight later ones. The toggle, the section switch and each section's controls are judged by the native judge. */
+/** The theme page: all thirty-seven native components on one 480 by 252 surface. The top row (the triggers and the section
+ * switch) is shared; the body is one of six sections of 204 px, shown one at a time. All six are mounted together, so one
+ * theme toggle re-renders all thirty-seven. Section 1 is the first twenty-four (the layout the page always had); sections 2 to 4
+ * hold the eight later ones of the first round; sections 4 to 6 hold the five later components (the sidebar, the calendar, the
+ * combobox, the resizable and the carousel). The toggle, the section switch and each section's controls are judged by the native judge. */
 export function ThemePage() {
   const [theme, setTheme] = useState<ThemeName>("light");
   return (
@@ -595,7 +596,12 @@ export function ThemePage() {
   );
 }
 
-const SECTIONS = 4;
+const SECTIONS = 6;
+
+// The theme page's sidebar is one group of two items, so it fits the 204 px section beside the empty state.
+const THEME_SIDEBAR: SidebarGroup[] = [
+  { heading: "Workspace", items: [{ value: "home", label: "Home", icon: "H" }, { value: "inbox", label: "Inbox", icon: "I" }] },
+];
 
 function ThemeBody() {
   const T = useTokens() as Record<string, string>;
@@ -740,7 +746,7 @@ function ThemeBody() {
         <Command groups={THEME_GROUPS} />
       </View>) : null}
       {section === 3 ? (
-      <View className="w-full h-[204px] flex-col gap-2" debugName="theme-section-4">
+      <View className="w-full h-[204px] flex-row gap-2" debugName="theme-section-4">
         <View className="w-[300px]">
           <Empty
             icon={<View className="w-4 h-4 bg-slate-900" />}
@@ -748,6 +754,17 @@ function ThemeBody() {
             action={<Button variant="outline" size="sm">Create project</Button>}
           >Projects you create show up here.</Empty>
         </View>
+        <Sidebar groups={THEME_SIDEBAR} defaultValue="home" />
+      </View>) : null}
+      {section === 4 ? (
+      <View className="w-full h-[204px] flex-row gap-2" debugName="theme-section-5">
+        <Calendar today={CALENDAR_TODAY} defaultView={{ year: 2026, month: 10 }} />
+        <Combobox groups={FRAMEWORKS} placeholder="Pick framework" />
+      </View>) : null}
+      {section === 5 ? (
+      <View className="w-full h-[204px] flex-col gap-2" debugName="theme-section-6">
+        <Resizable first={<Label>Files</Label>} second={<Label>Editor</Label>} />
+        <Carousel slides={CAROUSEL_SLIDES} />
       </View>) : null}
     </View>
   );

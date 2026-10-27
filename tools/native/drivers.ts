@@ -74,10 +74,12 @@ const BY_NAME: Record<string, Driver[]> = {
     { kind: "driven", trigger: "Pick framework", metrics: ["text"], keys: [BTN.CIRCLE, BTN.DOWN, BTN.CIRCLE] },
   ],
   Theme: [
-    { kind: "driven", trigger: "2/4", metrics: ["text"] },
-    { kind: "driven", trigger: "3/4", metrics: ["text"] },
-    { kind: "driven", trigger: "4/4", metrics: ["text"] },
-    { kind: "driven", trigger: "1/4", metrics: ["text"] },
+    { kind: "driven", trigger: "2/6", metrics: ["text"] },
+    { kind: "driven", trigger: "3/6", metrics: ["text"] },
+    { kind: "driven", trigger: "4/6", metrics: ["text"] },
+    { kind: "driven", trigger: "5/6", metrics: ["text"] },
+    { kind: "driven", trigger: "6/6", metrics: ["text"] },
+    { kind: "driven", trigger: "1/6", metrics: ["text"] },
     { kind: "driven", trigger: "Dark", metrics: ["text"] },
   ],
 };

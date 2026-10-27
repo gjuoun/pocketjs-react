@@ -1,8 +1,8 @@
 // Theme switch latency: the theme page alone, switched light to dark and back by its own toggle (a Button press). The page
-// holds four sections; only the shown one is mounted, so each section is measured with its own components on the page: the
+// holds six sections; only the shown one is mounted, so each section is measured with its own components on the page: the
 // section switch goes to section k, then 40 toggles are timed frame by frame, from the press frame until the page surface is
 // drawn in the new theme's colour. Section 1 reports the first switch (it compiles the new class combinations) and the steady
-// median; sections 2 to 4 report their steady medians. Output: /tmp/pocketjs-react-qa/native/theme-switch.json.
+// median; sections 2 to 6 report their steady medians. Output: /tmp/pocketjs-react-qa/native/theme-switch.json.
 //   POCKETJS_CORE_ROOT=<overlay> bun tools/native/theme-switch.ts
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -19,7 +19,7 @@ import { THEMES } from "../../src/native/tokens.ts";
 const ROOT = resolve(import.meta.dir, "../..");
 const QA = "/tmp/pocketjs-react-qa/native";
 const SWITCHES = 40;
-const SECTIONS = 4;
+const SECTIONS = 6;
 const PAGE_BG = { light: THEMES.light["theme.page"], dark: THEMES.dark["theme.page"] } as const;
 const BG_PX = { light: "#ffffff", dark: "#0f172a" } as const;
 // The page's own 4 px padding, top left: surface in every section (a section's rows start inside it).
