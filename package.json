@@ -18,6 +18,7 @@
     "./test/harness": "./test/harness.ts",
     "./pak-cook": "./src/pak-cook.ts",
     "./radix": "./src/primitives/radix.ts",
+    "./native": "./src/native/index.ts",
     "./glyph-icons": "./src/primitives/glyph-icons.tsx",
     "./vaul": "./src/primitives/vaul.ts",
     "./sonner": "./src/primitives/sonner.tsx",
