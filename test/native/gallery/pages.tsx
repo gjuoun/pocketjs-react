@@ -1,4 +1,4 @@
-// The five gallery pages: one per native component family. Each page is a 480x272 frame with a title bar.
+// The gallery pages: one per native component, plus the theme page. Each page is a 480x272 frame with a title bar.
 // Page roots carry debugName page-N so the judge can find them. Hidden pages are display:none.
 import type { ReactNode } from "react";
 import { Text, View } from "../../../src/index.ts";
@@ -6,6 +6,8 @@ import { Button } from "../../../src/native/button.tsx";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../../src/native/card.tsx";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from "../../../src/native/dialog.tsx";
 import { Input, Textarea } from "../../../src/native/input.tsx";
+import { ThemeProvider, useTheme, useTokens } from "../../../src/native/theme.tsx";
+import type { ThemeName } from "../../../src/native/tokens.ts";
 import { Label } from "../../../src/native/label.tsx";
 import { Badge } from "../../../src/native/badge.tsx";
 import { Separator } from "../../../src/native/separator.tsx";
@@ -13,10 +15,10 @@ import { Avatar } from "../../../src/native/avatar.tsx";
 import { Progress } from "../../../src/native/progress.tsx";
 import { Skeleton } from "../../../src/native/skeleton.tsx";
 import { Spinner } from "../../../src/native/spinner.tsx";
-import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
+import { useState } from "react";
 
-export function PageFrame(props: { index: number; total: number; name: string; active: boolean; children?: ReactNode }) {
+export function PageFrame(props: { index: number; total: number; name: string; active: boolean; flush?: boolean; children?: ReactNode }) {
   const num = String(props.index).padStart(2, "0");
   const of = String(props.total).padStart(2, "0");
   return (
@@ -24,7 +26,7 @@ export function PageFrame(props: { index: number; total: number; name: string; a
       <View className="w-full flex-row items-center px-2 bg-slate-900" style={{ height: 20 }}>
         <Text className="text-xs font-bold text-white">{num + "/" + of + " " + props.name}</Text>
       </View>
-      <View className="w-full flex-col gap-2 p-2">{props.children}</View>
+      <View className={props.flush ? "w-full h-[252px] flex-col" : "w-full flex-col gap-2 p-2"}>{props.children}</View>
     </View>
   );
 }
@@ -177,6 +179,68 @@ export function SpinnerPage() {
       <View className="flex-row items-center gap-2"><Spinner size="sm" /><Label>Loading</Label></View>
       <View className="flex-row items-center gap-2"><Spinner /><Label>Saving</Label></View>
       <View className="flex-row items-center gap-2"><Spinner size="lg" /><Label>Syncing</Label></View>
+    </View>
+  );
+}
+
+/** The theme page: all twelve native components on one surface. The toggle is a state change of the provider. */
+export function ThemePage() {
+  const [theme, setTheme] = useState<ThemeName>("light");
+  return (
+    <ThemeProvider theme={theme} onThemeChange={setTheme}>
+      <ThemeBody />
+    </ThemeProvider>
+  );
+}
+
+function ThemeBody() {
+  const T = useTokens() as Record<string, string>;
+  const { theme, setTheme } = useTheme();
+  return (
+    <View className={T["theme.page"]}>
+      <View className="flex-row gap-4">
+        <View className="flex-col gap-2 w-[216px]">
+          <View className="flex-row items-center gap-2">
+            <Button onPress={() => setTheme(theme === "light" ? "dark" : "light")}>{theme === "light" ? "Dark" : "Light"}</Button>
+            <Dialog>
+              <DialogTrigger>Edit</DialogTrigger>
+            </Dialog>
+          </View>
+          <View className="flex-row gap-1">
+            <Badge>Stable</Badge>
+            <Badge variant="secondary">Beta</Badge>
+            <Badge variant="destructive">Failed</Badge>
+          </View>
+          <Input placeholder="Name" value="" onChange={() => {}} />
+          <Card>
+            <CardHeader><CardTitle>Account</CardTitle><CardDescription>Plan renews monthly</CardDescription></CardHeader>
+          </Card>
+        </View>
+        <View className="flex-col gap-2 w-[216px]">
+          <Tabs defaultValue="Overview">
+            <TabsList>
+              <TabsTrigger value="Overview">Overview</TabsTrigger>
+              <TabsTrigger value="Usage">Usage</TabsTrigger>
+            </TabsList>
+            <TabsContent value="Overview">Usage this month</TabsContent>
+          </Tabs>
+          <Separator />
+          <View className="flex-row items-center gap-2">
+            <Avatar size="sm">JG</Avatar>
+            <Avatar>JG</Avatar>
+            <Spinner />
+            <Label>Loading</Label>
+          </View>
+          <View className="flex-row items-center gap-2">
+            <Skeleton shape="circle" />
+            <View className="flex-col gap-2"><Skeleton /></View>
+          </View>
+        </View>
+      </View>
+      <View className="flex-row items-center gap-2">
+        <Progress value={60} />
+        <Label>60%</Label>
+      </View>
     </View>
   );
 }

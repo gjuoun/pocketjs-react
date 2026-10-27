@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { BTN, mount, View } from "../../../src/index.ts";
 import { useButton } from "../../../src/input/buttons.ts";
 import { PAGE_NAMES, type PageName } from "./names.ts";
-import { ButtonPage, CardPage, DialogPage, FieldPage, BadgePage, LabelPage, AvatarPage, PageFrame, ProgressPage, SeparatorPage, SkeletonPage, SpinnerPage, TabsPage } from "./pages.tsx";
+import { ButtonPage, CardPage, DialogPage, FieldPage, BadgePage, LabelPage, AvatarPage, PageFrame, ProgressPage, SeparatorPage, SkeletonPage, SpinnerPage, TabsPage, ThemePage } from "./pages.tsx";
 
 export const PAGE_COUNT = PAGE_NAMES.length;
 
@@ -21,6 +21,7 @@ const BODY: Record<PageName, () => ReactNode> = {
   Progress: () => <ProgressPage />,
   Skeleton: () => <SkeletonPage />,
   Spinner: () => <SpinnerPage />,
+  Theme: () => <ThemePage />,
 };
 
 function ButtonPageState() {
@@ -41,7 +42,7 @@ function Gallery() {
   return (
     <View className="w-full h-full flex-col overflow-hidden bg-slate-100">
       {PAGE_NAMES.map((name, i) => (
-        <PageFrame key={name} index={i + 1} total={PAGE_COUNT} name={name} active={page === i}>
+        <PageFrame key={name} index={i + 1} total={PAGE_COUNT} name={name} active={page === i} flush={name === "Theme"}>
           {BODY[name]()}
         </PageFrame>
       ))}
