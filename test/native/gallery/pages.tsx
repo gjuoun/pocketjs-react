@@ -11,6 +11,7 @@ import { Badge } from "../../../src/native/badge.tsx";
 import { Separator } from "../../../src/native/separator.tsx";
 import { Avatar } from "../../../src/native/avatar.tsx";
 import { Progress } from "../../../src/native/progress.tsx";
+import { Skeleton } from "../../../src/native/skeleton.tsx";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
 
@@ -153,6 +154,18 @@ export function ProgressPage() {
       <Progress value={value} />
       <Label>{value + "%"}</Label>
       <Button variant="outline" onPress={() => setValue(Math.min(100, value + 10))}>Add 10%</Button>
+    </View>
+  );
+}
+
+export function SkeletonPage() {
+  return (
+    <View className="flex-row items-center gap-2">
+      <Skeleton shape="circle" />
+      <View className="flex-col gap-2">
+        <Skeleton />
+        <Skeleton shape="short" />
+      </View>
     </View>
   );
 }

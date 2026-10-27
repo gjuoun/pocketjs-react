@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { BTN, mount, View } from "../../../src/index.ts";
 import { useButton } from "../../../src/input/buttons.ts";
 import { PAGE_NAMES, type PageName } from "./names.ts";
-import { ButtonPage, CardPage, DialogPage, FieldPage, BadgePage, LabelPage, AvatarPage, PageFrame, ProgressPage, SeparatorPage, TabsPage } from "./pages.tsx";
+import { ButtonPage, CardPage, DialogPage, FieldPage, BadgePage, LabelPage, AvatarPage, PageFrame, ProgressPage, SeparatorPage, SkeletonPage, TabsPage } from "./pages.tsx";
 
 export const PAGE_COUNT = PAGE_NAMES.length;
 
@@ -19,6 +19,7 @@ const BODY: Record<PageName, () => ReactNode> = {
   Separator: () => <SeparatorPage />,
   Avatar: () => <AvatarPage />,
   Progress: () => <ProgressPage />,
+  Skeleton: () => <SkeletonPage />,
 };
 
 function ButtonPageState() {
