@@ -84,6 +84,21 @@ export function triggerNode(root: NodeMirror, label: string): NodeMirror | undef
   return found;
 }
 
+/** Text drawn outside every control: a run with no focusable node among its ancestors (a button, a trigger, a close). */
+export function panelTexts(root: NodeMirror): Set<string> {
+  const out = new Set<string>();
+  const visit = (n: NodeMirror, inControl: boolean): void => {
+    const control = inControl || (n as unknown as { focusable?: boolean }).focusable === true;
+    if (isText(n)) {
+      if (!control) out.add((n as unknown as { text: string }).text);
+      return;
+    }
+    for (const k of n.children) visit(k, control);
+  };
+  visit(root, false);
+  return out;
+}
+
 /** Run one driver: settle, snapshot, press the trigger, settle, snapshot, then the metrics (any one passes). */
 export function runDriver(core: Core, root: NodeMirror, geo: Geometry, driver: Driver): Verdict {
   if (driver.kind === "static") return { status: "n/a", reason: driver.reason };
@@ -98,13 +113,15 @@ export function runDriver(core: Core, root: NodeMirror, geo: Geometry, driver: D
   settle(core);
   const after = snap(core, root, geo);
   // A one-character run is an icon glyph on this runtime (the close X is an ASCII placeholder), not content.
-  const addedTexts = after.texts.filter((t) => !before.texts.includes(t) && t.trim().length >= 2);
+  // Panel content is a run drawn outside every control: the sheet's own Close (a button) does not count.
+  const panel = panelTexts(root);
+  const addedTexts = after.texts.filter((t) => !before.texts.includes(t) && t.trim().length >= 2 && panel.has(t));
   const added = addedTexts.length;
   const reasons: string[] = [];
   for (const m of driver.metrics) {
     if (m === "text") {
       if (added >= 1) return { status: "pass", metric: "text", reason: added + " text run(s) added: " + JSON.stringify(addedTexts) };
-      reasons.push("no text run added");
+      reasons.push("no panel text beyond its controls");
     }
     if (m === "layer") {
       const fresh = [...after.ids]
@@ -119,7 +136,7 @@ export function runDriver(core: Core, root: NodeMirror, geo: Geometry, driver: D
       const ink = inkIn(after.px, layer);
       if (ink >= MIN_INK && added >= 1)
         return { status: "pass", metric: "layer", reason: "layer ink " + ink + " px, text added: " + JSON.stringify(addedTexts) };
-      reasons.push("no text run added in the layer (layer ink " + ink + " px, texts added " + JSON.stringify(addedTexts) + ")");
+      reasons.push("no panel text beyond its controls in the layer (layer ink " + ink + " px, panel texts added " + JSON.stringify(addedTexts) + ")");
     }
     if (m === "ink" && targetRect) {
       const delta = Math.abs(inkIn(after.px, targetRect) - inkIn(before.px, targetRect));
