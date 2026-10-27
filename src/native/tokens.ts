@@ -152,6 +152,19 @@ export const TOKENS = {
   "radio.dot.disabled": "w-2 h-2 rounded-[4px] bg-slate-500",
   "radio.label.rest": "text-base text-slate-900",
   "radio.label.disabled": "text-base text-slate-500",
+  "chevron.turn.0": "w-4 h-4 transition-all duration-150 rotate-0",
+  "chevron.turn.90": "w-4 h-4 transition-all duration-150 rotate-90",
+  "chevron.turn.270": "w-4 h-4 transition-all duration-150 rotate-270",
+  "chevron.arm.top": "absolute left-[7px] top-[3px] w-[2px] h-[6px] bg-slate-900 rotate-135",
+  "chevron.arm.bottom": "absolute left-[7px] top-[7px] w-[2px] h-[6px] bg-slate-900 rotate-45",
+  "select.trigger": "h-9 w-[200px] px-3 border-2 border-slate-300 bg-white rounded-md flex-row items-center justify-between",
+  "select.focus": "focus:border-blue-600",
+  "select.value": "text-sm text-slate-900",
+  "select.list": "w-[200px] flex-col gap-1 p-1 bg-white border-2 border-slate-300 rounded-md",
+  "select.option": "h-8 px-2 rounded-md flex-row items-center border-2 border-transparent",
+  "select.option.selected": "bg-slate-100",
+  "select.option.text": "text-sm text-slate-900",
+  "select.option.text.selected": "text-sm font-bold text-slate-900",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -259,6 +272,14 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "radio.dot": "w-2 h-2 rounded-[4px] bg-white",
   "radio.dot.disabled": "w-2 h-2 rounded-[4px] bg-slate-500",
   "radio.label.rest": "text-base text-white",
+  "chevron.arm.top": "absolute left-[7px] top-[3px] w-[2px] h-[6px] bg-white rotate-135",
+  "chevron.arm.bottom": "absolute left-[7px] top-[7px] w-[2px] h-[6px] bg-white rotate-45",
+  "select.trigger": "h-9 w-[200px] px-3 border-2 border-slate-600 bg-slate-800 rounded-md flex-row items-center justify-between",
+  "select.value": "text-sm text-white",
+  "select.list": "w-[200px] flex-col gap-1 p-1 bg-slate-800 border-2 border-slate-600 rounded-md",
+  "select.option.selected": "bg-slate-700",
+  "select.option.text": "text-sm text-white",
+  "select.option.text.selected": "text-sm font-bold text-white",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {

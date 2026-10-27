@@ -18,6 +18,7 @@ import { Spinner } from "../../../src/native/spinner.tsx";
 import { Checkbox } from "../../../src/native/checkbox.tsx";
 import { Switch } from "../../../src/native/switch.tsx";
 import { RadioGroup, RadioItem } from "../../../src/native/radio.tsx";
+import { Select } from "../../../src/native/select.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
 import { useState } from "react";
 
@@ -236,6 +237,24 @@ export function RadioPage() {
         <RadioItem value="l">Large</RadioItem>
       </RadioGroup>
       <Label>{"Plan " + plan + ", size " + size}</Label>
+    </View>
+  );
+}
+
+export function SelectPage() {
+  const [plan, setPlan] = useState("monthly");
+  return (
+    <View className="flex-col gap-2">
+      <Select
+        value={plan}
+        onValueChange={setPlan}
+        options={[
+          { value: "monthly", label: "Per month" },
+          { value: "yearly", label: "Per year" },
+          { value: "weekly", label: "Per week" },
+        ]}
+      />
+      <Label>{"Billing " + plan}</Label>
     </View>
   );
 }

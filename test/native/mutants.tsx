@@ -13,6 +13,7 @@ import { Badge } from "../../src/native/badge.tsx";
 import { Checkbox } from "../../src/native/checkbox.tsx";
 import { Switch } from "../../src/native/switch.tsx";
 import { RadioGroup, RadioItem } from "../../src/native/radio.tsx";
+import { Select } from "../../src/native/select.tsx";
 import { Avatar } from "../../src/native/avatar.tsx";
 import { Progress } from "../../src/native/progress.tsx";
 import { Label } from "../../src/native/label.tsx";
@@ -60,6 +61,16 @@ function LiveRadio() {
         <RadioItem value="monthly">Live radio</RadioItem>
         <RadioItem value="yearly">Yearly</RadioItem>
       </RadioGroup>
+      <Label>{"Plan " + plan}</Label>
+    </View>
+  );
+}
+
+function LiveSelect() {
+  const [plan, setPlan] = useState("monthly");
+  return (
+    <View className="flex-col gap-2">
+      <Select value={plan} onValueChange={setPlan} options={[{ value: "monthly", label: "Live select" }, { value: "yearly", label: "Yearly" }]} />
       <Label>{"Plan " + plan}</Label>
     </View>
   );
@@ -275,5 +286,19 @@ export const MUTANTS: Record<string, Mutant> = {
   "dead-radio-control": {
     gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live radio", metrics: ["text"], keys: [BTN.RIGHT] },
     render: () => <View className={ROOT}><LiveRadio /></View>,
+  },
+  "dead-select": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead select", metrics: ["text"] },
+    render: () => (
+      <View className={ROOT}>
+        <Focusable look={[T["select.trigger"], T["select.focus"]].join(" ")}>
+          <Text className={T["select.value"]}>Dead select</Text>
+        </Focusable>
+      </View>
+    ),
+  },
+  "dead-select-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live select", metrics: ["text"] },
+    render: () => <View className={ROOT}><LiveSelect /></View>,
   },
 };
