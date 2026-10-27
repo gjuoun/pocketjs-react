@@ -175,6 +175,7 @@ function OskPanel(props: { field: TextFieldBinding }) {
             key={rect.row + ":" + rect.col}
             ref={registerKey(rect)}
             className={rect.key.ch === undefined ? KEY_SPECIAL : KEY}
+            focusable
             style={{
               left: rect.x,
               top: rowTop(rect.row),
