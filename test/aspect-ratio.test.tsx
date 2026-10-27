@@ -74,12 +74,19 @@ test("AspectRatio: a 16:9 box is width * 9/16 tall, to the pixel within one", as
 
 // The first visible frame is the settled box: the width is read before the first render (the box
 // measures at PROBE px with nothing mounted, so an unmeasured frame would draw nothing, never a wrong size).
-test("AspectRatio: the first visible frame already has the settled 2:1 size", async () => {
+// The mirror holds the box from the first frame on the stock core, and from the first frame pump on the overlay
+// core (its node is not in the mirror before the pump). A frame with no box is the empty frame the header allows;
+// a box that is drawn must already be the settled size, and the next frame must have it.
+test("AspectRatio: the first visible frame is empty or already the settled 2:1 size", async () => {
   await boot();
   core!.step(0);
   core!.render();
-  const first = boxNamed("ratio-2")!;
-  expect({ w: first.w, h: first.h }).toEqual({ w: 200, h: 100 });
+  const first = boxNamed("ratio-2");
+  if (first) expect({ w: first.w, h: first.h }).toEqual({ w: 200, h: 100 });
+  core!.step(0);
+  core!.step(0);
+  core!.render();
+  expect(boxNamed("ratio-2")).toEqual(expect.objectContaining({ w: 200, h: 100 }));
 });
 
 test("AspectRatio: a width change on the same instance re-measures within a few frames", async () => {
