@@ -12,9 +12,7 @@ import { getOverlayLayer } from "../renderer/mount.ts";
 import { pushLayer } from "../primitives/layer-stack.ts";
 import { useControllableState } from "../primitives/state.ts";
 import { Button } from "./button.tsx";
-import { TOKENS } from "./tokens.ts";
-
-const T = TOKENS as Record<string, string>;
+import { useTokens } from "./theme.tsx";
 
 interface DialogContextValue {
   open: boolean;
@@ -53,19 +51,23 @@ export function DialogClose(props: { children?: string }) {
 }
 
 export function DialogTitle(props: { children?: string }) {
+  const T = useTokens() as Record<string, string>;
   return <Text className={T["dialog.title"]}>{props.children}</Text>;
 }
 
 export function DialogDescription(props: { children?: string }) {
+  const T = useTokens() as Record<string, string>;
   return <Text className={T["dialog.description"]}>{props.children}</Text>;
 }
 
 export function DialogFooter(props: { children?: ReactNode }) {
+  const T = useTokens() as Record<string, string>;
   return <View className={T["dialog.footer"]}>{props.children}</View>;
 }
 
 /** The layer: a scrim and a focus-trapped panel. Mounted only while the dialog is open. */
 function DialogLayer(props: { children?: ReactNode }) {
+  const T = useTokens() as Record<string, string>;
   const ctx = useDialog("DialogContent");
   const node = useRef<NodeMirror | null>(null);
   const close = useRef<() => void>(() => {});

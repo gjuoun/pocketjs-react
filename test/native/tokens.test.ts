@@ -1,10 +1,11 @@
 import { expect, test } from "bun:test";
 import { rewrite } from "../../src/compat/tokens.ts";
 import { unknownUtilities } from "../../src/internal/pocket.ts";
-import { TOKENS, type TokenKey } from "../../src/native/tokens.ts";
+import { THEMES, TOKENS, type TokenKey } from "../../src/native/tokens.ts";
 
-const REJECT = ["ring-2", "underline", "shadow-sm", "text-3xl", "leading-tight", "bg-slate-950/60", "cursor-pointer", "hover:bg-slate-800", "disabled:opacity-50", "focus:outline-none", "border-b", "border-l", "select-none"];
-const values = Object.values(TOKENS) as string[];
+// rounded-full is rejected too: the compat rewrite drops it, so a circle is rounded-[Npx] at half the size.
+const REJECT = ["ring-2", "underline", "shadow-sm", "text-3xl", "leading-tight", "bg-slate-950/60", "cursor-pointer", "hover:bg-slate-800", "disabled:opacity-50", "focus:outline-none", "border-b", "border-l", "select-none", "rounded-full"];
+const values = [...Object.values(TOKENS), ...Object.values(THEMES.dark)] as string[];
 
 test("every token literal compiles on the core (empty unknownUtilities)", () => {
   for (const literal of values) expect(unknownUtilities(literal)).toEqual([]);
@@ -14,9 +15,14 @@ test("the build rewrite is an identity on every token (no C2 mapping changes a l
   for (const literal of values) expect(rewrite(literal).text).toBe(literal);
 });
 
-test("the vocabulary holds at most 80 distinct utilities", () => {
+// Phase 0 held 80; Phase 1 adds seven families and the dark table (91 distinct utilities with both themes).
+test("the vocabulary holds at most 100 distinct utilities, light and dark together", () => {
   const distinct = new Set(values.flatMap((l) => l.split(/\s+/).filter(Boolean)));
-  expect(distinct.size).toBeLessThanOrEqual(80);
+  expect(distinct.size).toBeLessThanOrEqual(100);
+});
+
+test("the dark table has every key of the light table (a theme switch cannot miss a key)", () => {
+  expect(Object.keys(THEMES.dark).sort()).toEqual(Object.keys(TOKENS).sort());
 });
 
 test("no rejected utility appears in the vocabulary", () => {

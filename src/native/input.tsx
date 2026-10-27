@@ -8,9 +8,7 @@ import { View } from "../elements.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
 import { bindField, openField, type TextFieldBinding, unbindField } from "../input/text-field.ts";
 import { Focusable } from "./focusable.tsx";
-import { TOKENS } from "./tokens.ts";
-
-const T = TOKENS as Record<string, string>;
+import { useTokens } from "./theme.tsx";
 
 interface FieldProps {
   value?: string;
@@ -21,6 +19,7 @@ interface FieldProps {
 }
 
 function Field(props: FieldProps) {
+  const T = useTokens() as Record<string, string>;
   const node = useRef<NodeMirror | null>(null);
   const bound = useRef<TextFieldBinding | null>(null);
   const lastValue = useRef<string | undefined | null>(null);

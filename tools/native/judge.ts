@@ -86,8 +86,9 @@ interface PageRow {
 async function judgePages() {
   const entry = resolve(ROOT, "test/native/gallery/main.tsx");
   const built = await build(entry, { outdir: OUT, name: "native-gallery" });
-  const core = await bootCore({ classes: built.tokens, fontSlots: built.fontSlots });
-  installBuildStyles({}, compileClasses([]).bin, built.tokens);
+  const styles = compileClasses(built.literals);
+  const core = await bootCore({ classes: built.literals, fontSlots: built.fontSlots });
+  installBuildStyles(styles.ids, styles.bin, built.tokens);
   await import(entry);
   core.step(0); core.step(0); core.render();
   const geo = geometryFor(core);
@@ -145,8 +146,9 @@ async function judgeMutants() {
       "",
     ].join("\n"));
     const built = await build(entry, { outdir: OUT, name: "mutant-" + name });
-    const core = await bootCore({ classes: built.tokens, fontSlots: built.fontSlots });
-    installBuildStyles({}, compileClasses([]).bin, built.tokens);
+    const styles = compileClasses(built.literals);
+    const core = await bootCore({ classes: built.literals, fontSlots: built.fontSlots });
+    installBuildStyles(styles.ids, styles.bin, built.tokens);
     const mod = (await import(entry)) as { unmount: () => void };
     core.step(0); core.step(0); core.render();
     const geo = geometryFor(core);

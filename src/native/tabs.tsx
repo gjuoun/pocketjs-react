@@ -7,9 +7,7 @@ import { Text, View } from "../elements.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
 import { useControllableState } from "../primitives/state.ts";
 import { Focusable } from "./focusable.tsx";
-import { TOKENS } from "./tokens.ts";
-
-const T = TOKENS as Record<string, string>;
+import { useTokens } from "./theme.tsx";
 
 interface TriggerItem {
   node: NodeMirror;
@@ -35,6 +33,7 @@ export function Tabs(props: { value?: string; defaultValue?: string; onValueChan
 }
 
 export function TabsList(props: { children?: ReactNode }) {
+  const T = useTokens() as Record<string, string>;
   const g = useGroup("TabsList");
   const node = useRef<NodeMirror | null>(null);
   useLayoutEffect(() => {
@@ -54,6 +53,7 @@ export function TabsList(props: { children?: ReactNode }) {
 }
 
 export function TabsTrigger(props: { value: string; children?: string }) {
+  const T = useTokens() as Record<string, string>;
   const g = useGroup("TabsTrigger");
   const node = useRef<NodeMirror | null>(null);
   const select = useRef(() => g.select(props.value));
@@ -75,6 +75,7 @@ export function TabsTrigger(props: { value: string; children?: string }) {
 }
 
 export function TabsContent(props: { value: string; children?: string }) {
+  const T = useTokens() as Record<string, string>;
   const g = useGroup("TabsContent");
   if (g.value !== props.value) return null;
   return (
