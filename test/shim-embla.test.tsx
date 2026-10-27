@@ -65,15 +65,15 @@ test("Next moves the track one slide and Previous moves it back", async () => {
   });
   await step();
   // One slide step: Two moves to where One was. Previous is disabled at the start, so Next is the only focusable.
+  // Slides fill the viewport (basis-full), so Two is off screen at rest: One is the slide to return to.
   const one = labelX("One");
-  const two = labelX("Two");
   focusNode(focusables()[0]);
   m!.core.press(BTN.CIRCLE);
   await step();
   expect(Math.abs(labelX("Two") - one)).toBeLessThanOrEqual(2);
-  // Previous is now the first focusable and moves back by the same step.
+  // Previous is now the first focusable and moves back by the same step: One is where it started.
   focusNode(focusables()[0]);
   m!.core.press(BTN.CIRCLE);
   await step();
-  expect(Math.abs(labelX("Two") - two)).toBeLessThanOrEqual(2);
+  expect(Math.abs(labelX("One") - one)).toBeLessThanOrEqual(2);
 });

@@ -116,7 +116,7 @@ function ComboboxContent({
           data-slot="combobox-content"
           data-chips={!!anchor}
           className={cn(
-            "relative max-h-96 w-(--anchor-width) max-w-(--available-width) overflow-hidden rounded-md bg-white text-slate-900 shadow-md duration-100",
+            "relative max-h-96 w-(--anchor-width) max-w-(--available-width) overflow-hidden rounded-md bg-white text-slate-900 shadow-md duration-100 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:border-slate-200",
             className
           )}
           {...props}

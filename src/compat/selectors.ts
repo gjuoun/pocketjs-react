@@ -16,7 +16,11 @@ export type Selector =
   /** has-data-[slot=v]: a direct child whose data-slot (or component name, kebab-cased) is v. */
   | { kind: "has-data"; value: string }
   /** A descendant rule ([&_svg]:, [&>svg]:): it styles the icon children, never the node. */
-  | { kind: "svg" };
+  | { kind: "svg" }
+  /** [&[data-NAME=VALUE]>svg]:BODY: BODY styles the icon children while the node's own data-NAME is VALUE. */
+  | { kind: "icon-state"; name: string; value: string }
+  /** *:data-[slot=NAME]:BODY: BODY styles the direct child whose data-slot is NAME (the child takes it, never the node). */
+  | { kind: "child-slot"; slot: string };
 
 export interface SplitToken {
   /** The first variant prefix as written (`disabled`, `data-[state=open]`). */
@@ -27,6 +31,7 @@ export interface SplitToken {
 }
 
 const DATA_SELECTOR = /^data-\[([\w-]+)(?:=([^\]]+))?\]$/;
+const ICON_STATE_SELECTOR = /^\[&\[data-([\w-]+)=([^\]]+)\]>svg\]$/;
 
 /** Split a token at its top-level colons: colons inside [...] or (...) belong to a selector. */
 export function splitVariants(tok: string): string[] {
@@ -77,6 +82,8 @@ function selectorOf(prefix: string): Selector | null {
     prefix === "[&_svg:not([class*='text-'])]"
   )
     return { kind: "svg" };
+  const icon = ICON_STATE_SELECTOR.exec(prefix);
+  if (icon) return { kind: "icon-state", name: icon[1], value: icon[2] };
   const m = DATA_SELECTOR.exec(prefix);
   if (m) return { kind: "data", name: m[1], value: m[2] };
   return null;
@@ -86,6 +93,13 @@ function selectorOf(prefix: string): Selector | null {
 export function splitSelector(tok: string): SplitToken | null {
   const parts = splitVariants(tok);
   if (parts.length < 2) return null;
+  const child = /^data-\[slot=([\w-]+)\]$/.exec(parts[1]);
+  if (parts[0] === "*" && child && parts.length > 2)
+    return {
+      prefix: "*:" + parts[1],
+      selector: { kind: "child-slot", slot: child[1] },
+      body: parts.slice(2).join(":"),
+    };
   const selector = selectorOf(parts[0]);
   if (!selector) return null;
   return { prefix: parts[0], selector, body: parts.slice(1).join(":") };
@@ -143,6 +157,10 @@ export function holds(sel: Selector, node: SelectorNode): boolean {
     }
     case "svg":
       return false;
+    case "icon-state":
+      return String(node.props["data-" + sel.name]) === sel.value;
+    case "child-slot":
+      return false;
     case "has-data":
       return children(node.children).some((c) => slotOf(c) === sel.value);
     case "has-svg": {
@@ -164,8 +182,13 @@ export function resolveSelectors(
       out.push(tok);
       return;
     }
-    // A descendant rule is consumed here and applied to the icons by the icon colour pass.
-    if (split.selector.kind === "svg") return;
+    // A descendant rule is consumed here and applied to the icons by the icon colour and turn passes.
+    if (
+      split.selector.kind === "svg" ||
+      split.selector.kind === "icon-state" ||
+      split.selector.kind === "child-slot"
+    )
+      return;
     if (holds(split.selector, node)) visit(split.body);
   };
   for (const tok of className.trim().split(/\s+/)) if (tok !== "") visit(tok);
@@ -193,9 +216,37 @@ export function selectorInputs(className: unknown): Set<string> {
     const s = split.selector;
     if (s.kind === "disabled") names.add("disabled");
     else if (s.kind === "invalid") names.add("aria-invalid");
-    else if (s.kind === "data") names.add("data-" + s.name);
+    else if (s.kind === "data" || s.kind === "icon-state") names.add("data-" + s.name);
   }
   return names;
+}
+
+/** The child-slot rules of a class string: each BODY and the data-slot NAME of the child it styles. */
+export function childSlotRules(className: unknown): { slot: string; body: string }[] {
+  if (typeof className !== "string") return [];
+  const out: { slot: string; body: string }[] = [];
+  for (const tok of className.split(/\s+/)) {
+    const split = splitSelector(tok);
+    if (split?.selector.kind === "child-slot")
+      out.push({ slot: split.selector.slot, body: split.body });
+  }
+  return out;
+}
+
+/**
+ * The degrees a node's [&[data-…]>svg]:rotate-N rule turns its icon children: N while the rule holds, 0 while it does
+ * not, undefined when the node has no such rule.
+ */
+export function iconTurnRule(props: Record<string, unknown>): number | undefined {
+  if (typeof props.className !== "string") return undefined;
+  let turn: number | undefined;
+  for (const tok of props.className.split(/\s+/)) {
+    const split = splitSelector(tok);
+    if (split?.selector.kind !== "icon-state") continue;
+    const deg = /^rotate-(\d+)$/.exec(split.body);
+    if (deg) turn = holds(split.selector, { props }) ? Number(deg[1]) : 0;
+  }
+  return turn;
 }
 
 /** The build's view of a literal: every selector token replaced by its innermost body. */

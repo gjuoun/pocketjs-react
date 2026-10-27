@@ -66,6 +66,12 @@ export const TOKEN_MAP: Readonly<Record<string, string>> = {
   "overflow-x-hidden": "overflow-hidden",
   "tracking-tight": "tracking-wide",
   "tracking-widest": "tracking-wide",
+  // Carousel (embla shim): a slide takes the viewport width; the track and the arrows are pulled out by px.
+  "basis-full": "w-full",
+  "-left-12": "left-1",
+  "-right-12": "right-1",
+  "-top-12": "top-1",
+  "-bottom-12": "bottom-1",
   // --- no PocketJS equivalent: mapped to nothing, counted (never silently kept) -------
   "w-fit": "",
   "whitespace-nowrap": "",

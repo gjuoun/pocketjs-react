@@ -28,9 +28,19 @@ export interface ButtonProps {
   onClick?: () => void;
 }
 
+/** A button whose class sets no text colour: its label takes the foreground of its own fill (white on a dark fill, slate-900 on a light one). */
+function labelColour(className: string | undefined): string {
+  const cls = className ?? "";
+  if (/(^|\s)text-(white|black|slate-\d+|red-\d+)(\s|$)/.test(cls)) return "";
+  return /(^|\s)bg-(slate-(800|900|950)|red-(600|700)|black)(\s|$)/.test(cls)
+    ? "text-white"
+    : "text-slate-900";
+}
+
+/** A string label is a Text that takes its colour from the button (never from the dialog above it). */
 function labelled(children: ReactNode): ReactNode {
   if (typeof children === "string" || typeof children === "number")
-    return <Text className="text-sm text-white">{children}</Text>;
+    return <Text className="text-sm">{children}</Text>;
   return children;
 }
 
@@ -39,7 +49,7 @@ export function Action(props: ButtonProps) {
   const ctx = useDialogContext("AlertDialog.Action");
   return (
     <Pressable
-      className={cn("flex items-center justify-center", props.className)}
+      className={cn("flex items-center justify-center", labelColour(props.className), props.className)}
       onPress={() => {
         props.onClick?.();
         ctx.setOpen(false);
@@ -55,7 +65,7 @@ export function Cancel(props: ButtonProps) {
   const ctx = useDialogContext("AlertDialog.Cancel");
   return (
     <Pressable
-      className={cn("flex items-center justify-center", props.className)}
+      className={cn("flex items-center justify-center", labelColour(props.className), props.className)}
       onPress={() => {
         props.onClick?.();
         ctx.setOpen(false);
