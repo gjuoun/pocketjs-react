@@ -99,7 +99,7 @@ function MessageScrollerButton({
       data-size={size}
       direction={direction}
       className={cn(
-        "absolute border-slate-200 bg-white text-slate-900 duration-200 active:bg-slate-100 active:text-slate-900 data-[active=false]:scale-95 data-[active=false]:opacity-0 data-[active=false]:duration-400 data-[active=true]:translate-y-0 data-[active=true]:scale-100 data-[active=true]:opacity-100 data-[direction=end]:bottom-4 data-[direction=start]:top-4",
+        "absolute -translate-x-1/2 border-slate-200 bg-white text-slate-900 duration-200 active:bg-slate-100 active:text-slate-900 data-[active=false]:scale-95 data-[active=false]:opacity-0 data-[active=false]:duration-400 data-[active=true]:translate-y-0 data-[active=true]:scale-100 data-[active=true]:opacity-100 data-[direction=end]:bottom-4 data-[direction=start]:top-4",
         className
       )}
       render={render ?? <Button variant={variant} size={size} />}

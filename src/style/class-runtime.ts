@@ -17,6 +17,7 @@ import { bakedTimelines } from "@pocket-internal/framework/compiler/animation.ts
 import type { AnimTimeline } from "@pocket-internal/contracts/spec/spec.ts";
 import { dropReason, rewrite } from "../compat/tokens.ts";
 import { setBindings } from "./vars.ts";
+import { setPercents } from "./percent.ts";
 import {
   decodeStyleTable,
   encodeStyleTable,
@@ -279,6 +280,7 @@ export function applyClassName(node: NodeMirror, cls: unknown): void {
   applied.set(node, raw);
   const rewritten = tokenMapEnabled ? rewrite(raw) : undefined;
   setBindings(node, rewritten?.bindings ?? []);
+  setPercents(node, rewritten?.percents ?? []);
   const next = rewritten ? rewritten.text : raw;
   if (rewritten) {
     classRuntimeStats.mappedTokens += rewritten.mapped;

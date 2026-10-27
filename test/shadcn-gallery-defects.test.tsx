@@ -203,7 +203,9 @@ test("carousel: the slide fills the screen, both arrows are drawn, and next move
   const nextInk = arrowInk(428, 472);
   const shown = () => core.texts().filter((r) => r.y >= TITLE_H && r.y < VIEW_H && r.x < FB_W);
   const before = shown().map((r) => r.text);
-  await tap(core, 452, 58);
+  // The next arrow's centre: the gallery pins its top to 14px, and the shadcn -translate-y-1/2 lifts it by half its
+  // 32px height (top-1/2 is replaced by that pin under twMerge, as in the browser). Its box is y 26..58.
+  await tap(core, 452, 42);
   const after = shown().map((r) => r.text);
   console.log(`carousel slide x ${slideLeft}..${slideRight} (${slideRight - slideLeft + 1} px of ${FB_W}) | arrow ink prev ${prevInk} next ${nextInk} | on screen before [${before}] after next [${after}]`);
   expect(slideLeft).toBeGreaterThanOrEqual(0);

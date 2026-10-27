@@ -58,8 +58,8 @@ function DrawerContent({
           "absolute z-50 flex flex-col bg-white",
           "data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24",
           "data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-24",
-          "data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3",
-          "data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:w-3",
+          "data-[vaul-drawer-direction=right]:right-0",
+          "data-[vaul-drawer-direction=left]:left-0",
           className
         )}
         {...props}

@@ -291,7 +291,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
       onClick={toggleSidebar}
       title="Toggle Sidebar"
       className={cn(
-        "absolute z-20 hidden w-4 transition-all ease-linear",
+        "absolute z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear",
         "",
         "",
         "",
