@@ -17,8 +17,8 @@ test("the build rewrite is an identity on every token (no C2 mapping changes a l
 
 // Phase 0 held 80; Phase 1 adds seven families and the dark table (91 distinct utilities with both themes).
 // Phase 2 tracks the measured count at each step: eight spinner arc-start steps and the skeleton pulse take it to 101,
-// the checkbox to 121 and the switch to 128. The budget is the count at the last green step; the B batch reports its final count.
-const BUDGET = 128;
+// the checkbox to 121, the switch to 128 and the radio group to 130. The budget is the count at the last green step.
+const BUDGET = 130;
 test("the vocabulary holds at most " + BUDGET + " distinct utilities, light and dark together", () => {
   const distinct = new Set(values.flatMap((l) => l.split(/\s+/).filter(Boolean)));
   expect(distinct.size).toBeLessThanOrEqual(BUDGET);

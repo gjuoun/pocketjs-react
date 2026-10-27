@@ -17,6 +17,7 @@ import { Skeleton } from "../../../src/native/skeleton.tsx";
 import { Spinner } from "../../../src/native/spinner.tsx";
 import { Checkbox } from "../../../src/native/checkbox.tsx";
 import { Switch } from "../../../src/native/switch.tsx";
+import { RadioGroup, RadioItem } from "../../../src/native/radio.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
 import { useState } from "react";
 
@@ -215,6 +216,26 @@ export function SwitchPage() {
       <Switch checked disabled>Locked on</Switch>
       <Switch disabled>Locked off</Switch>
       <Label>{"Airplane mode " + (airplane ? "on" : "off")}</Label>
+    </View>
+  );
+}
+
+export function RadioPage() {
+  const [plan, setPlan] = useState("monthly");
+  const [size, setSize] = useState("m");
+  return (
+    <View className="flex-col gap-2">
+      <RadioGroup value={plan} onValueChange={setPlan}>
+        <RadioItem value="monthly">Monthly</RadioItem>
+        <RadioItem value="yearly">Yearly</RadioItem>
+        <RadioItem value="lifetime" disabled>Lifetime</RadioItem>
+      </RadioGroup>
+      <RadioGroup value={size} onValueChange={setSize} orientation="horizontal">
+        <RadioItem value="s">Small</RadioItem>
+        <RadioItem value="m">Medium</RadioItem>
+        <RadioItem value="l">Large</RadioItem>
+      </RadioGroup>
+      <Label>{"Plan " + plan + ", size " + size}</Label>
     </View>
   );
 }

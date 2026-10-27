@@ -1,6 +1,7 @@
 // Defect mutants for the native judge: each defect is one body that must fail its gate; each -control is the same
 // body done right, which must pass. Built one entry per name by tools/native/judge.ts --mutants.
 // Sizes that are not in the vocabulary go through the style prop (the build scan does not collect arbitrary lengths here).
+import { BTN } from "@pocketjs/framework/input";
 import { useState, type ReactNode } from "react";
 import { Text, View } from "../../src/index.ts";
 import { Button } from "../../src/native/button.tsx";
@@ -11,6 +12,7 @@ import { Text as Txt, View as Vw } from "../../src/index.ts";
 import { Badge } from "../../src/native/badge.tsx";
 import { Checkbox } from "../../src/native/checkbox.tsx";
 import { Switch } from "../../src/native/switch.tsx";
+import { RadioGroup, RadioItem } from "../../src/native/radio.tsx";
 import { Avatar } from "../../src/native/avatar.tsx";
 import { Progress } from "../../src/native/progress.tsx";
 import { Label } from "../../src/native/label.tsx";
@@ -46,6 +48,19 @@ function LiveSwitch() {
   return (
     <View className="flex-col gap-2">
       <Switch checked={on} onCheckedChange={setOn}>Live switch</Switch>
+    </View>
+  );
+}
+
+function LiveRadio() {
+  const [plan, setPlan] = useState("monthly");
+  return (
+    <View className="flex-col gap-2">
+      <RadioGroup value={plan} onValueChange={setPlan}>
+        <RadioItem value="monthly">Live radio</RadioItem>
+        <RadioItem value="yearly">Yearly</RadioItem>
+      </RadioGroup>
+      <Label>{"Plan " + plan}</Label>
     </View>
   );
 }
@@ -244,5 +259,21 @@ export const MUTANTS: Record<string, Mutant> = {
   "dead-switch-control": {
     gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live switch", metrics: ["offset"] },
     render: () => <View className={ROOT}><LiveSwitch /></View>,
+  },
+  "dead-radio": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead radio", metrics: ["text"], keys: [BTN.RIGHT] },
+    render: () => (
+      <View className={ROOT}>
+        <RadioGroup value="monthly">
+          <RadioItem value="monthly">Dead radio</RadioItem>
+          <RadioItem value="yearly">Yearly</RadioItem>
+        </RadioGroup>
+        <Label>Plan monthly</Label>
+      </View>
+    ),
+  },
+  "dead-radio-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live radio", metrics: ["text"], keys: [BTN.RIGHT] },
+    render: () => <View className={ROOT}><LiveRadio /></View>,
   },
 };

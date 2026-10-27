@@ -141,6 +141,17 @@ export const TOKENS = {
   "switch.thumb.on": "w-5 h-5 rounded-[10px] bg-white ml-[16px] transition-all duration-150",
   "switch.label.rest": "text-base text-slate-900",
   "switch.label.disabled": "text-base text-slate-500",
+  "radio.group": "flex-col gap-1",
+  "radio.group.row": "flex-row gap-3 items-center",
+  "radio.row": "flex-row items-center gap-2 h-8 px-1 border-2 border-transparent rounded-md",
+  "radio.focus": "focus:border-blue-600",
+  "radio.ring.off": "w-5 h-5 rounded-[10px] border-2 border-slate-500 bg-white flex-row items-center justify-center",
+  "radio.ring.on": "w-5 h-5 rounded-[10px] border-2 border-slate-900 bg-white flex-row items-center justify-center",
+  "radio.ring.disabled": "w-5 h-5 rounded-[10px] border-2 border-slate-300 bg-slate-100 flex-row items-center justify-center",
+  "radio.dot": "w-2 h-2 rounded-[4px] bg-slate-900",
+  "radio.dot.disabled": "w-2 h-2 rounded-[4px] bg-slate-500",
+  "radio.label.rest": "text-base text-slate-900",
+  "radio.label.disabled": "text-base text-slate-500",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -242,6 +253,12 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "switch.thumb.off": "w-5 h-5 rounded-[10px] bg-slate-900 ml-0 transition-all duration-150",
   "switch.thumb.on": "w-5 h-5 rounded-[10px] bg-slate-900 ml-[16px] transition-all duration-150",
   "switch.label.rest": "text-base text-white",
+  "radio.ring.off": "w-5 h-5 rounded-[10px] border-2 border-slate-400 bg-slate-900 flex-row items-center justify-center",
+  "radio.ring.on": "w-5 h-5 rounded-[10px] border-2 border-white bg-slate-900 flex-row items-center justify-center",
+  "radio.ring.disabled": "w-5 h-5 rounded-[10px] border-2 border-slate-600 bg-slate-800 flex-row items-center justify-center",
+  "radio.dot": "w-2 h-2 rounded-[4px] bg-white",
+  "radio.dot.disabled": "w-2 h-2 rounded-[4px] bg-slate-500",
+  "radio.label.rest": "text-base text-white",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {

@@ -1,5 +1,6 @@
 // Gate 4 drivers for the native pages and the mutant bodies: the visible trigger text and the metric that counts.
 // Keys are page numbers (1-based, gallery order). A trigger text must be unique across all pages (the judge searches the whole tree).
+import { BTN } from "@pocketjs/framework/input";
 import type { Driver } from "../qa/acceptance/drivers.ts";
 
 export const PAGE_DRIVERS: Record<number, Driver[]> = {
@@ -21,8 +22,9 @@ export const PAGE_DRIVERS: Record<number, Driver[]> = {
   12: [{ kind: "static", reason: "a spinner has no focus and no press; it steps its arc on a frame pump (see spinner.tsx)" }],
   13: [{ kind: "driven", trigger: "Email me updates", metrics: ["ink"] }],
   14: [{ kind: "driven", trigger: "Airplane mode", metrics: ["offset"] }],
-  15: [{ kind: "driven", trigger: "Dark", metrics: ["text"] }],
+  15: [{ kind: "driven", trigger: "Monthly", metrics: ["text"], keys: [BTN.RIGHT] }],
+  16: [{ kind: "driven", trigger: "Dark", metrics: ["text"] }],
 };
 
 /** Pages whose gates 1-3 run again after a passing driver (the driver changes the page's state, e.g. a theme). */
-export const PAGE_REJUDGE: Record<number, boolean> = { 15: true };
+export const PAGE_REJUDGE: Record<number, boolean> = { 16: true };
