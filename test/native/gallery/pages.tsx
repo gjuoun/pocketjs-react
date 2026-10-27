@@ -285,7 +285,9 @@ export function AccordionPage() {
   );
 }
 
-/** The theme page: all twelve native components on one surface. The toggle is a state change of the provider. */
+/** The theme page: all eighteen native components on one 480 by 252 surface, in four bands. The toggle is a state change
+ * of the provider, so every component under it re-renders with the other table. Sizes are the components' own tokens: the
+ * page is sized so nothing shrinks (a squeezed row drew its badges and avatars at 15 px before this layout). */
 export function ThemePage() {
   const [theme, setTheme] = useState<ThemeName>("light");
   return (
@@ -298,50 +300,73 @@ export function ThemePage() {
 function ThemeBody() {
   const T = useTokens() as Record<string, string>;
   const { theme, setTheme } = useTheme();
+  const [checked, setChecked] = useState(true);
+  const [sync, setSync] = useState(false);
+  const [answer, setAnswer] = useState("yes");
+  const [option, setOption] = useState("monthly");
+  const [volume, setVolume] = useState(40);
   return (
     <View className={T["theme.page"]}>
-      <View className="flex-row gap-4">
-        <View className="flex-col gap-2 w-[216px]">
-          <View className="flex-row items-center gap-2">
-            <Button onPress={() => setTheme(theme === "light" ? "dark" : "light")}>{theme === "light" ? "Dark" : "Light"}</Button>
-            <Dialog>
-              <DialogTrigger>Edit</DialogTrigger>
-            </Dialog>
-          </View>
-          <View className="flex-row gap-1">
-            <Badge>Stable</Badge>
-            <Badge variant="secondary">Beta</Badge>
-            <Badge variant="destructive">Failed</Badge>
-          </View>
-          <Input placeholder="Name" value="" onChange={() => {}} />
-          <Card>
-            <CardHeader><CardTitle>Account</CardTitle><CardDescription>Plan renews monthly</CardDescription></CardHeader>
-          </Card>
-        </View>
-        <View className="flex-col gap-2 w-[216px]">
-          <Tabs defaultValue="Overview">
-            <TabsList>
-              <TabsTrigger value="Overview">Overview</TabsTrigger>
-              <TabsTrigger value="Usage">Usage</TabsTrigger>
-            </TabsList>
-            <TabsContent value="Overview">Usage this month</TabsContent>
-          </Tabs>
-          <Separator />
-          <View className="flex-row items-center gap-2">
-            <Avatar size="sm">AK</Avatar>
-            <Avatar>AK</Avatar>
-            <Spinner />
-            <Label>Loading</Label>
-          </View>
-          <View className="flex-row items-center gap-2">
-            <Skeleton shape="circle" />
-            <View className="flex-col gap-2"><Skeleton /></View>
-          </View>
-        </View>
+      <View className="flex-row items-center gap-2">
+        <Button onPress={() => setTheme(theme === "light" ? "dark" : "light")}>{theme === "light" ? "Dark" : "Light"}</Button>
+        <Dialog>
+          <DialogTrigger>Edit</DialogTrigger>
+        </Dialog>
+        <Badge>Stable</Badge>
+        <Badge variant="secondary">Beta</Badge>
+        <Badge variant="destructive">Failed</Badge>
+      </View>
+      <View className="flex-row items-center gap-2">
+        <Select
+          value={option}
+          onValueChange={setOption}
+          options={[
+            { value: "monthly", label: "Per month" },
+            { value: "yearly", label: "Per year" },
+          ]}
+        />
+        <Slider value={volume} onValueChange={setVolume} />
       </View>
       <View className="flex-row items-center gap-2">
         <Progress value={60} />
         <Label>60%</Label>
+      </View>
+      <View className="flex-row gap-2">
+        <View className="flex-col gap-2 w-[110px]">
+          <Input placeholder="Name" value="" onChange={() => {}} />
+          <Card>
+            <CardHeader><CardTitle>Account</CardTitle></CardHeader>
+          </Card>
+        </View>
+        <View className="flex-col gap-2 w-[110px]">
+          <Tabs defaultValue="Info">
+            <TabsList>
+              <TabsTrigger value="Info">Info</TabsTrigger>
+              <TabsTrigger value="Use">Use</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Separator />
+          <View className="flex-row items-center gap-2">
+            <Avatar>AK</Avatar>
+            <Avatar>AK</Avatar>
+            <Spinner size="sm" />
+          </View>
+          <Skeleton />
+        </View>
+        <View className="flex-col gap-2 w-[110px]">
+          <Checkbox checked={checked} onCheckedChange={setChecked}>Email</Checkbox>
+          <RadioGroup value={answer} onValueChange={setAnswer}>
+            <RadioItem value="yes">Yes</RadioItem>
+            <RadioItem value="no">No</RadioItem>
+          </RadioGroup>
+        </View>
+        <View className="flex-col gap-2 w-[110px]">
+          <Accordion type="multiple">
+            <AccordionItem value="shipping" title="Shipping">{"Ships in 2 days."}</AccordionItem>
+            <AccordionItem value="returns" title="Returns">{"30 days."}</AccordionItem>
+          </Accordion>
+          <Switch checked={sync} onCheckedChange={setSync}>Sync</Switch>
+        </View>
       </View>
     </View>
   );

@@ -62,7 +62,7 @@ export const TOKENS = {
   "badge.label": "text-xs font-bold",
   "badge.default.rest": "bg-slate-900 border-transparent",
   "badge.default.text": "text-white",
-  "badge.secondary.rest": "bg-slate-200 border-transparent",
+  "badge.secondary.rest": "bg-slate-200 border-slate-300",
   "badge.secondary.text": "text-slate-900",
   "badge.destructive.rest": "bg-red-600 border-transparent",
   "badge.destructive.text": "text-white",
