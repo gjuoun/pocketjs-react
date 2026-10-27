@@ -108,6 +108,25 @@ export function registerDrag(node: NodeMirror, fn: DragListener): () => void {
   };
 }
 
+/** A tap on empty canvas: the press point. A release within TAP_SLOP of it is a tap. */
+export type TapListener = (x: number, y: number) => void;
+const tapListeners: TapListener[] = [];
+
+/** Logical pixels a release may drift from its press and still be a tap. */
+export const TAP_SLOP = 8;
+
+/**
+ * A tap that lands on no focusable, no label control and no open layer (a press on empty canvas, released
+ * near where it went down). A tap on a control never reaches it. Pages use it for touch paging. Returns the teardown.
+ */
+export function onPointerTap(fn: TapListener): () => void {
+  tapListeners.push(fn);
+  return () => {
+    const i = tapListeners.indexOf(fn);
+    if (i >= 0) tapListeners.splice(i, 1);
+  };
+}
+
 let pressing = false;
 
 /** True while the pointer pump presses a node (a tap or click), not a CIRCLE press. */
@@ -145,6 +164,8 @@ export function installPointer(): () => void {
   let seenFocus: unknown = null;
   // A held drag: the listener of the node the press began on, until the release.
   let dragging: DragListener | null = null;
+  // The press point of a press that hit nothing pressable (a tap candidate), until its release.
+  let tapAt: { x: number; y: number } | null = null;
   return addFramePump(() => {
     const focus = getFocused();
     if (focus !== seenFocus) {
@@ -188,13 +209,15 @@ export function installPointer(): () => void {
         held = 0;
         downAt = { x: event.x, y: event.y };
         armedOutside = top && outsideLayer(top, event.x, event.y) ? top : null;
+        tapAt = null;
         if (armedOutside) continue;
         const target = hitFocusable(event.x, event.y);
         armed = target;
         armedFocused = target !== null && getFocused() === target;
         if (target) focusNode(target);
         // Batch A (R-L): no focusable under the tap, but a label is: its control takes the focus.
-        else focusLabelControlAt(event.x, event.y);
+        // Neither, and no layer open: the press is a tap candidate for onPointerTap.
+        else if (!focusLabelControlAt(event.x, event.y) && !top) tapAt = { x: event.x, y: event.y };
         // A registered drag starts here: its first point is the press point, and nothing is pressed on release.
         const drag = target ? drags.get(target) : undefined;
         if (drag) {
@@ -213,6 +236,8 @@ export function installPointer(): () => void {
         )
           layer.close();
       } else {
+        const tap = tapAt;
+        tapAt = null;
         const target = hitFocusable(event.x, event.y);
         if (target && target === armed) {
           const placed =
@@ -231,6 +256,8 @@ export function installPointer(): () => void {
         armed = null;
         armedFocused = false;
         isDown = false;
+        if (tap && Math.abs(event.x - tap.x) <= TAP_SLOP && Math.abs(event.y - tap.y) <= TAP_SLOP)
+          for (const fn of [...tapListeners]) fn(tap.x, tap.y);
       }
     }
     // A press still held on its node counts toward the long press; the frame it reaches the count, it fires.

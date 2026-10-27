@@ -1,8 +1,12 @@
-// The native gallery entry: one page per component, paged with the shoulder triggers (LTRIGGER back, RTRIGGER forward).
-// The shoulder triggers keep the d-pad free for focus. Built by tools/build.ts (--name=native-gallery).
-import { useState, type ReactNode } from "react";
+// The native gallery entry: one page per component, paged with the shoulder triggers (LTRIGGER back, RTRIGGER forward)
+// or by touch: a tap in the left eighth of the canvas goes back, one in the right eighth goes forward. The middle is left
+// to the page, and a tap that lands on a control never pages (onPointerTap). The shoulder triggers keep the d-pad free for focus.
+// Built by tools/build.ts (--name=native-gallery).
+import { useEffect, useState, type ReactNode } from "react";
+import { getOps, hostViewport } from "@pocketjs/framework/host";
 import { BTN, mount, View } from "../../../src/index.ts";
 import { useButton } from "../../../src/input/buttons.ts";
+import { onPointerTap } from "../../../src/input/pointer.ts";
 import { PAGE_NAMES, type PageName } from "./names.ts";
 import { ButtonPage, CardPage, CheckboxPage, SwitchPage, RadioPage, SelectPage, SliderPage, AccordionPage, SheetPage, PopoverPage, TooltipPage, DropdownMenuPage, ToastPage, TablePage, DialogPage, FieldPage, BadgePage, LabelPage, AvatarPage, PageFrame, ProgressPage, SeparatorPage, SkeletonPage, SpinnerPage, TabsPage, ThemePage } from "./pages.tsx";
 
@@ -49,8 +53,20 @@ function FieldPageState() {
 
 function Gallery() {
   const [page, setPage] = useState(0);
-  useButton(BTN.RTRIGGER, () => setPage((p) => Math.min(PAGE_COUNT - 1, p + 1)));
-  useButton(BTN.LTRIGGER, () => setPage((p) => Math.max(0, p - 1)));
+  const back = () => setPage((p) => Math.max(0, p - 1));
+  const forward = () => setPage((p) => Math.min(PAGE_COUNT - 1, p + 1));
+  useButton(BTN.RTRIGGER, forward);
+  useButton(BTN.LTRIGGER, back);
+  // Touch paging: the left and right eighths of the logical canvas (480 px wide on the web host).
+  useEffect(
+    () =>
+      onPointerTap((x) => {
+        const w = hostViewport(getOps())?.w ?? 480;
+        if (x < w / 8) back();
+        else if (x >= (w * 7) / 8) forward();
+      }),
+    [],
+  );
   return (
     <View className="w-full h-full flex-col overflow-hidden bg-slate-100">
       {PAGE_NAMES.map((name, i) => (
