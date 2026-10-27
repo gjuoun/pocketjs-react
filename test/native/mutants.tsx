@@ -16,6 +16,7 @@ import { RadioGroup, RadioItem } from "../../src/native/radio.tsx";
 import { Select } from "../../src/native/select.tsx";
 import { Sidebar } from "../../src/native/sidebar.tsx";
 import { Resizable } from "../../src/native/resizable.tsx";
+import { Carousel } from "../../src/native/carousel.tsx";
 import { Slider } from "../../src/native/slider.tsx";
 import { Accordion, AccordionItem } from "../../src/native/accordion.tsx";
 import { Chevron } from "../../src/native/chevron.tsx";
@@ -30,7 +31,7 @@ import { clearToasts, toast, Toaster } from "../../src/native/toast.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../src/native/table.tsx";
 import { Alert } from "../../src/native/alert.tsx";
 import { Empty } from "../../src/native/empty.tsx";
-import { ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage, SidebarPage, SIDEBAR_GROUPS, ResizablePage } from "./gallery/pages.tsx";
+import { ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage, SidebarPage, SIDEBAR_GROUPS, ResizablePage, CarouselPage, CAROUSEL_SLIDES } from "./gallery/pages.tsx";
 import { Breadcrumb } from "../../src/native/breadcrumb.tsx";
 import type { Driver } from "../../tools/qa/acceptance/drivers.ts";
 
@@ -818,5 +819,57 @@ export const MUTANTS: Record<string, Mutant> = {
         </View>
       </View>
     ),
+  },
+  "dead-carousel": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Next slide", metrics: ["text"] },
+    render: () => (
+      <View className={ROOT}>
+        <View className={T["carousel.root"]}>
+          <Focusable look={[T["carousel.nav"], T["carousel.focus"], T["carousel.nav.idle"]].join(" ")}><Text className={T["carousel.nav.text"]}>Next slide</Text></Focusable>
+          <Text className={T["carousel.indicator"]}>1 / 3</Text>
+        </View>
+      </View>
+    ),
+  },
+  "dead-carousel-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Next slide", metrics: ["text"] },
+    render: () => <View className={ROOT}><CarouselPage /></View>,
+  },
+  "carousel-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={T["carousel.root"]}><Text className="text-sm text-slate-300">1 / 3</Text></View></View>,
+  },
+  "carousel-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><CarouselPage /></View>,
+  },
+  "carousel-overflow": {
+    gate: "G2", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="w-[120px] h-[96px] overflow-hidden bg-white border border-slate-200 rounded-md">
+          <View className={[T["carousel.slide"], T["carousel.at"]].join(" ")}><Text className={T["carousel.text"]}>{CAROUSEL_SLIDES[0]}</Text></View>
+        </View>
+      </View>
+    ),
+  },
+  "carousel-overflow-control": {
+    gate: "G2", defect: false, driver: null,
+    render: () => <View className={ROOT}><CarouselPage /></View>,
+  },
+  "misaligned-carousel": {
+    gate: "G3", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="flex-row items-center gap-2">
+          <View className={[T["carousel.nav"], T["carousel.nav.idle"]].join(" ")}><Text className={T["carousel.nav.text"]}>Prev slide</Text></View>
+          <View className={[T["carousel.nav"], T["carousel.nav.idle"]].join(" ")} style={{ marginTop: 10 }}><Text className={T["carousel.nav.text"]}>Next slide</Text></View>
+        </View>
+      </View>
+    ),
+  },
+  "misaligned-carousel-control": {
+    gate: "G3", defect: false, driver: null,
+    render: () => <View className={ROOT}><CarouselPage /></View>,
   },
 };

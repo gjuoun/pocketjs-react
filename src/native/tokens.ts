@@ -366,6 +366,22 @@ export const TOKENS = {
   "resizable.fill": "w-full h-full flex-col items-center justify-center bg-slate-100",
   "resizable.focus": "focus:border-blue-600",
   "resizable.grip": "text-sm text-slate-600",
+  "carousel.root": "flex-col gap-2 items-center",
+  "carousel.row": "flex-row items-center gap-2",
+  "carousel.viewport": "w-[168px] h-[96px] overflow-hidden bg-white border border-slate-200 rounded-md",
+  "carousel.slide": "absolute top-0 w-[168px] h-[96px] flex-col items-center justify-center p-2",
+  "carousel.at": "left-[0px] transition-all duration-150",
+  "carousel.from.right": "left-[168px]",
+  "carousel.from.left": "left-[-168px]",
+  "carousel.text": "text-base font-bold text-slate-900",
+  "carousel.indicator": "text-sm text-slate-500",
+  "carousel.nav": "h-8 px-2 flex-row items-center justify-center rounded-md border-2",
+  "carousel.nav.idle": "border-transparent",
+  "carousel.nav.disabled": "bg-slate-100 border-transparent",
+  "carousel.nav.text": "text-sm font-bold text-slate-900",
+  "carousel.nav.disabled.text": "text-sm text-slate-500",
+  "carousel.focus": "focus:border-blue-600",
+  "carousel.press": "active:bg-slate-100",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -591,6 +607,12 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "resizable.divider": "w-4 h-full flex-col border-2 border-slate-600",
   "resizable.fill": "w-full h-full flex-col items-center justify-center bg-slate-700",
   "resizable.grip": "text-sm text-slate-300",
+  "carousel.viewport": "w-[168px] h-[96px] overflow-hidden bg-slate-800 border border-slate-700 rounded-md",
+  "carousel.text": "text-base font-bold text-white",
+  "carousel.indicator": "text-sm text-slate-300",
+  "carousel.nav.disabled": "bg-slate-900 border-transparent",
+  "carousel.nav.text": "text-sm font-bold text-white",
+  "carousel.press": "active:bg-slate-700",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {

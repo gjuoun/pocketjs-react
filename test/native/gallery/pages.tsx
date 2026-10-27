@@ -21,6 +21,7 @@ import { RadioGroup, RadioItem } from "../../../src/native/radio.tsx";
 import { Select } from "../../../src/native/select.tsx";
 import { Sidebar, type SidebarGroup } from "../../../src/native/sidebar.tsx";
 import { Resizable } from "../../../src/native/resizable.tsx";
+import { Carousel } from "../../../src/native/carousel.tsx";
 import { Slider } from "../../../src/native/slider.tsx";
 import { Accordion, AccordionItem } from "../../../src/native/accordion.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
@@ -304,6 +305,16 @@ export function ResizablePage() {
     <View className="flex-col gap-2">
       <Resizable first={<Label>Files</Label>} second={<Label>Editor</Label>} size={size} onSizeChange={setSize} />
       <Label>{"Split " + size}</Label>
+    </View>
+  );
+}
+
+export const CAROUSEL_SLIDES = ["Welcome", "Pricing", "Support"];
+
+export function CarouselPage() {
+  return (
+    <View className="flex-col gap-2">
+      <Carousel slides={CAROUSEL_SLIDES} />
     </View>
   );
 }

@@ -60,6 +60,8 @@ const BY_NAME: Record<string, Driver[]> = {
   ],
   // The divider is a focusable bar (its grip is "::"); RIGHT twice moves it, and the split readout changes.
   Resizable: [{ kind: "driven", trigger: "::", metrics: ["offset", "text"], keys: [BTN.RIGHT, BTN.RIGHT] }],
+  // The next control moves the slide; the position readout (panel text) changes from "1 / 3" to "2 / 3".
+  Carousel: [{ kind: "driven", trigger: "Next slide", metrics: ["text"] }],
   Theme: [
     { kind: "driven", trigger: "2/4", metrics: ["text"] },
     { kind: "driven", trigger: "3/4", metrics: ["text"] },

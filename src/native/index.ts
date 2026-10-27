@@ -7,6 +7,7 @@ export { Avatar } from "./avatar.tsx";
 export { Badge } from "./badge.tsx";
 export { Breadcrumb } from "./breadcrumb.tsx";
 export { Button } from "./button.tsx";
+export { Carousel, type CarouselProps } from "./carousel.tsx";
 export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./card.tsx";
 export { Checkbox } from "./checkbox.tsx";
 export { Chevron } from "./chevron.tsx";
