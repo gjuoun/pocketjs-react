@@ -29,18 +29,19 @@ async function bootTheme(): Promise<Core> {
   return c;
 }
 
-/** The vertical extent of the painted (non-page) pixels down the centre of a drawn label. */
-function paintedHeight(c: Core, label: string, index = 0): number {
+/** The vertical extent of the painted (non-page) pixels down the centre of a drawn label, read from `up` px above its
+ * text to `down` px below it: a window that stays inside the component's own gap, clear of its neighbours. */
+function paintedHeight(c: Core, label: string, index = 0, up = 3, down = 3): number {
   const t = c.texts().filter((x) => x.text === label)[index];
   const cx = t.x + Math.floor(t.w / 2);
   let top = -1, bot = -1;
-  for (let y = t.y - 12; y < t.y + t.h + 12; y++) if (c.pixel(cx, y) !== "#ffffff") { if (top < 0) top = y; bot = y; }
+  for (let y = t.y - up; y < t.y + t.h + down; y++) if (c.pixel(cx, y) !== "#ffffff") { if (top < 0) top = y; bot = y; }
   return bot - top + 1;
 }
 
-const COMPONENTS = ["Dark", "Edit", "Stable", "Beta", "Failed", "Per month", "60%", "Name", "Account", "Info", "Use", "AK", "Email", "Yes", "No", "Shipping", "Returns", "Sync"];
+const COMPONENTS = ["Dark", "Edit", "Sheet", "More", "Hint", "Menu", "Notify", "Stable", "Beta", "Failed", "Per month", "60%", "Name", "Account", "Info", "Use", "AK", "Email", "Yes", "No", "Shipping", "Sync", "Plan", "Team"];
 
-test("the theme page draws the labels of all eighteen components (Button, Dialog, Badge, Select, Slider, Progress, Label, Input, Card, Tabs, Separator, Avatar, Spinner, Skeleton, Checkbox, RadioGroup, Accordion, Switch)", async () => {
+test("the theme page draws the labels of all twenty-four components (Button, Dialog, Sheet, Popover, Tooltip, DropdownMenu, Toast, Table, Badge, Select, Slider, Progress, Label, Input, Card, Tabs, Separator, Avatar, Spinner, Skeleton, Checkbox, RadioGroup, Accordion, Switch)", async () => {
   const c = await bootTheme();
   const drawn = c.texts().map((t) => t.text);
   for (const l of COMPONENTS) expect(drawn).toContain(l);
@@ -52,8 +53,8 @@ test("nothing is squeezed: a badge paints 20 px, an avatar 32 px", async () => {
   expect(paintedHeight(c, "Stable")).toBe(20);
   expect(paintedHeight(c, "Beta")).toBe(20);
   expect(paintedHeight(c, "Failed")).toBe(20);
-  expect(paintedHeight(c, "AK", 0)).toBe(32);
-  expect(paintedHeight(c, "AK", 1)).toBe(32);
+  expect(paintedHeight(c, "AK", 0, 9, 8)).toBe(32);
+  expect(paintedHeight(c, "AK", 1, 9, 8)).toBe(32);
 });
 
 test("the dark toggle re-renders the same labels in the dark table; the layout is unchanged", async () => {

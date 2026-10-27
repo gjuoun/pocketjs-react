@@ -1,4 +1,4 @@
-// Theme switch latency: the theme page (all twelve native components) alone, switched light to dark and back by
+// Theme switch latency: the theme page (all twenty-four native components) alone, switched light to dark and back by
 // its own toggle (a Button press). Each switch is timed frame by frame, from the press frame until the page surface
 // is drawn in the new theme's colour. Reports the first switch (it compiles the new class combinations) and the
 // median of the steady switches. Output: /tmp/pocketjs-react-qa/native/theme-switch.json.
@@ -20,7 +20,7 @@ const QA = "/tmp/pocketjs-react-qa/native";
 const SWITCHES = 40;
 const PAGE_BG = { light: THEMES.light["theme.page"], dark: THEMES.dark["theme.page"] } as const;
 const BG_PX = { light: "#ffffff", dark: "#0f172a" } as const;
-// Inside the theme page's surface (it is 480 x 252), clear of every component.
+// Inside the theme page's surface (it is 480 x 252), clear of every component (the bottom-right corner, below the table).
 const PROBE = { x: 470, y: 240 };
 
 function median(xs: number[]): number {

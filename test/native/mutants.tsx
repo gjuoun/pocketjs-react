@@ -2,7 +2,7 @@
 // body done right, which must pass. Built one entry per name by tools/native/judge.ts --mutants.
 // Sizes that are not in the vocabulary go through the style prop (the build scan does not collect arbitrary lengths here).
 import { BTN } from "@pocketjs/framework/input";
-import { useState, type ReactNode } from "react";
+import { useLayoutEffect, useState, type ReactNode } from "react";
 import { Text, View } from "../../src/index.ts";
 import { Button } from "../../src/native/button.tsx";
 import { Focusable } from "../../src/native/focusable.tsx";
@@ -23,7 +23,9 @@ import { Label } from "../../src/native/label.tsx";
 import { Separator } from "../../src/native/separator.tsx";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "../../src/native/sheet.tsx";
 import { Popover, PopoverContent, PopoverTrigger } from "../../src/native/popover.tsx";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../../src/native/tooltip.tsx";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "../../src/native/dropdown-menu.tsx";
+import { clearToasts, toast, Toaster } from "../../src/native/toast.tsx";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../src/native/table.tsx";
 import { ThemePage } from "./gallery/pages.tsx";
 import type { Driver } from "../../tools/qa/acceptance/drivers.ts";
 
@@ -99,6 +101,21 @@ function LiveAccordion() {
       </Accordion>
     </View>
   );
+}
+
+function LiveToast() {
+  const [n, setN] = useState(0);
+  return (
+    <View className="flex-col gap-2">
+      <Button onPress={() => { setN(n + 1); toast("Saved " + (n + 1)); }}>Live notify</Button>
+      <Toaster />
+    </View>
+  );
+}
+
+function ShownToast() {
+  useLayoutEffect(() => { toast("Saved 1"); }, []);
+  return <Toaster />;
 }
 
 function Live() {
@@ -408,22 +425,6 @@ export const MUTANTS: Record<string, Mutant> = {
       </View>
     ),
   },
-  "dead-tooltip": {
-    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead hint", metrics: ["text"] },
-    render: () => <View className={ROOT}><Button>Dead hint</Button></View>,
-  },
-  "dead-tooltip-control": {
-    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live hint", metrics: ["text"] },
-    render: () => (
-      <View className={ROOT}>
-        <View style={{ height: 60 }} />
-        <Tooltip>
-          <TooltipTrigger>Live hint</TooltipTrigger>
-          <TooltipContent>Saves the draft</TooltipContent>
-        </Tooltip>
-      </View>
-    ),
-  },
   "tooltip-contrast": {
     gate: "G1", defect: true, driver: null,
     render: () => (
@@ -437,6 +438,113 @@ export const MUTANTS: Record<string, Mutant> = {
     render: () => (
       <View className={ROOT}>
         <View className={[T["tooltip.panel"]].join(" ")}><Text className={T["tooltip.text"]}>Faint hint</Text></View>
+      </View>
+    ),
+  },
+  "dead-dropdown": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead actions", metrics: ["layer"] },
+    render: () => <View className={ROOT}><Button>Dead actions</Button></View>,
+  },
+  "dead-dropdown-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live actions", metrics: ["layer"] },
+    render: () => (
+      <View className={ROOT}>
+        <DropdownMenu>
+          <DropdownMenuTrigger>Live actions</DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem value="edit">Edit</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </View>
+    ),
+  },
+  "dropdown-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className="flex-col p-1 w-[200px] bg-white"><Text className="px-2 text-xs font-bold text-slate-300">Document</Text></View></View>,
+  },
+  "dropdown-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <DropdownMenu defaultOpen>
+          <DropdownMenuTrigger>Actions</DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>Document</DropdownMenuLabel>
+            <DropdownMenuItem value="edit">Edit</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </View>
+    ),
+  },
+  "dead-toast": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead notify", metrics: ["text"] },
+    render: () => { clearToasts(); return <View className={ROOT}><Button>Dead notify</Button></View>; },
+  },
+  "dead-toast-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live notify", metrics: ["text"] },
+    render: () => { clearToasts(); return <View className={ROOT}><LiveToast /></View>; },
+  },
+  "toast-overflow": {
+    gate: "G2", defect: true, driver: null,
+    render: () => {
+      clearToasts();
+      return (
+        <View className={ROOT}>
+          <View className="absolute bottom-0 w-full flex-col items-center">
+            <View className="px-3 py-2 bg-slate-900" style={{ width: 600 }}><Text className={T["toast.text"]}>Saved 1</Text></View>
+          </View>
+        </View>
+      );
+    },
+  },
+  "toast-overflow-control": {
+    gate: "G2", defect: false, driver: null,
+    render: () => { clearToasts(); return <View className={ROOT}><ShownToast /></View>; },
+  },
+  "misaligned-table": {
+    gate: "G3", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="flex-row items-center h-8">
+          <View className="h-8 flex-row items-center" style={{ width: 80, marginTop: 10 }}><Text className={T["table.cell.text"]}>Team</Text></View>
+          <View className="h-8 flex-row items-center" style={{ width: 80 }}><Text className={T["table.cell.text"]}>Pro</Text></View>
+        </View>
+      </View>
+    ),
+  },
+  "misaligned-table-control": {
+    gate: "G3", defect: false, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <Table columns={[{ width: 80 }, { width: 80 }]}>
+          <TableBody>
+            <TableRow><TableCell>Team</TableCell><TableCell>Pro</TableCell></TableRow>
+          </TableBody>
+        </Table>
+      </View>
+    ),
+  },
+  "table-overflow": {
+    gate: "G2", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <Table columns={[{ width: 40 }]}>
+          <TableBody>
+            <TableRow><TableCell>Enterprise</TableCell></TableRow>
+          </TableBody>
+        </Table>
+      </View>
+    ),
+  },
+  "table-overflow-control": {
+    gate: "G2", defect: false, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <Table columns={[{ width: 120 }]}>
+          <TableBody>
+            <TableRow><TableCell>Enterprise</TableCell></TableRow>
+          </TableBody>
+        </Table>
       </View>
     ),
   },

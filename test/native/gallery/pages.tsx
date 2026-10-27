@@ -24,7 +24,10 @@ import { Accordion, AccordionItem } from "../../../src/native/accordion.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
 import { Popover, PopoverContent, PopoverTrigger } from "../../../src/native/popover.tsx";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../../src/native/tooltip.tsx";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../../../src/native/dropdown-menu.tsx";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetTitle, SheetTrigger } from "../../../src/native/sheet.tsx";
+import { Toaster, toast } from "../../../src/native/toast.tsx";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../src/native/table.tsx";
 import { useState } from "react";
 
 export function PageFrame(props: { index: number; total: number; name: string; active: boolean; flush?: boolean; children?: ReactNode }) {
@@ -334,9 +337,59 @@ export function TooltipPage() {
   );
 }
 
-/** The theme page: all eighteen native components on one 480 by 252 surface, in four bands. The toggle is a state change
- * of the provider, so every component under it re-renders with the other table. Sizes are the components' own tokens: the
- * page is sized so nothing shrinks (a squeezed row drew its badges and avatars at 15 px before this layout). */
+export function DropdownMenuPage() {
+  const [picked, setPicked] = useState("none");
+  return (
+    <View className="flex-col gap-2">
+      <DropdownMenu onSelect={setPicked}>
+        <DropdownMenuTrigger>Actions</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuLabel>Document</DropdownMenuLabel>
+          <DropdownMenuItem value="edit">Edit</DropdownMenuItem>
+          <DropdownMenuItem value="duplicate">Duplicate</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem value="archive" disabled>Archive</DropdownMenuItem>
+          <DropdownMenuItem value="delete">Delete</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Label>{"Chose " + picked}</Label>
+    </View>
+  );
+}
+
+export function ToastPage() {
+  const [n, setN] = useState(0);
+  return (
+    <View className="flex-col gap-2">
+      <Button onPress={() => { setN(n + 1); toast("Saved " + (n + 1)); }}>Notify</Button>
+      <Label>{"Notified " + n}</Label>
+      <Toaster limit={2} />
+    </View>
+  );
+}
+
+export function TablePage() {
+  return (
+    <View className="flex-col gap-2">
+      <Table columns={[{ width: 150 }, { width: 70, align: "right" }, { width: 70, align: "right" }]} rows="zebra">
+        <TableHeader>
+          <TableRow><TableHead>Plan</TableHead><TableHead>Seats</TableHead><TableHead>Price</TableHead></TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow><TableCell>Starter</TableCell><TableCell>1</TableCell><TableCell>$4</TableCell></TableRow>
+          <TableRow><TableCell>Team</TableCell><TableCell>10</TableCell><TableCell>$40</TableCell></TableRow>
+          <TableRow><TableCell>Studio</TableCell><TableCell>25</TableCell><TableCell>$90</TableCell></TableRow>
+        </TableBody>
+      </Table>
+      <Label>Zebra rows, right-aligned numbers</Label>
+    </View>
+  );
+}
+
+/** The theme page: all twenty-four native components on one 480 by 252 surface, in four bands. The toggle is a state change
+ * of the provider, so every component under it re-renders with the other table. Sizes are the components' own tokens; the
+ * heights add up to 226 px inside the 236 px of content (the page's padding is 8 px each side), so nothing is squeezed:
+ * the band of triggers (36), the badges and progress (20), select and slider (36), then four 110 px columns (122 px tall). */
 export function ThemePage() {
   const [theme, setTheme] = useState<ThemeName>("light");
   return (
@@ -356,14 +409,42 @@ function ThemeBody() {
   const [volume, setVolume] = useState(40);
   return (
     <View className={T["theme.page"]}>
-      <View className="flex-row items-center gap-2">
+      <View className="flex-row items-center gap-1">
         <Button onPress={() => setTheme(theme === "light" ? "dark" : "light")}>{theme === "light" ? "Dark" : "Light"}</Button>
         <Dialog>
           <DialogTrigger>Edit</DialogTrigger>
         </Dialog>
+        <Sheet>
+          <SheetTrigger>Sheet</SheetTrigger>
+          <SheetContent side="right" size={75}>
+            <SheetTitle>Account</SheetTitle>
+          </SheetContent>
+        </Sheet>
+        <Popover>
+          <PopoverTrigger>More</PopoverTrigger>
+          <PopoverContent>
+            <Button variant="outline">Copy link</Button>
+          </PopoverContent>
+        </Popover>
+        <Tooltip>
+          <TooltipTrigger>Hint</TooltipTrigger>
+          <TooltipContent>Saves the draft</TooltipContent>
+        </Tooltip>
+        <DropdownMenu>
+          <DropdownMenuTrigger>Menu</DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem value="rename">Rename</DropdownMenuItem>
+            <DropdownMenuItem value="delete">Delete</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <NotifyButton />
+      </View>
+      <View className="flex-row items-center gap-2">
         <Badge>Stable</Badge>
         <Badge variant="secondary">Beta</Badge>
         <Badge variant="destructive">Failed</Badge>
+        <Progress value={60} />
+        <Label>60%</Label>
       </View>
       <View className="flex-row items-center gap-2">
         <Select
@@ -376,18 +457,15 @@ function ThemeBody() {
         />
         <Slider value={volume} onValueChange={setVolume} />
       </View>
-      <View className="flex-row items-center gap-2">
-        <Progress value={60} />
-        <Label>60%</Label>
-      </View>
-      <View className="flex-row gap-2">
-        <View className="flex-col gap-2 w-[110px]">
+      <View className="flex-row gap-1">
+        <View className="flex-col gap-1 w-[110px]">
           <Input placeholder="Name" value="" onChange={() => {}} />
           <Card>
             <CardHeader><CardTitle>Account</CardTitle></CardHeader>
           </Card>
+          <Skeleton />
         </View>
-        <View className="flex-col gap-2 w-[110px]">
+        <View className="flex-col gap-1 w-[110px]">
           <Tabs defaultValue="Info">
             <TabsList>
               <TabsTrigger value="Info">Info</TabsTrigger>
@@ -395,28 +473,45 @@ function ThemeBody() {
             </TabsList>
           </Tabs>
           <Separator />
-          <View className="flex-row items-center gap-2">
+          <View className="flex-row items-center gap-1">
             <Avatar>AK</Avatar>
             <Avatar>AK</Avatar>
             <Spinner size="sm" />
           </View>
-          <Skeleton />
+          <Accordion type="multiple">
+            <AccordionItem value="shipping" title="Shipping">{"Ships in 2 days."}</AccordionItem>
+          </Accordion>
         </View>
-        <View className="flex-col gap-2 w-[110px]">
+        <View className="flex-col gap-1 w-[110px]">
           <Checkbox checked={checked} onCheckedChange={setChecked}>Email</Checkbox>
           <RadioGroup value={answer} onValueChange={setAnswer}>
             <RadioItem value="yes">Yes</RadioItem>
             <RadioItem value="no">No</RadioItem>
           </RadioGroup>
         </View>
-        <View className="flex-col gap-2 w-[110px]">
-          <Accordion type="multiple">
-            <AccordionItem value="shipping" title="Shipping">{"Ships in 2 days."}</AccordionItem>
-            <AccordionItem value="returns" title="Returns">{"30 days."}</AccordionItem>
-          </Accordion>
+        <View className="flex-col gap-1 w-[110px]">
           <Switch checked={sync} onCheckedChange={setSync}>Sync</Switch>
+          <Table columns={[{ width: 110 }]}>
+            <TableHeader>
+              <TableRow><TableHead>Plan</TableHead></TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow><TableCell>Team</TableCell></TableRow>
+            </TableBody>
+          </Table>
         </View>
       </View>
     </View>
+  );
+}
+
+/** The Notify trigger: each press queues a toast; the host is outside the page flow. */
+function NotifyButton() {
+  const [n, setN] = useState(0);
+  return (
+    <>
+      <Button onPress={() => { setN(n + 1); toast("Saved " + (n + 1)); }}>Notify</Button>
+      <Toaster limit={2} />
+    </>
   );
 }

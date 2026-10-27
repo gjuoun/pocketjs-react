@@ -28,9 +28,14 @@ export const PAGE_DRIVERS: Record<number, Driver[]> = {
   18: [{ kind: "driven", trigger: "Shipping", metrics: ["text"] }],
   19: [{ kind: "driven", trigger: "Open sheet", metrics: ["layer"] }],
   20: [{ kind: "driven", trigger: "Share", metrics: ["layer"] }],
-  21: [{ kind: "driven", trigger: "Draft hint", metrics: ["text"] }],
-  22: [{ kind: "driven", trigger: "Dark", metrics: ["text"] }],
+  // A tooltip opens on focus, and the driver takes its baseline after focusing: the open is in the baseline, so no press shows it.
+  // Its frame-counted open and close are pinned by test/native/tooltip.test.tsx.
+  21: [{ kind: "static", reason: "a tooltip opens on focus; the driver's baseline is taken after focus, so the open is not a press's effect" }],
+  22: [{ kind: "driven", trigger: "Actions", metrics: ["layer"] }],
+  23: [{ kind: "driven", trigger: "Notify", metrics: ["text"] }],
+  24: [{ kind: "static", reason: "a table is display only: no focus, no press and no state" }],
+  25: [{ kind: "driven", trigger: "Dark", metrics: ["text"] }],
 };
 
 /** Pages whose gates 1-3 run again after a passing driver (the driver changes the page's state, e.g. a theme). */
-export const PAGE_REJUDGE: Record<number, boolean> = { 22: true };
+export const PAGE_REJUDGE: Record<number, boolean> = { 25: true };

@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { BTN, mount, View } from "../../../src/index.ts";
 import { useButton } from "../../../src/input/buttons.ts";
 import { PAGE_NAMES, type PageName } from "./names.ts";
-import { ButtonPage, CardPage, CheckboxPage, SwitchPage, RadioPage, SelectPage, SliderPage, AccordionPage, SheetPage, PopoverPage, TooltipPage, DialogPage, FieldPage, BadgePage, LabelPage, AvatarPage, PageFrame, ProgressPage, SeparatorPage, SkeletonPage, SpinnerPage, TabsPage, ThemePage } from "./pages.tsx";
+import { ButtonPage, CardPage, CheckboxPage, SwitchPage, RadioPage, SelectPage, SliderPage, AccordionPage, SheetPage, PopoverPage, TooltipPage, DropdownMenuPage, ToastPage, TablePage, DialogPage, FieldPage, BadgePage, LabelPage, AvatarPage, PageFrame, ProgressPage, SeparatorPage, SkeletonPage, SpinnerPage, TabsPage, ThemePage } from "./pages.tsx";
 
 export const PAGE_COUNT = PAGE_NAMES.length;
 
@@ -30,6 +30,9 @@ const BODY: Record<PageName, () => ReactNode> = {
   Sheet: () => <SheetPage />,
   Popover: () => <PopoverPage />,
   Tooltip: () => <TooltipPage />,
+  DropdownMenu: () => <DropdownMenuPage />,
+  Toast: () => <ToastPage />,
+  Table: () => <TablePage />,
   Theme: () => <ThemePage />,
 };
 

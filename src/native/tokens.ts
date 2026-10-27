@@ -214,6 +214,23 @@ export const TOKENS = {
   "popover.panel": "flex-col gap-2 p-3 w-[220px] bg-white border border-slate-200 rounded-md",
   "tooltip.panel": "px-2 py-1 rounded-md bg-slate-900 border border-slate-900",
   "tooltip.text": "text-xs font-bold text-white",
+  "dropdown.panel": "flex-col gap-1 p-1 w-[200px] bg-white border border-slate-200 rounded-md",
+  "dropdown.item": "h-8 px-2 rounded-md flex-row items-center border-2 border-transparent",
+  "dropdown.focus": "focus:border-blue-600",
+  "dropdown.item.text": "text-sm text-slate-900",
+  "dropdown.item.disabled": "text-sm text-slate-500",
+  "dropdown.label": "px-2 text-xs font-bold text-slate-500",
+  "toast.host": "absolute bottom-0 w-full flex-col items-center gap-1 p-2",
+  "toast.item": "w-[280px] px-3 py-2 rounded-md bg-slate-900 border border-slate-900 flex-row items-center",
+  "toast.text": "text-sm font-bold text-white",
+  "table.row": "h-8 w-full flex-row items-center",
+  "table.zebra": "bg-slate-100",
+  "table.cell": "h-8 px-2 flex-row items-center overflow-hidden",
+  "table.align.left": "justify-start",
+  "table.align.center": "justify-center",
+  "table.align.right": "justify-end",
+  "table.head.text": "text-xs font-bold text-slate-500",
+  "table.cell.text": "text-sm text-slate-900",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -342,6 +359,14 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "popover.panel": "flex-col gap-2 p-3 w-[220px] bg-slate-800 border border-slate-700 rounded-md",
   "tooltip.panel": "px-2 py-1 rounded-md bg-white border border-white",
   "tooltip.text": "text-xs font-bold text-slate-900",
+  "dropdown.panel": "flex-col gap-1 p-1 w-[200px] bg-slate-800 border border-slate-700 rounded-md",
+  "dropdown.item.text": "text-sm text-white",
+  "dropdown.label": "px-2 text-xs font-bold text-slate-300",
+  "toast.item": "w-[280px] px-3 py-2 rounded-md bg-white border border-white flex-row items-center",
+  "toast.text": "text-sm font-bold text-slate-900",
+  "table.zebra": "bg-slate-800",
+  "table.head.text": "text-xs font-bold text-slate-300",
+  "table.cell.text": "text-sm text-white",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {
