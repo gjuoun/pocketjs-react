@@ -1,9 +1,9 @@
 // The native judge, on the overlay core only (POCKETJS_CORE_ROOT must be set; stock geometry is not evidence).
-//   bun tools/native/judge.ts --page       gates 1-4 for the five gallery pages, plus a text-fit check
+//   bun tools/native/judge.ts --page       gates 1-4 for every gallery page, plus a text-fit check (pages from names.ts)
 //   bun tools/native/judge.ts --mutants    each defect must fail its gate; each control must pass it
 // Gates come unchanged from tools/qa/acceptance; this file only boots the native entries and drives them.
 import { mkdirSync, writeFileSync } from "node:fs";
-import { resolve, join } from "node:path";
+import { relative, resolve, join, sep } from "node:path";
 import { BTN } from "@pocketjs/framework/input";
 import { rootMirror, type NodeMirror } from "../../src/internal/pocket.ts";
 import { compatStats, resetCompatStats } from "../../src/index.ts";
@@ -16,7 +16,8 @@ import { judgeLegibility, type LegibilityReport } from "../qa/acceptance/gates.t
 import { checkOverflow, type OverflowReport } from "../qa/acceptance/overflow.ts";
 import { checkAlignment, type AlignmentReport } from "../qa/acceptance/alignment.ts";
 import { runDriver, settle, type Verdict } from "../qa/acceptance/interaction.ts";
-import { PAGE_DRIVERS } from "./drivers.ts";
+import { PAGE_DRIVERS, PAGE_REJUDGE } from "./drivers.ts";
+import { PAGE_NAMES } from "../../test/native/gallery/names.ts";
 import { MUTANTS } from "../../test/native/mutants.tsx";
 
 const ROOT = resolve(import.meta.dir, "../..");
@@ -51,46 +52,90 @@ function textFit(core: Core, root: NodeMirror, geo: Geometry): { runs: number; o
   return { runs: n, outside };
 }
 
+/** The gallery pages in mirror order: page-N debugNames, N from 1. */
+function pageNodes(root: NodeMirror): Array<{ index: number; node: NodeMirror }> {
+  const out: Array<{ index: number; node: NodeMirror }> = [];
+  walk(root, (n) => {
+    const m = /^page-(\d+)$/.exec(n.debugName ?? "");
+    if (m) out.push({ index: Number(m[1]), node: n });
+  });
+  return out.sort((a, b) => a.index - b.index);
+}
+
+/** The page name, read back from its drawn title ("NN/MM Name"). */
+function titleName(page: NodeMirror): string {
+  let title = "";
+  walk(page, (n) => {
+    if (!title && isText(n)) title = (n as unknown as { text: string }).text;
+  });
+  return title.replace(/^\d+\/\d+\s+/, "");
+}
+
+interface PageRow {
+  page: number;
+  name: string;
+  g1: LegibilityReport;
+  g2: OverflowReport;
+  g3: AlignmentReport;
+  g4: Verdict[];
+  fit: { runs: number; outside: string[] };
+  /** Gates 1-3 again after a driver that changes the page state (pages in REJUDGE only). */
+  after: Array<{ trigger: string; g1: LegibilityReport; g2: OverflowReport; g3: AlignmentReport }>;
+}
+
 async function judgePages() {
   const entry = resolve(ROOT, "test/native/gallery/main.tsx");
   const built = await build(entry, { outdir: OUT, name: "native-gallery" });
-  const core = await bootCore({ classes: built.tokens, fontSlots: built.fontSlots });
-  installBuildStyles({}, compileClasses([]).bin, built.tokens);
+  const styles = compileClasses(built.literals);
+  const core = await bootCore({ classes: built.literals, fontSlots: built.fontSlots });
+  installBuildStyles(styles.ids, styles.bin, built.tokens);
   await import(entry);
   core.step(0); core.step(0); core.render();
   const geo = geometryFor(core);
   resetCompatStats();
-  const rows: Array<{ page: number; g1: LegibilityReport; g2: OverflowReport; g3: AlignmentReport; g4: Verdict[]; fit: { runs: number; outside: string[] } }> = [];
-  for (let i = 0; i < 5; i++) {
+  const pages = pageNodes(rootMirror);
+  if (pages.length !== PAGE_NAMES.length) throw new Error("judge: " + pages.length + " pages in the mirror, names.ts lists " + PAGE_NAMES.length);
+  const rows: PageRow[] = [];
+  for (let i = 0; i < pages.length; i++) {
     if (i > 0) core.press(BTN.RTRIGGER);
     settle(core);
-    const page = find(rootMirror, "page-" + (i + 1));
-    if (!page) throw new Error("page-" + (i + 1) + " not in the mirror tree");
+    const { index, node: page } = pages[i];
+    const name = titleName(page);
+    if (name !== PAGE_NAMES[i]) throw new Error("judge: page " + index + " is titled " + JSON.stringify(name) + ", names.ts says " + JSON.stringify(PAGE_NAMES[i]));
     const box = geo.rect(page) ?? undefined;
     const g1 = judgeLegibility(core, page, geo, box);
     const g2 = checkOverflow(page, geo);
     const g3 = checkAlignment(page, geo);
     const fit = textFit(core, page, geo);
     const g4: Verdict[] = [];
-    for (const d of PAGE_DRIVERS[i + 1] ?? []) {
-      g4.push(runDriver(core, rootMirror, geo, d));
+    const after: PageRow["after"] = [];
+    for (const d of PAGE_DRIVERS[index] ?? []) {
+      const v = runDriver(core, rootMirror, geo, d);
+      g4.push(v);
+      if (PAGE_REJUDGE[index] && v.status === "pass") {
+        settle(core);
+        const b = geo.rect(page) ?? undefined;
+        after.push({ trigger: d.kind === "driven" ? d.trigger : "", g1: judgeLegibility(core, page, geo, b), g2: checkOverflow(page, geo), g3: checkAlignment(page, geo) });
+      }
       core.press(BTN.CROSS, 2);
       settle(core);
     }
-    rows.push({ page: i + 1, g1, g2, g3, g4, fit });
+    rows.push({ page: index, name, g1, g2, g3, g4, fit, after });
   }
   const s = compatStats();
   core.dispose();
   return { channel: geo.channel, rows, compat: { unsupported: s.unsupported, classMiss: s.classMiss.tokens, tokenMap: s.tokenMap } };
 }
 
-const NAMES = ["Button", "Input", "Card", "Dialog", "Tabs"];
-function pageLine(channel: string, r: { page: number; g1: LegibilityReport; g2: OverflowReport; g3: AlignmentReport; g4: Verdict[]; fit: { runs: number; outside: string[] } }): string {
+function pageLine(channel: string, r: PageRow): string {
   const g4 = r.g4.length ? r.g4.map((v) => v.status).join("/") : "n/a";
-  return r.page + " " + NAMES[r.page - 1] + " [" + channel + "]: G1 fails " + r.g1.fails.length + " · G2 findings " + r.g2.findings.length + " · G3 fails " + r.g3.fails.length + " · G4 " + g4 + " · text-fit outside " + r.fit.outside.length + "/" + r.fit.runs;
+  const after = r.after.map((a) => " · after " + JSON.stringify(a.trigger) + ": G1 fails " + a.g1.fails.length + " · G2 findings " + a.g2.findings.length + " · G3 fails " + a.g3.fails.length).join("");
+  return r.page + " " + r.name + " [" + channel + "]: G1 fails " + r.g1.fails.length + " · G2 findings " + r.g2.findings.length + " · G3 fails " + r.g3.fails.length + " · G4 " + g4 + " · text-fit outside " + r.fit.outside.length + "/" + r.fit.runs + after;
 }
 
 async function judgeMutants() {
+  const rel = relative(OUT, join(ROOT, "test/native/mutants.tsx")).split(sep).join("/");
+  const mutantsImport = rel.startsWith(".") ? rel : "./" + rel;
   const rows: Array<{ name: string; defect: boolean; gate: string; fails: boolean; expected: boolean; ok: boolean }> = [];
   mkdirSync(OUT, { recursive: true });
   for (const name of Object.keys(MUTANTS)) {
@@ -98,13 +143,15 @@ async function judgeMutants() {
     const entry = join(OUT, "mutant-" + name + ".tsx");
     writeFileSync(entry, [
       "import { mount } from " + JSON.stringify(ROOT + "/src/index.ts") + ";",
-      "import { MUTANTS } from " + JSON.stringify(ROOT + "/test/native/mutants.tsx") + ";",
+      // Relative, not absolute: the build scan follows relative imports only, so the mutant bodies' classes are collected.
+      "import { MUTANTS } from " + JSON.stringify(mutantsImport) + ";",
       "export const unmount = mount(MUTANTS[" + JSON.stringify(name) + "].render() as never, { compat: { classMiss: \"throw\", tokenMap: false } });",
       "",
     ].join("\n"));
     const built = await build(entry, { outdir: OUT, name: "mutant-" + name });
-    const core = await bootCore({ classes: built.tokens, fontSlots: built.fontSlots });
-    installBuildStyles({}, compileClasses([]).bin, built.tokens);
+    const styles = compileClasses(built.literals);
+    const core = await bootCore({ classes: built.literals, fontSlots: built.fontSlots });
+    installBuildStyles(styles.ids, styles.bin, built.tokens);
     const mod = (await import(entry)) as { unmount: () => void };
     core.step(0); core.step(0); core.render();
     const geo = geometryFor(core);
@@ -137,7 +184,7 @@ async function main(): Promise<number> {
   console.log("compat: unsupported " + JSON.stringify(out.compat.unsupported) + " · classMiss " + out.compat.classMiss + " · tokenMap " + JSON.stringify(out.compat.tokenMap));
   writeFileSync(QA + "/gates.json", JSON.stringify(out, null, 2));
   if (out.channel !== "overlay") { console.error("judge: channel is " + out.channel + ", not overlay"); return 2; }
-  const failing = out.rows.some((r) => r.g1.fails.length || r.g2.findings.length || r.g3.fails.length || r.g4.some((v) => v.status === "fail"));
+  const failing = out.rows.some((r) => r.g1.fails.length || r.g2.findings.length || r.g3.fails.length || r.g4.some((v) => v.status === "fail") || r.after.some((a) => a.g1.fails.length || a.g2.findings.length || a.g3.fails.length));
   return failing ? 1 : 0;
 }
 

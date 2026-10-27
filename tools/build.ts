@@ -61,6 +61,8 @@ export interface BuildResult {
   fontSlots: number[];
   /** The utility tokens the build table holds (STYLE_TOKENS), for tests that drive the runtime directly. */
   tokens: string[];
+  /** The class literals the build compiled (after C2 rewrite): a harness boots the core with these and installs the table. */
+  literals: string[];
   /** Pak keys of the baked icon variants (`ui:img.icon.*`). */
   icons: string[];
 }
@@ -380,6 +382,7 @@ export async function build(
     pakBytes: pak.length,
     fontSlots,
     tokens: [...tokens],
+    literals,
     icons: icons.map((b) => b.key),
   };
 }

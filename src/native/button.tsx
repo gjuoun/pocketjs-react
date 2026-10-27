@@ -1,10 +1,10 @@
-// Button: a Focusable with a variant and size look, and a label Text. Every class is a token from TOKENS.
+// Button: a Focusable with a variant and size look, and a label Text. Every class is a token from the theme.
 // States: rest, focused (focus border), pressed (active background), disabled (no focus, no press).
 import type { Ref } from "react";
 import { Text } from "../elements.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
 import { Focusable } from "./focusable.tsx";
-import { TOKENS } from "./tokens.ts";
+import { useTokens } from "./theme.tsx";
 
 export type ButtonVariant = "default" | "secondary" | "destructive" | "outline" | "ghost";
 export type ButtonSize = "sm" | "md" | "lg";
@@ -18,9 +18,8 @@ export interface ButtonProps {
   children?: string;
 }
 
-const T = TOKENS as Record<string, string>;
-
 export function Button(props: ButtonProps) {
+  const T = useTokens() as Record<string, string>;
   const variant = props.variant ?? "default";
   const size = props.size ?? "md";
   const look = props.disabled

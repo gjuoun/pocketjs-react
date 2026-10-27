@@ -75,13 +75,19 @@ export interface Verdict {
   reason: string;
 }
 
-/** The element to focus: the host of the first text run whose text is the label. */
+/**
+ * The element to focus: the host of the first text run whose text is the label, climbed to its nearest focusable
+ * ancestor. The climb matters where the mount-time compat layer holds a run in its own view beside a sibling
+ * (a checkbox row: the label sits in a view of its own), so the host alone is not the focus target.
+ */
 export function triggerNode(root: NodeMirror, label: string): NodeMirror | undefined {
   let found: NodeMirror | undefined;
   walk(root, (n) => {
     if (!found && isText(n) && (n as unknown as { text: string }).text === label) found = n.parent ?? undefined;
   });
-  return found;
+  let f: NodeMirror | undefined = found;
+  while (f && !f.focusable) f = f.parent ?? undefined;
+  return f ?? found;
 }
 
 /** Text drawn outside every control: a run with no focusable node among its ancestors (a button, a trigger, a close). */
@@ -104,13 +110,15 @@ export function runDriver(core: Core, root: NodeMirror, geo: Geometry, driver: D
   if (driver.kind === "static") return { status: "n/a", reason: driver.reason };
   if (driver.kind === "unresolved") return { status: "unresolved", reason: driver.reason };
   settle(core);
-  const before = snap(core, root, geo);
   const target = triggerNode(root, driver.trigger);
   if (!target) return { status: "unresolved", reason: "no element with text " + JSON.stringify(driver.trigger) };
   const targetRect = geo.rect(target);
+  // Focus first, then the baseline: the focus ring is not the press's effect, so "ink" must not count it.
   focusNode(target);
-  core.press(BTN.CIRCLE, 4);
   settle(core);
+  const before = snap(core, root, geo);
+  // Default: one CIRCLE press. A driver may name its own press sequence (arrows, CROSS, LEFT), each followed by a settle.
+  for (const key of driver.keys ?? [BTN.CIRCLE]) { core.press(key, 4); settle(core); }
   const after = snap(core, root, geo);
   // A one-character run is an icon glyph on this runtime (the close X is an ASCII placeholder), not content.
   // Panel content is a run drawn outside every control: the sheet's own Close (a button) does not count.

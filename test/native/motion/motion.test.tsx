@@ -73,8 +73,9 @@ function Five() {
 }
 
 async function boot(app: () => ReactNode) {
-  const core: Core = await bootCore({ classes: UTIL, fontSlots: slotCrossProduct(LITERALS, []) });
-  installBuildStyles({}, compileClasses([]).bin, UTIL);
+  const styles = compileClasses([...LITERALS]);
+  const core: Core = await bootCore({ classes: LITERALS, fontSlots: slotCrossProduct(LITERALS, []) });
+  installBuildStyles(styles.ids, styles.bin, UTIL);
   const counts = instrument(core.ops as unknown as Record<string, unknown>);
   const unmount = mount(app(), STRICT);
   core.step(0); core.step(0); core.render();

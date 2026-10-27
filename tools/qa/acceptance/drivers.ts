@@ -6,7 +6,7 @@ import type { SectionName } from "../../../test/fixtures/shadcn-gallery/layout.t
 
 export type Metric = "layer" | "text" | "ink" | "offset";
 export type Driver =
-  | { kind: "driven"; trigger: string; metrics: Metric[] }
+  | { kind: "driven"; trigger: string; metrics: Metric[]; keys?: number[] }
   | { kind: "static"; reason: string }
   | { kind: "unresolved"; reason: string };
 
