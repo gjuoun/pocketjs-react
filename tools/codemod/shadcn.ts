@@ -30,6 +30,7 @@ import { parse } from "@babel/parser";
 import {
   dropReason,
   parseBinding,
+  parsePercent,
   rewriteToken,
 } from "../../src/compat/tokens.ts";
 import { bodiesOnly, splitSelector } from "../../src/compat/selectors.ts";
@@ -219,7 +220,7 @@ function rewriteOne(
       continue;
     }
     // Var-bound lengths stay in the vendored source; the runtime turns them into bindings (vars.ts).
-    if (parseBinding(next)) {
+    if (parseBinding(next) || parsePercent(next)) {
       kept.push(next);
       continue;
     }
@@ -422,7 +423,7 @@ function checkResidual(text: string, file: CodemodFile): void {
     // A var binding is resolved at run time (vars.ts), so the compiler is not asked about it.
     const compiled = text
       .split(/\s+/)
-      .filter((t) => t !== "" && parseBinding(t) === null)
+      .filter((t) => t !== "" && parseBinding(t) === null && parsePercent(t) === null)
       .join(" ");
     ok = compiled === "" || parseClassLiteral(bodiesOnly(compiled)) !== null;
   } catch {

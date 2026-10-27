@@ -170,7 +170,7 @@ function FieldSeparator({
       )}
       {...props}
     >
-      <Separator className="absolute inset-0 top-1" />
+      <Separator className="absolute inset-0 top-1/2" />
       {children && (
         <span
           className="relative bg-white px-2 text-slate-500"

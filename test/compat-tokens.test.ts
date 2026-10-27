@@ -2,6 +2,8 @@
 // literal compiles), the audit's 7 core shadcn literals rewrite to 6 compilable strings plus
 // the known Dialog gap, and rewriting is idempotent and whitespace-normalizing.
 import { expect, test } from "bun:test";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import {
   type DropReason,
   dropReason,
@@ -11,7 +13,11 @@ import {
   TOKEN_MAP,
 } from "../src/compat/tokens.ts";
 import { bodiesOnly, splitSelector } from "../src/compat/selectors.ts";
+import { parsePercent } from "../src/compat/tokens.ts";
 import { parseClassLiteral, unknownUtilities } from "../src/internal/pocket.ts";
+
+const COLOUR_PREFIX =
+  /^(bg|text|border|ring|from|via|to|fill|stroke|shadow|outline|divide|decoration|accent|caret|placeholder)-/;
 
 const BUTTON_BASE =
   "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4";
@@ -219,4 +225,86 @@ test("batch A: size-full, the primary/20 track and w-px map to PocketJS vocabula
 
 test("batch A: aspect-square is owned by the primitive, not an unmapped utility (B5)", () => {
   expect(dropReason("aspect-square")).toBe("owned-by-primitive");
+});
+
+// Fractions (w-1/2, top-1/2, -translate-y-3/4) are sizes and insets, not opacity. The bug this pins: the
+// /NN rule stripped every slash, so top-1/2 became top-1 (4px, not 50%) and w-3/4 became w-3 (12px, a sheet).
+test("fraction family: a size, inset or translate keeps its slash; the colour alpha still drops", () => {
+  const fractions = [
+    "top-1/2", "left-1/2", "right-1/2", "bottom-1/2", "inset-1/2", "w-1/2", "h-1/2",
+    "w-3/4", "max-w-3/4", "min-w-1/3", "basis-1/2", "-top-1/2", "-translate-x-1/2",
+    "-translate-y-1/2", "translate-x-1/2", "translate-y-3/4", "data-[state=open]:w-1/3",
+  ];
+  for (const tok of fractions) expect({ tok, out: rewriteToken(tok) }).toEqual({ tok, out: tok });
+  // The percents leave the literal and resolve per node (style/percent.ts); the token rule above is unchanged.
+  const pct = rewrite("absolute top-1/2 left-1/2 -translate-y-1/2 w-3/4");
+  expect(pct.text).toBe("absolute");
+  expect(pct.percents.map((p) => [p.prop, p.fraction, p.of])).toEqual([
+    ["insetT", 0.5, "parent"],
+    ["insetL", 0.5, "parent"],
+    ["translateY", -0.5, "self"],
+    ["width", 0.75, "parent"],
+  ]);
+  const alpha: [string, string][] = [
+    ["bg-primary/90", "bg-slate-900"],
+    ["hover:bg-primary/90", "active:bg-slate-900"],
+    ["text-muted-foreground/70", "text-slate-500"],
+    ["bg-slate-900/50", "bg-slate-900"],
+    ["text-sm/6", "text-sm/6"],
+  ];
+  for (const [from, to] of alpha) expect({ from, to: rewriteToken(from) }).toEqual({ from, to });
+});
+
+test("fraction family: a fraction is named by the drop table, never rewritten into another utility", () => {
+  for (const tok of ["w-3/4", "top-1/2", "-translate-y-1/2"])
+    expect(dropReason(tok)).toBe("no-core-feature");
+});
+
+// Class-level pin over the vendored corpus: every fraction a shadcn source uses comes out as itself
+// (it is then named and dropped by the codemod, or kept), and no fraction is ever turned into a
+// different non-empty token. Red on the old /NN rule: w-3/4 -> w-3 in the sheet and drawer sources.
+test("fraction family: every fraction in the shadcn-full corpus survives the rewrite unchanged", () => {
+  const dir = join(import.meta.dir, "fixtures/shadcn-full/upstream");
+  const seen = new Set<string>();
+  for (const file of readdirSync(dir)) {
+    if (!file.endsWith(".tsx")) continue;
+    for (const tok of readFileSync(join(dir, file), "utf8").split(/[\s"'`{}]+/))
+      if (/^[-a-z0-9:\[\]&>()=.]*-\d+\/\d+$/.test(tok) && !COLOUR_PREFIX.test(tok)) seen.add(tok);
+  }
+  expect(seen.size).toBeGreaterThanOrEqual(8);
+  const changed = [...seen].filter((tok) => {
+    const out = rewriteToken(tok);
+    return out !== "" && out !== tok;
+  });
+  expect(changed).toEqual([]);
+});
+
+// Percent lengths (style/percent.ts resolves them): the core props and the signed share of the reference box.
+test("percent lengths: each form names its core props, fraction and reference", () => {
+  const p = (tok: string) => parsePercent(tok)?.map((x) => [x.prop, x.fraction, x.of, x.axis]);
+  expect(p("w-1/2")).toEqual([["width", 0.5, "parent", "w"]]);
+  expect(p("h-3/4")).toEqual([["height", 0.75, "parent", "h"]]);
+  expect(p("min-w-1/3")).toEqual([["minW", 1 / 3, "parent", "w"]]);
+  expect(p("max-h-2/3")).toEqual([["maxH", 2 / 3, "parent", "h"]]);
+  expect(p("-top-1/4")).toEqual([["insetT", -0.25, "parent", "h"]]);
+  expect(p("right-1/2")).toEqual([["insetR", 0.5, "parent", "w"]]);
+  expect(p("inset-x-1/4")).toEqual([
+    ["insetL", 0.25, "parent", "w"],
+    ["insetR", 0.25, "parent", "w"],
+  ]);
+  expect(p("inset-1/2")?.map((x) => x[0])).toEqual(["insetT", "insetB", "insetL", "insetR"]);
+  expect(p("-translate-y-1/2")).toEqual([["translateY", -0.5, "self", "h"]]);
+  expect(p("translate-x-3/4")).toEqual([["translateX", 0.75, "self", "w"]]);
+  // Not a percent: a px or scale utility, a colour alpha, a variant (named as dropped below), a zero denominator.
+  for (const tok of ["w-3", "w-full", "translate-x-[10px]", "bg-slate-900/50", "hover:w-1/2", "w-1/0"])
+    expect({ tok, out: p(tok) }).toEqual({ tok, out: undefined });
+});
+
+// The forms the compat layer cannot place are dropped by name, never sent to the compiler (and never throw).
+test("percent lengths: an unsupported fraction is dropped and named, not compiled", () => {
+  const r = rewrite("hover:w-1/2 basis-1/2 data-[state=open]:w-1/3 w-1/2");
+  expect(r.text).toBe("");
+  expect(r.droppedTokens).toEqual(["hover:w-1/2", "basis-1/2", "data-[state=open]:w-1/3"]);
+  expect(r.percents.map((x) => x.prop)).toEqual(["width"]);
+  for (const tok of r.droppedTokens) expect(dropReason(tok)).toBe("no-core-feature");
 });

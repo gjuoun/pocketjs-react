@@ -90,6 +90,10 @@ export const TOKEN_MAP: Readonly<Record<string, string>> = {
  *  string literal, and a bare "rounded-full" would throw during pass 1. */
 const NEEDS_SIZE = /^rounded-full$/;
 
+/** A colour utility with an alpha modifier (bg-primary/90, ring-ring/50). `text-sm/6` is a line height, not a colour. */
+const COLOUR_OPACITY =
+  /^((?:bg|text(?!-(?:2xs|xs|sm|base|lg|xl|\dxl))|border|ring|from|via|to|fill|stroke|shadow|outline|divide|decoration|accent|caret|placeholder)-[^/]+)\/\d+$/;
+
 /** Prefixes that map onto a PocketJS variant. Anything else is dropped by the rewriter. */
 const VARIANTS: Readonly<Record<string, string>> = {
   hover: "active",
@@ -167,6 +171,8 @@ export function dropReason(tok: string): DropReason {
   if (base === "rounded-full") return "no-core-feature";
   // Negative utilities (-translate-x-1) are arbitrary-form only in the core's subset.
   if (/calc\(|^(underline|ml-auto)|^-/.test(base)) return "no-core-feature";
+  // A fraction (w-1/2, top-3/4) is a percent size or inset: the core has no percentages beyond -full (DESIGN.md).
+  if (/\d\/\d/.test(base)) return "no-core-feature";
   return "unmapped";
 }
 
@@ -181,6 +187,8 @@ export interface RewriteResult {
   droppedTokens: string[];
   /** Var-bound lengths (w-(--x)): kept out of the text, applied per node from the custom properties. */
   bindings: Binding[];
+  /** Percentage lengths: kept out of the text, resolved per node against the parent box (style/percent.ts). */
+  percents: Percent[];
 }
 
 export type BindingProp =
@@ -216,6 +224,73 @@ export function parseBinding(tok: string): Binding | null {
   if (name.startsWith("--radix-")) return null;
   return { prop: BINDING_PROP[m[1]], name };
 }
+
+/** A percentage length (w-1/2, top-3/4, min-w-1/3, -translate-y-1/2). The core has no percent: the compat layer
+ *  resolves it to pixels against a reference box (style/percent.ts). The fraction is signed: -1/2 is -0.5. */
+export type PercentProp =
+  | "width"
+  | "height"
+  | "minW"
+  | "minH"
+  | "maxW"
+  | "maxH"
+  | "insetT"
+  | "insetR"
+  | "insetB"
+  | "insetL"
+  | "translateX"
+  | "translateY";
+export interface Percent {
+  prop: PercentProp;
+  /** The share of the reference length: 1/2 is 0.5, -1/2 is -0.5. */
+  fraction: number;
+  /** The reference: the parent's box for sizes and insets, the node's own box for translate (as CSS). */
+  of: "parent" | "self";
+  /** The axis of the reference box the fraction multiplies. */
+  axis: "w" | "h";
+}
+const PERCENT =
+  /^(-?)(w|h|min-w|min-h|max-w|max-h|top|right|bottom|left|inset-x|inset-y|inset|translate-x|translate-y)-(\d+)\/(\d+)$/;
+type PercentTarget = [PercentProp, Percent["of"], Percent["axis"]];
+const PERCENT_TARGETS: Readonly<Record<string, PercentTarget[]>> = {
+  w: [["width", "parent", "w"]],
+  h: [["height", "parent", "h"]],
+  "min-w": [["minW", "parent", "w"]],
+  "min-h": [["minH", "parent", "h"]],
+  "max-w": [["maxW", "parent", "w"]],
+  "max-h": [["maxH", "parent", "h"]],
+  top: [["insetT", "parent", "h"]],
+  bottom: [["insetB", "parent", "h"]],
+  left: [["insetL", "parent", "w"]],
+  right: [["insetR", "parent", "w"]],
+  "inset-x": [
+    ["insetL", "parent", "w"],
+    ["insetR", "parent", "w"],
+  ],
+  "inset-y": [
+    ["insetT", "parent", "h"],
+    ["insetB", "parent", "h"],
+  ],
+  inset: [
+    ["insetT", "parent", "h"],
+    ["insetB", "parent", "h"],
+    ["insetL", "parent", "w"],
+    ["insetR", "parent", "w"],
+  ],
+  "translate-x": [["translateX", "self", "w"]],
+  "translate-y": [["translateY", "self", "h"]],
+};
+
+/** A bare percent utility -> the core props it sets (inset-x is two). Null for anything else, variants included. */
+export function parsePercent(tok: string): Percent[] | null {
+  const m = PERCENT.exec(tok);
+  if (!m || Number(m[4]) === 0) return null;
+  const fraction = (m[1] ? -1 : 1) * (Number(m[3]) / Number(m[4]));
+  return PERCENT_TARGETS[m[2]].map(([prop, of, axis]) => ({ prop, fraction, of, axis }));
+}
+
+/** A fraction token that survived the map: a utility the compat layer does not place (named as dropped). */
+const isFraction = (tok: string): boolean => /\d\/\d/.test(tok);
 
 /** shadcn's focus ring border: dropped, because the compat default focus border is the
  *  focus indicator. Mapped to focus:border-slate-900 it would be the button's own colour. */
@@ -270,8 +345,10 @@ export function rewriteToken(tok: string): string {
   }
   const hit = TOKEN_MAP[tok];
   if (hit !== undefined) return hit;
-  // /NN opacity modifier: PocketJS colors carry no alpha channel.
-  const opacity = /^(.*)\/\d+$/.exec(tok);
+  // /NN on a colour utility is its alpha: PocketJS colors carry no alpha channel, so the modifier drops.
+  // On any other utility the slash is a fraction (w-1/2, top-1/2, -translate-y-3/4): it is kept as written,
+  // so the compiler decides and it is never rewritten to a whole-number value (w-1/2 was w-1, 4px not 50%).
+  const opacity = COLOUR_OPACITY.exec(tok);
   if (opacity) return rewriteToken(opacity[1]);
   // size-N is w-N h-N on a flexbox core.
   const size = /^size-(\d+(?:\.\d+)?)$/.exec(tok);
@@ -292,6 +369,7 @@ export function rewrite(cls: string): RewriteResult {
   const out: string[] = [];
   const droppedTokens: string[] = [];
   const bindings: Binding[] = [];
+  const percents: Percent[] = [];
   let mapped = 0;
   for (const tok of tokens) {
     const bind = parseBinding(tok);
@@ -299,8 +377,14 @@ export function rewrite(cls: string): RewriteResult {
       bindings.push(bind);
       continue;
     }
+    const percent = parsePercent(tok);
+    if (percent) {
+      percents.push(...percent);
+      continue;
+    }
     const next = rewriteToken(tok);
-    if (next === "") {
+    // A fraction that is not a percent above (a variant, basis-, a logical inset) is dropped by name, never compiled.
+    if (next === "" || next.split(/\s+/).some(isFraction)) {
       droppedTokens.push(tok);
     } else {
       if (next !== tok) mapped++;
@@ -313,6 +397,7 @@ export function rewrite(cls: string): RewriteResult {
     dropped: droppedTokens.length,
     droppedTokens,
     bindings,
+    percents,
   };
 }
 

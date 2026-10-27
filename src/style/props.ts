@@ -5,6 +5,7 @@
 //     clears an override, so a removed key is written back to the class's own value for it,
 //     or to the core default when the class does not set it.
 
+import { getOps } from "@pocketjs/framework/host";
 import {
   type NodeMirror,
   type PropName,
@@ -19,6 +20,7 @@ import {
 } from "./class-runtime.ts";
 import { CORE_DEFAULTS, type CoreStyle, cssToCore, cssVars } from "./css.ts";
 import { setNodeVars, sweepVars } from "./vars.ts";
+import { type PercentHooks, sweepPercents } from "./percent.ts";
 import { sweepIconColour, syncIconColour } from "./icon-colour.ts";
 import {
   defaultTextColour,
@@ -64,6 +66,28 @@ export function syncIconColours(): void {
   syncIconColour(rootMirror, inlineTextColour, defaultTextColour());
 }
 
+const percentHooks: PercentHooks = {
+  inlineHas: (node, prop) => appliedStyle.get(node)?.[prop] !== undefined,
+  classBase: (node, prop) => classBaseValue(node, prop),
+  defaultOf: (prop) => (CORE_DEFAULTS[prop] as number | undefined) ?? 0,
+  declaredSize: (node, axis) => {
+    const prop = axis === "w" ? "width" : "height";
+    const inline = appliedStyle.get(node)?.[prop];
+    const px = typeof inline === "number" ? inline : classBaseValue(node, prop);
+    // A negative value is the core's SIZE_FULL (100%): not a fixed size.
+    return px !== undefined && px >= 0 ? px : undefined;
+  },
+};
+
+let percentFrame = 0;
+/** The per-frame full pass of percent lengths (a size change moves them). With nodeRect that is one call per box, so
+ *  every frame; a host without it measures by hit-test search, so every 16th frame (the commit pass covers the rest). */
+export function resolvePercentsNow(): void {
+  const hasRect = typeof (getOps() as { nodeRect?: unknown }).nodeRect === "function";
+  if (!hasRect && percentFrame++ % 16 !== 0) return;
+  sweepPercents(percentHooks, true);
+}
+
 export function installStyleLayer(): void {
   setPropsTransform({
     toHost(props) {
@@ -89,6 +113,7 @@ export function installStyleLayer(): void {
         classBase: (node, prop) => classBaseValue(node, prop),
         defaultOf: (prop) => (CORE_DEFAULTS[prop] as number | undefined) ?? 0,
       });
+      sweepPercents(percentHooks, false);
       sweepTextColor(rootMirror, inlineTextColour);
       sweepIconColour(rootMirror, inlineTextColour, defaultTextColour());
     },

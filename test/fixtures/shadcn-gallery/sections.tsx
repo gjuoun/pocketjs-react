@@ -1032,11 +1032,11 @@ function ResizableBody() {
 function ScrollAreaBody() {
   return (
     <ScrollArea className="h-[120px] w-[240px]">
-      <div className="flex-col">
+      <div className="flex flex-col">
         {ROWS.map((row) => (
-          <span key={row} className="text-sm">
+          <div key={row} className="text-sm">
             {row}
-          </span>
+          </div>
         ))}
       </div>
       <ScrollBar orientation="vertical" />

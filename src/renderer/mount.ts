@@ -53,7 +53,11 @@ import {
   buildStyleTokens,
 } from "../style/build-styles.ts";
 import { initClassRuntime } from "../style/class-runtime.ts";
-import { installStyleLayer, syncIconColours } from "../style/props.ts";
+import {
+  installStyleLayer,
+  resolvePercentsNow,
+  syncIconColours,
+} from "../style/props.ts";
 import { forgetIconVariants, registerIconVariant } from "../style/icon-colour.ts";
 import { reconciler, withPriority } from "./host-config.ts";
 import { setOskTarget } from "./osk-target.ts";
@@ -141,6 +145,7 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
   installCompat(opts.compat);
   const removePointer = installPointer();
   const removeRing = installFocusRing(addFramePump);
+  const removePercents = addFramePump(resolvePercentsNow);
   const removeTextEntry = installTextEntry();
   // A fresh mount starts with no keyboard, even if a previous mount left one open.
   resetTextFields();
@@ -239,6 +244,7 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
   if (errors.length > 0) {
     // A failed mount leaves nothing behind: the pumps and layers it registered are torn down first.
     removeRing();
+    removePercents();
     removePointer();
     removeTextEntry();
     for (const child of [appLayer, overlay]) removeNode(rootMirror, child);
@@ -253,6 +259,7 @@ export function mount(element: ReactNode, opts: MountOptions = {}): () => void {
     reconciler.updateContainerSync(null, container, null, null);
     reconciler.flushSyncWork();
     removeRing();
+    removePercents();
     for (const child of [appLayer, overlay]) removeNode(rootMirror, child);
     runSweep();
     setInputRoot(null);

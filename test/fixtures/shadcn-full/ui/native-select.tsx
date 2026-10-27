@@ -24,7 +24,7 @@ function NativeSelect({
         {...props}
       />
       <ChevronDownIcon
-        className="absolute top-1 right-3.5 w-4 h-4 text-slate-500 opacity-50"
+        className="absolute top-1/2 right-3.5 w-4 h-4 -translate-y-1/2 text-slate-500 opacity-50"
         aria-hidden="true"
         data-slot="native-select-icon"
       />

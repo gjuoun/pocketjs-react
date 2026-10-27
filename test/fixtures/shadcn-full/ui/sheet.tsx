@@ -61,9 +61,9 @@ function SheetContent({
         className={cn(
           "absolute z-50 flex flex-col gap-4 bg-white shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
           side === "right" &&
-            "right-0 h-full w-3",
+            "right-0 h-full w-3/4",
           side === "left" &&
-            "left-0 h-full w-3",
+            "left-0 h-full w-3/4",
           side === "top" &&
             "top-0",
           side === "bottom" &&

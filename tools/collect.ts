@@ -86,7 +86,8 @@ export async function collect(
     walkAst(ast.program);
     for (const stmt of ast.program.body) {
       const source = (stmt as { source?: { value?: string } }).source?.value;
-      if (typeof source === "string" && source.startsWith(".")) {
+      // Relative and absolute specifiers are both the app's own files (the acceptance screens import by absolute path).
+      if (typeof source === "string" && (source.startsWith(".") || source.startsWith("/"))) {
         const dep = resolveRelative(file, source);
         if (dep && /\.(tsx?|jsx?)$/.test(dep)) await visit(dep);
       }
