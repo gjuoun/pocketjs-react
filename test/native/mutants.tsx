@@ -17,6 +17,7 @@ import { Select } from "../../src/native/select.tsx";
 import { Sidebar } from "../../src/native/sidebar.tsx";
 import { Resizable } from "../../src/native/resizable.tsx";
 import { Carousel } from "../../src/native/carousel.tsx";
+import { Combobox } from "../../src/native/combobox.tsx";
 import { Slider } from "../../src/native/slider.tsx";
 import { Accordion, AccordionItem } from "../../src/native/accordion.tsx";
 import { Chevron } from "../../src/native/chevron.tsx";
@@ -31,7 +32,7 @@ import { clearToasts, toast, Toaster } from "../../src/native/toast.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../src/native/table.tsx";
 import { Alert } from "../../src/native/alert.tsx";
 import { Empty } from "../../src/native/empty.tsx";
-import { ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage, SidebarPage, SIDEBAR_GROUPS, ResizablePage, CarouselPage, CAROUSEL_SLIDES, CalendarPage } from "./gallery/pages.tsx";
+import { ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage, SidebarPage, SIDEBAR_GROUPS, ResizablePage, CarouselPage, CAROUSEL_SLIDES, CalendarPage, ComboboxPage, FRAMEWORKS } from "./gallery/pages.tsx";
 import { Breadcrumb } from "../../src/native/breadcrumb.tsx";
 import type { Driver } from "../../tools/qa/acceptance/drivers.ts";
 
@@ -925,5 +926,44 @@ export const MUTANTS: Record<string, Mutant> = {
   "misaligned-calendar-control": {
     gate: "G3", defect: false, driver: null,
     render: () => <View className={ROOT}><CalendarPage /></View>,
+  },
+  "dead-combobox": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Pick framework", metrics: ["menu"] },
+    render: () => <View className={ROOT}><Button variant="outline">Pick framework</Button></View>,
+  },
+  "dead-combobox-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Pick framework", metrics: ["menu"] },
+    render: () => <View className={ROOT}><ComboboxPage /></View>,
+  },
+  "combobox-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={T["popover.panel.wide"]}><Text className="text-sm text-slate-300">React</Text></View></View>,
+  },
+  "combobox-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><Combobox groups={FRAMEWORKS} placeholder="Pick framework" defaultOpen /></View>,
+  },
+  "combobox-zero-width": {
+    gate: "G2", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={T["popover.panel.wide"]} style={{ width: 0 }}><Text className={T["command.item.text"]}>React</Text></View></View>,
+  },
+  "combobox-zero-width-control": {
+    gate: "G2", defect: false, driver: null,
+    render: () => <View className={ROOT}><Combobox groups={FRAMEWORKS} placeholder="Pick framework" defaultOpen /></View>,
+  },
+  "misaligned-combobox": {
+    gate: "G3", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="flex-row items-center gap-2">
+          <Button variant="outline">Pick framework</Button>
+          <View style={{ marginTop: 10 }}><Label>Framework none</Label></View>
+        </View>
+      </View>
+    ),
+  },
+  "misaligned-combobox-control": {
+    gate: "G3", defect: false, driver: null,
+    render: () => <View className={ROOT}><ComboboxPage /></View>,
   },
 };

@@ -12,6 +12,7 @@ export { Calendar, type CalendarDate, type CalendarMonth, type CalendarProps } f
 export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./card.tsx";
 export { Checkbox } from "./checkbox.tsx";
 export { Chevron } from "./chevron.tsx";
+export { Combobox, comboboxLabel, type ComboboxProps } from "./combobox.tsx";
 export { Command, type CommandGroup, type CommandItem } from "./command.tsx";
 export {
   Dialog,

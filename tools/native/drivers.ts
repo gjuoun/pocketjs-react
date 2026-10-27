@@ -67,6 +67,12 @@ const BY_NAME: Record<string, Driver[]> = {
     { kind: "driven", trigger: "Next month", metrics: ["text"] },
     { kind: "driven", trigger: "15", metrics: ["text"] },
   ],
+  // The open panel is the layer (its items are controls: "menu" counts them); then CIRCLE, DOWN and CIRCLE choose the first
+  // item from the search input, and the framework readout changes.
+  Combobox: [
+    { kind: "driven", trigger: "Pick framework", metrics: ["menu"] },
+    { kind: "driven", trigger: "Pick framework", metrics: ["text"], keys: [BTN.CIRCLE, BTN.DOWN, BTN.CIRCLE] },
+  ],
   Theme: [
     { kind: "driven", trigger: "2/4", metrics: ["text"] },
     { kind: "driven", trigger: "3/4", metrics: ["text"] },

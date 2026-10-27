@@ -23,6 +23,7 @@ import { Sidebar, type SidebarGroup } from "../../../src/native/sidebar.tsx";
 import { Resizable } from "../../../src/native/resizable.tsx";
 import { Carousel } from "../../../src/native/carousel.tsx";
 import { Calendar, type CalendarDate } from "../../../src/native/calendar.tsx";
+import { Combobox } from "../../../src/native/combobox.tsx";
 import { Slider } from "../../../src/native/slider.tsx";
 import { Accordion, AccordionItem } from "../../../src/native/accordion.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
@@ -331,6 +332,20 @@ export function CalendarPage() {
       <View className="flex-col gap-2 flex-1">
         <Label>{picked ? "Picked " + picked.year + "-" + pad(picked.month) + "-" + pad(picked.day) : "Picked none"}</Label>
       </View>
+    </View>
+  );
+}
+
+export const FRAMEWORKS: CommandGroup[] = [
+  { heading: "Frontend", items: [{ value: "react", label: "React" }, { value: "vue", label: "Vue" }, { value: "svelte", label: "Svelte" }] },
+];
+
+export function ComboboxPage() {
+  const [value, setValue] = useState("");
+  return (
+    <View className="flex-col gap-2">
+      <Combobox groups={FRAMEWORKS} placeholder="Pick framework" value={value} onValueChange={setValue} />
+      <Label>{"Framework " + (value || "none")}</Label>
     </View>
   );
 }
