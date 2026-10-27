@@ -14,7 +14,7 @@ import type { TargetGates } from "./gates.ts";
 const ROOT = join(import.meta.dir, "../../..");
 const GATES = "/tmp/pocketjs-react-qa/acceptance/gates.json";
 const DEFECTS = "/tmp/pocketjs-react-qa-defects.log";
-const OUT = "/Users/junguo/.notebook/project/gjuoun/pocketjs-react/visual-parity.md";
+const OUT = process.env.QA_REPORT_OUT ?? join(ROOT, "dist/qa/visual-parity.md");
 const FENCE = "~~~";
 
 export type Verdict = "一致" | "偏差" | "缺失" | "未比对";
