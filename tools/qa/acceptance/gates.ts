@@ -28,6 +28,8 @@ export interface TargetGates {
   g2: OverflowReport;
   g3: AlignmentReport;
   g4: Verdict;
+  /** Distinct text the core drew (captureTexts), in draw order. */
+  drawn: string[];
   unsupported: Record<string, number>;
   classMiss: number;
 }
@@ -83,7 +85,8 @@ export async function judgeTarget(t: Target): Promise<TargetGates> {
     const name = t.kind === "mutant" ? MUTANT_COMPONENT(t.name) : t.name;
     const g4 = runDriver(b.core, rootMirror, geo, DRIVERS[name as SectionName] ?? { kind: "unresolved", reason: "no driver entry" });
     const s = compatStats();
-    return { target: targetName(t), channel: geo.channel, g1, g2, g3, g4, unsupported: s.unsupported, classMiss: s.classMiss.tokens };
+    const drawn = [...new Set(b.core.texts().map((r) => r.text))];
+    return { target: targetName(t), channel: geo.channel, g1, g2, g3, g4, drawn, unsupported: s.unsupported, classMiss: s.classMiss.tokens };
   } finally {
     disposeTarget(b);
   }
