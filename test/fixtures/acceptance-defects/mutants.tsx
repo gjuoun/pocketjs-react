@@ -40,6 +40,21 @@ function OverflowCarousel() {
   );
 }
 
+/** Control: the same carousel with its viewport clipping (overflow-hidden); the gate must pass on it. */
+function OverflowCarouselFixed() {
+  return (
+    <Carousel className="w-full">
+      <View className="flex-col overflow-hidden" style={{ width: 400 }}>
+        <CarouselItem>
+          <View className="h-[60px] bg-slate-200 flex-col items-center justify-center" style={{ width: 600 }}>
+            <Text className="text-sm font-bold">One</Text>
+          </View>
+        </CarouselItem>
+      </View>
+    </Carousel>
+  );
+}
+
 /** Opens empty: the trigger works, the panel has no title, no description and no footer. */
 function EmptySheet() {
   return (
@@ -69,4 +84,5 @@ export const MUTANTS: Record<string, Mutant> = {
   "zero-size-badge": { component: "badge", defect: "zero-size component", h: 80, body: ZeroSizeBadge },
   "overflow-carousel": { component: "carousel", defect: "overflowing carousel", h: 150, body: OverflowCarousel },
   "empty-sheet": { component: "sheet", defect: "sheet opens empty", h: 80, body: EmptySheet },
+  "overflow-carousel-fixed": { component: "carousel", defect: "control: clipped carousel (must pass)", h: 150, body: OverflowCarouselFixed },
 };
