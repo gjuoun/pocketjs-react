@@ -135,7 +135,8 @@ function pageLine(channel: string, r: PageRow): string {
   const g4 = r.g4.length ? r.g4.map((v) => v.status).join("/") : "n/a";
   const after = r.after.map((a) => " · after " + JSON.stringify(a.trigger) + ": G1 fails " + a.g1.fails.length + " · G2 findings " + a.g2.findings.length + " · G3 fails " + a.g3.fails.length).join("");
   const cj = r.g1.cannotJudge ? " (" + r.g1.cannotJudge + " could not judge)" : "";
-  return r.page + " " + r.name + " [" + channel + "]: G1 fails " + r.g1.fails.length + cj + " · G2 findings " + r.g2.findings.length + " · G3 fails " + r.g3.fails.length + " · G4 " + g4 + " · text-fit outside " + r.fit.outside.length + "/" + r.fit.runs + after;
+  const floor = " · 1 px floor " + r.g1.floorRuns + " runs (" + r.g1.floorDecided.length + " decided by it" + (r.g1.floorDecided.length ? ": " + r.g1.floorDecided.map((t) => JSON.stringify(t)).join(" ") : "") + ")";
+  return r.page + " " + r.name + " [" + channel + "]: G1 fails " + r.g1.fails.length + cj + " · G2 findings " + r.g2.findings.length + " (clipped away " + r.g2.clippedAway + ") · G3 fails " + r.g3.fails.length + " · G4 " + g4 + " · text-fit outside " + r.fit.outside.length + "/" + r.fit.runs + floor + after;
 }
 
 async function judgeMutants(filter: string[]) {

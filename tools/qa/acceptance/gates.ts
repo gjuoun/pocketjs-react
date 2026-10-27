@@ -16,6 +16,10 @@ import type { Core } from "../../../test/harness.ts";
 export interface LegibilityReport {
   /** One-character runs (icon placeholders): counted, judged apart from text. */
   icons: number;
+  /** Runs judged with the 1 px one-character ink floor (see legibility.ts): every one is counted here. */
+  floorRuns: number;
+  /** The floor-judged runs whose verdict flips at the 3 px floor: the floor decided them. Listed, never hidden. */
+  floorDecided: string[];
   /** Text runs judged to a verdict: a pass, or a contrast fail. */
   judged: number;
   /** Every failing run: a contrast fail, a no-ink fail, and each could-not-judge run. */
@@ -113,6 +117,8 @@ export function judgeLegibility(core: Core, geo: Geometry, inside?: Box): Legibi
   for (const r of results) backdrops[r.attribution ?? ""] = (backdrops[r.attribution ?? ""] ?? 0) + 1;
   return {
     icons,
+    floorRuns: results.filter((r) => r.usedOneCharFloor).length,
+    floorDecided: results.filter((r) => r.floorDecided).map((r) => r.text),
     judged: results.length - cannot.length,
     fails: results.filter((r) => r.status === "fail"),
     cannotJudge: cannot.length,

@@ -58,3 +58,29 @@ test("legibility: the WCAG formula matches its reference points", () => {
   expect(luminance("#000000")).toBeCloseTo(0, 3);
   expect(contrast("#ffffff", "#000000")).toBeCloseTo(21, 0);
 });
+
+/** Ink on exactly the first n pixels of the run's box (a thin glyph has few full-coverage pixels). */
+function thin(n: number, ink: string) {
+  return source((x, y) => (y === RUN.y && x >= RUN.x && x < RUN.x + n ? ink : "#ffffff"));
+}
+
+test("ink floor: a one-character run is judged with 1 px of ink, is counted as floor-judged, and the floor decides it", () => {
+  const r = checkRun(thin(1, "#000000"), { text: "?", rect: RUN, candidates: [{ box: HOST, how: "test" }] });
+  expect(r.status).toBe("pass");
+  expect(r.usedOneCharFloor).toBe(true);
+  expect(r.floorDecided).toBe(true);
+});
+
+test("ink floor: a one-character run with 3 px of ink is floor-judged but the floor does not decide it", () => {
+  const r = checkRun(thin(3, "#000000"), { text: "?", rect: RUN, candidates: [{ box: HOST, how: "test" }] });
+  expect(r.status).toBe("pass");
+  expect(r.usedOneCharFloor).toBe(true);
+  expect(r.floorDecided).toBe(false);
+});
+
+test("ink floor: a run of text keeps the 3 px floor: 1 px of ink is no ink, and the floor is not counted", () => {
+  const r = checkRun(thin(1, "#000000"), { text: "Ok", rect: RUN, candidates: [{ box: HOST, how: "test" }] });
+  expect(r.status).toBe("fail");
+  expect(r.reason).toContain("no ink");
+  expect(r.usedOneCharFloor).toBeUndefined();
+});

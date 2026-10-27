@@ -3,10 +3,17 @@
 // box at least twice the run's area, so a text box never stands for its own background). A backdrop whose
 // dominant colour covers less than 60% of it is mixed. There is no third state: a run the gate cannot judge
 // (mixed backdrop, off-screen run) FAILS with reason "could not judge: ..." and its cause, so it never reads as neither.
+//
+// The ink floor. A run's ink is the colour, other than its backdrop, that covers at least a floor of pixels in the run's box;
+// the best such colour's contrast is the run's contrast. The floor is 3 px for a run of text. It is 1 px for a ONE-CHARACTER
+// run (an icon placeholder such as "?" or "+"), because a thin glyph can have only a few full-coverage pixels. That 1 px floor
+// is accepted, with two guards: every run it judges is counted in floorRuns (the page report), and each run whose verdict
+// would flip at the 3 px floor is listed in floorDecided. A run of tiny text therefore cannot pass unnoticed inside the floor.
 export const SCREEN_W = 480;
 export const SCREEN_H = 272;
 export const MIN_CONTRAST = 3;
-const MIN_INK_PX = 3;
+export const MIN_INK_PX = 3;
+export const ONE_CHAR_INK_PX = 1;
 const MIN_BG_SHARE = 0.6;
 
 export interface Pixels {
@@ -40,6 +47,10 @@ export interface LegibilityResult {
   reason?: string;
   cannotJudge?: CannotJudge;
   attribution?: string;
+  /** True when the run was judged with the 1 px one-character floor (its ink was not subject to the 3 px floor). */
+  usedOneCharFloor?: boolean;
+  /** True when the verdict at the 1 px floor differs from the verdict at the 3 px floor (the floor decided it). */
+  floorDecided?: boolean;
 }
 
 function rgb(hex: string): [number, number, number] {
@@ -82,6 +93,21 @@ function histogram(px: Pixels, box: Box): Map<string, number> {
   return hist;
 }
 
+/** The best ink contrast on a backdrop: the colour covering at least `floor` px that contrasts most (0 when none). */
+function bestInk(hist: Map<string, number>, bg: string, floor: number): { best: number; colour: string } {
+  let best = 0;
+  let colour = "";
+  for (const [c, n] of hist) {
+    if (c === bg || n < floor) continue;
+    const r = contrast(c, bg);
+    if (r > best) {
+      best = r;
+      colour = c;
+    }
+  }
+  return { best, colour };
+}
+
 /** Judge one text run (see RunInput for the backdrop search). */
 export function checkRun(px: Pixels, run: RunInput, min = MIN_CONTRAST): LegibilityResult {
   const base: { text: string; attribution?: string } = { text: run.text };
@@ -120,20 +146,13 @@ export function checkRun(px: Pixels, run: RunInput, min = MIN_CONTRAST): Legibil
   if (!chosen) return cannot("mixed background", "mixed background under the run (no enclosing box up to the screen is 60% one colour outside the text; nearest " + (nearest || "none") + ")", run.candidates[0]?.how);
   const { bg, how } = chosen;
   const inkHist = histogram(px, ink);
-  let best = 0;
-  let bestColour = "";
-  // A one-character run is a thin glyph: its full-coverage colour can be only a few pixels, so the floor is one pixel there.
-  const floor = run.text.trim().length === 1 ? 1 : MIN_INK_PX;
-  for (const [c, n] of inkHist) {
-    if (c === bg || n < floor) continue;
-    const r = contrast(c, bg);
-    if (r > best) {
-      best = r;
-      bestColour = c;
-    }
-  }
+  // A one-character run is a thin glyph: its full-coverage colour can be only a few pixels, so its floor is 1 px (see the header).
+  const oneChar = run.text.trim().length === 1;
+  const { best, colour: bestColour } = bestInk(inkHist, bg, oneChar ? ONE_CHAR_INK_PX : MIN_INK_PX);
+  const verdict = (b: number) => b > 0 && b >= min;
+  const floored = oneChar ? { usedOneCharFloor: true, floorDecided: verdict(best) !== verdict(bestInk(inkHist, bg, MIN_INK_PX).best) } : {};
   if (best === 0)
-    return { ...base, attribution: how, status: "fail", ratio: 1, reason: "no ink on its background (invisible text)" };
+    return { ...base, attribution: how, status: "fail", ratio: 1, reason: "no ink on its background (invisible text)", ...floored };
   const status = best >= min ? "pass" : "fail";
-  return { ...base, attribution: how, status, ratio: Math.round(best * 100) / 100, reason: status === "fail" ? "contrast " + best.toFixed(2) + " below " + min + " (ink " + bestColour + " on " + bg + ")" : bestColour };
+  return { ...base, attribution: how, status, ratio: Math.round(best * 100) / 100, reason: status === "fail" ? "contrast " + best.toFixed(2) + " below " + min + " (ink " + bestColour + " on " + bg + ")" : bestColour, ...floored };
 }
