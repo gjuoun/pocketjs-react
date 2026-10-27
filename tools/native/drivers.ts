@@ -1,4 +1,5 @@
 // Gate 4 drivers for the native pages and the mutant bodies: the visible trigger text and the metric that counts.
+// Keys are page numbers (1-based, gallery order). A trigger text must be unique across all pages (the judge searches the whole tree).
 import type { Driver } from "../qa/acceptance/drivers.ts";
 
 export const PAGE_DRIVERS: Record<number, Driver[]> = {
@@ -11,3 +12,6 @@ export const PAGE_DRIVERS: Record<number, Driver[]> = {
   4: [{ kind: "driven", trigger: "Open dialog", metrics: ["layer"] }],
   5: [{ kind: "driven", trigger: "Password", metrics: ["text"] }],
 };
+
+/** Pages whose gates 1-3 run again after a passing driver (the driver changes the page's state, e.g. a theme). */
+export const PAGE_REJUDGE: Record<number, boolean> = {};

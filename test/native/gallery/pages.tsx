@@ -8,12 +8,13 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { Input, Textarea } from "../../../src/native/input.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
 
-export function PageFrame(props: { index: number; name: string; active: boolean; children?: ReactNode }) {
+export function PageFrame(props: { index: number; total: number; name: string; active: boolean; children?: ReactNode }) {
   const num = String(props.index).padStart(2, "0");
+  const of = String(props.total).padStart(2, "0");
   return (
     <View debugName={"page-" + props.index} className="w-full h-full flex-col bg-white" style={{ display: props.active ? "flex" : "none" }}>
       <View className="w-full flex-row items-center px-2 bg-slate-900" style={{ height: 20 }}>
-        <Text className="text-xs font-bold text-white">{num + "/05 " + props.name}</Text>
+        <Text className="text-xs font-bold text-white">{num + "/" + of + " " + props.name}</Text>
       </View>
       <View className="w-full flex-col gap-2 p-2">{props.children}</View>
     </View>
