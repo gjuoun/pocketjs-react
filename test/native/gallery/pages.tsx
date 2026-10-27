@@ -360,7 +360,7 @@ export function DropdownMenuPage() {
           <DropdownMenuItem value="delete">Delete</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Label>{"Chose " + picked}</Label>
+      <Label>{"Chosen: " + picked}</Label>
     </View>
   );
 }
@@ -487,7 +487,7 @@ export function NavigationPage() {
           </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>
-      <Label>{"Chose " + picked}</Label>
+      <Label>{"Chosen: " + picked}</Label>
     </View>
   );
 }
