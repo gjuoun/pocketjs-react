@@ -107,7 +107,7 @@ export function AccordionItem(props: AccordionItemProps) {
       </Focusable>
       {isOpen ? (
         <View className={T["accordion.content"]} debugName="accordion-panel">
-          {lines.map((l, i) => <Text key={i} className={T["accordion.body"]}>{l}</Text>)}
+          {lines.map((l) => <Text key={l} className={T["accordion.body"]}>{l}</Text>)}
         </View>
       ) : null}
     </View>

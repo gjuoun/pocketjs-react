@@ -64,7 +64,7 @@ export function Select(props: SelectProps) {
     return pushFocusController(list.current as never, (direction: FocusDirection) => {
       if (direction !== "up" && direction !== "down") return false;
       const ordered = latest.current.options.map((o) => optionNodes.current.get(o.value)).filter((n): n is NodeMirror => !!n);
-      const at = ordered.findIndex((n) => n === (getFocused() as unknown as NodeMirror | null));
+      const at = ordered.indexOf(getFocused() as unknown as NodeMirror);
       if (at < 0) return false;
       focusNode(ordered[clampIndex(ordered.length, at, direction === "down" ? 1 : -1)] as never);
       return true;
