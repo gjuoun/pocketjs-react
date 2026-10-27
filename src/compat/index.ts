@@ -42,6 +42,7 @@ import { ownsFocusBorder } from "./focus.ts";
 import { registerControl } from "../input/label-map.ts";
 import { focusRingOf, setRingTarget } from "./ring.ts";
 import { rewriteLiteral } from "./tokens.ts";
+import { bindChildSlots } from "../style/child-slots.ts";
 
 /** DOM text tags that become views when they carry flex. */
 const TEXTUAL_FLEX_TAGS = new Set(["span", "p", "label"]);
@@ -110,8 +111,9 @@ export function installCompat(opts: CompatOptions = {}): void {
           ? undefined
           : classStringValue(rewriteLiteral(iconClass), "textColor"),
       );
-      // C8: a [&[data-state=open]>svg]:rotate-N rule turns the icons below this node while it holds.
+      // A [&[data-state=open]>svg]:rotate-N rule turns the icons below this node while it holds.
       setIconTurn(node, iconTurnRule(props));
+      bindChildSlots(node, props);
       // The focus ring of a DOM-mapped focusable: its own ring tokens, or the default ring.
       setRingTarget(
         node,

@@ -26,6 +26,7 @@ import {
   sweepTextColor,
 } from "./text-color.ts";
 import { sweepSelects } from "../compat/selects.ts";
+import { noteOwnClass, sweepChildSlots } from "./child-slots.ts";
 
 type Props = Record<string, unknown>;
 const appliedStyle = new WeakMap<NodeMirror, CoreStyle>();
@@ -74,12 +75,14 @@ export function installStyleLayer(): void {
     },
     afterProps(node: NodeMirror, props: Props) {
       applyClassName(node, props.className);
+      noteOwnClass(node, props.className);
       if (props.style !== undefined || appliedStyle.has(node))
         applyStyle(node, props.style);
     },
     afterCommit() {
       // The select sweep writes option classes; the table flush after it loads any ids they need.
       sweepSelects();
+      sweepChildSlots();
       flushClassTable();
       sweepVars({
         inlineHas: (node, prop) => appliedStyle.get(node)?.[prop] !== undefined,

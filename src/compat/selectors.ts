@@ -18,7 +18,9 @@ export type Selector =
   /** A descendant rule ([&_svg]:, [&>svg]:): it styles the icon children, never the node. */
   | { kind: "svg" }
   /** [&[data-NAME=VALUE]>svg]:BODY: BODY styles the icon children while the node's own data-NAME is VALUE. */
-  | { kind: "icon-state"; name: string; value: string };
+  | { kind: "icon-state"; name: string; value: string }
+  /** *:data-[slot=NAME]:BODY: BODY styles the direct child whose data-slot is NAME (the child takes it, never the node). */
+  | { kind: "child-slot"; slot: string };
 
 export interface SplitToken {
   /** The first variant prefix as written (`disabled`, `data-[state=open]`). */
@@ -91,6 +93,13 @@ function selectorOf(prefix: string): Selector | null {
 export function splitSelector(tok: string): SplitToken | null {
   const parts = splitVariants(tok);
   if (parts.length < 2) return null;
+  const child = /^data-\[slot=([\w-]+)\]$/.exec(parts[1]);
+  if (parts[0] === "*" && child && parts.length > 2)
+    return {
+      prefix: "*:" + parts[1],
+      selector: { kind: "child-slot", slot: child[1] },
+      body: parts.slice(2).join(":"),
+    };
   const selector = selectorOf(parts[0]);
   if (!selector) return null;
   return { prefix: parts[0], selector, body: parts.slice(1).join(":") };
@@ -150,6 +159,8 @@ export function holds(sel: Selector, node: SelectorNode): boolean {
       return false;
     case "icon-state":
       return String(node.props["data-" + sel.name]) === sel.value;
+    case "child-slot":
+      return false;
     case "has-data":
       return children(node.children).some((c) => slotOf(c) === sel.value);
     case "has-svg": {
@@ -172,7 +183,12 @@ export function resolveSelectors(
       return;
     }
     // A descendant rule is consumed here and applied to the icons by the icon colour and turn passes.
-    if (split.selector.kind === "svg" || split.selector.kind === "icon-state") return;
+    if (
+      split.selector.kind === "svg" ||
+      split.selector.kind === "icon-state" ||
+      split.selector.kind === "child-slot"
+    )
+      return;
     if (holds(split.selector, node)) visit(split.body);
   };
   for (const tok of className.trim().split(/\s+/)) if (tok !== "") visit(tok);
@@ -203,6 +219,18 @@ export function selectorInputs(className: unknown): Set<string> {
     else if (s.kind === "data" || s.kind === "icon-state") names.add("data-" + s.name);
   }
   return names;
+}
+
+/** The child-slot rules of a class string: each BODY and the data-slot NAME of the child it styles. */
+export function childSlotRules(className: unknown): { slot: string; body: string }[] {
+  if (typeof className !== "string") return [];
+  const out: { slot: string; body: string }[] = [];
+  for (const tok of className.split(/\s+/)) {
+    const split = splitSelector(tok);
+    if (split?.selector.kind === "child-slot")
+      out.push({ slot: split.selector.slot, body: split.body });
+  }
+  return out;
 }
 
 /**

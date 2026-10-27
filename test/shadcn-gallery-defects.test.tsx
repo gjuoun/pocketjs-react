@@ -6,7 +6,7 @@ import { join, resolve } from "node:path";
 import { BTN } from "@pocketjs/framework/input";
 import { FB_W } from "../src/internal/pocket-build.ts";
 import { build } from "../tools/build.ts";
-import { SECTIONS, TOPS, TITLE_H, VIEW_H } from "./fixtures/shadcn-gallery/layout.ts";
+import { SECTIONS, TITLE_H, VIEW_H } from "./fixtures/shadcn-gallery/layout.ts";
 import { bootApp, type Core, type TextRun } from "./harness.ts";
 
 const ROOT = resolve(import.meta.dir, "..");
@@ -142,4 +142,43 @@ test("prompt: the alert's Cancel and Continue labels read on their own fills", a
     expect(l.n).toBeGreaterThan(20);
     expect(l.ratio).toBeGreaterThanOrEqual(4.5);
   }
+}, 120_000);
+
+test("bubble: each bubble draws its own filled box with a legible label", async () => {
+  const core = await bootGallery();
+  await show(core, "bubble");
+  const h = SECTIONS[SECTIONS.findIndex((s) => s.name === "bubble")].h;
+  const section = inkOf(grab(core, 0, TITLE_H, FB_W, h), 0, TITLE_H).n;
+  const boxes = ["Hello", "Hi there"].map((text) => {
+    const r = run(core, text);
+    const fill = core.pixel(r.x - 6, r.y + 7);
+    const rows = grab(core, r.x - 2, r.y - 2, r.x + r.w + 2, r.y + r.h + 2);
+    const ink = new Map<string, number>();
+    for (const row of rows) for (const p of row) if (p !== fill) ink.set(p, (ink.get(p) ?? 0) + 1);
+    const label = [...ink.entries()].sort((x, y) => y[1] - x[1])[0]?.[0] ?? fill;
+    return { text, fill, label, ratio: contrast(label, fill) };
+  });
+  console.log(`bubble section ink ${section} px | ${boxes.map((b) => `${b.text}: fill ${b.fill} label ${b.label} contrast ${b.ratio.toFixed(2)}`).join(" | ")}`);
+  expect(section).toBeGreaterThan(20);
+  for (const b of boxes) {
+    expect(b.fill).not.toBe(WHITE);
+    expect(b.ratio).toBeGreaterThanOrEqual(4.5);
+  }
+}, 120_000);
+
+test("calendar: the month grid lays out as a grid, every day inside the screen", async () => {
+  const core = await bootGallery();
+  await show(core, "calendar");
+  const h = SECTIONS[SECTIONS.findIndex((s) => s.name === "calendar")].h;
+  const section = inkOf(grab(core, 0, TITLE_H, FB_W, h), 0, TITLE_H).n;
+  const runs = core.texts().filter((r) => r.y >= TITLE_H && r.y < h);
+  const days = runs.filter((r) => /^\d+$/.test(r.text));
+  const weekdays = runs.filter((r) => ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].includes(r.text));
+  const rowsOf = new Set(days.map((r) => r.y)).size;
+  console.log(`calendar section ink ${section} px | day numbers ${days.length} on screen, ${rowsOf} week rows, weekdays ${weekdays.length}, rightmost edge ${Math.max(...runs.map((r) => r.x + r.w))}`);
+  expect(section).toBeGreaterThan(20);
+  expect(days.length).toBe(35);
+  expect(weekdays.length).toBe(7);
+  expect(rowsOf).toBe(5);
+  expect(Math.max(...runs.map((r) => r.x + r.w))).toBeLessThanOrEqual(FB_W);
 }, 120_000);

@@ -19,19 +19,19 @@ const bubbleVariants = cva(
     variants: {
       variant: {
         default:
-          "",
+          "*:data-[slot=bubble-content]:bg-slate-900 *:data-[slot=bubble-content]:text-white",
         secondary:
-          "",
+          "*:data-[slot=bubble-content]:bg-slate-200 *:data-[slot=bubble-content]:text-slate-900",
         muted:
-          "",
+          "*:data-[slot=bubble-content]:bg-slate-100",
         tinted:
-          "",
+          "*:data-[slot=bubble-content]:text-slate-900",
         outline:
-          "",
+          "*:data-[slot=bubble-content]:border-slate-200 *:data-[slot=bubble-content]:bg-white",
         ghost:
-          "",
+          "*:data-[slot=bubble-content]:bg-transparent *:data-[slot=bubble-content]:p-0",
         destructive:
-          "",
+          "*:data-[slot=bubble-content]:bg-red-600 *:data-[slot=bubble-content]:text-red-600",
       },
     },
     defaultVariants: {

@@ -84,7 +84,7 @@ export function setIconRule(node: NodeMirror, colour: number | undefined): void 
   else descendantRule.set(node, colour);
 }
 
-/** C8: the rotation (degrees) a node's [&[data-…]>svg]:rotate-N rule gives its icon descendants (compat sets it on bind). */
+/** The rotation (degrees) a node's [&[data-…]>svg]:rotate-N rule gives its icon descendants (compat sets it on bind). */
 const turnRule = new WeakMap<NodeMirror, number>();
 export function setIconTurn(node: NodeMirror, degrees: number | undefined): void {
   if (degrees === undefined) turnRule.delete(node);

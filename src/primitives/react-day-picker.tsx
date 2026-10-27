@@ -174,6 +174,6 @@ export function DayPicker(props: DayPickerProps) {
       ))}
     </>
   );
-  if (Root) return <Root className={props.className}>{body}</Root>;
+  if (Root) return <Root className={cn("flex-col w-full", props.className)}>{body}</Root>;
   return <View className={cn("flex-col w-full", props.className)}>{body}</View>;
 }
