@@ -62,6 +62,11 @@ const BY_NAME: Record<string, Driver[]> = {
   Resizable: [{ kind: "driven", trigger: "::", metrics: ["offset", "text"], keys: [BTN.RIGHT, BTN.RIGHT] }],
   // The next control moves the slide; the position readout (panel text) changes from "1 / 3" to "2 / 3".
   Carousel: [{ kind: "driven", trigger: "Next slide", metrics: ["text"] }],
+  // The next-month control changes the title (panel text); then a day is chosen and the picked readout changes.
+  Calendar: [
+    { kind: "driven", trigger: "Next month", metrics: ["text"] },
+    { kind: "driven", trigger: "15", metrics: ["text"] },
+  ],
   Theme: [
     { kind: "driven", trigger: "2/4", metrics: ["text"] },
     { kind: "driven", trigger: "3/4", metrics: ["text"] },

@@ -22,6 +22,7 @@ import { Select } from "../../../src/native/select.tsx";
 import { Sidebar, type SidebarGroup } from "../../../src/native/sidebar.tsx";
 import { Resizable } from "../../../src/native/resizable.tsx";
 import { Carousel } from "../../../src/native/carousel.tsx";
+import { Calendar, type CalendarDate } from "../../../src/native/calendar.tsx";
 import { Slider } from "../../../src/native/slider.tsx";
 import { Accordion, AccordionItem } from "../../../src/native/accordion.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
@@ -315,6 +316,21 @@ export function CarouselPage() {
   return (
     <View className="flex-col gap-2">
       <Carousel slides={CAROUSEL_SLIDES} />
+    </View>
+  );
+}
+
+export const CALENDAR_TODAY = { year: 2026, month: 10, day: 27 };
+
+export function CalendarPage() {
+  const [picked, setPicked] = useState<CalendarDate | null>(null);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    <View className="flex-row gap-2 items-start">
+      <Calendar today={CALENDAR_TODAY} defaultView={{ year: 2026, month: 10 }} value={picked} onValueChange={setPicked} />
+      <View className="flex-col gap-2 flex-1">
+        <Label>{picked ? "Picked " + picked.year + "-" + pad(picked.month) + "-" + pad(picked.day) : "Picked none"}</Label>
+      </View>
     </View>
   );
 }

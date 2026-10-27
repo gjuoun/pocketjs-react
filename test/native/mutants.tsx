@@ -31,7 +31,7 @@ import { clearToasts, toast, Toaster } from "../../src/native/toast.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../src/native/table.tsx";
 import { Alert } from "../../src/native/alert.tsx";
 import { Empty } from "../../src/native/empty.tsx";
-import { ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage, SidebarPage, SIDEBAR_GROUPS, ResizablePage, CarouselPage, CAROUSEL_SLIDES } from "./gallery/pages.tsx";
+import { ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage, SidebarPage, SIDEBAR_GROUPS, ResizablePage, CarouselPage, CAROUSEL_SLIDES, CalendarPage } from "./gallery/pages.tsx";
 import { Breadcrumb } from "../../src/native/breadcrumb.tsx";
 import type { Driver } from "../../tools/qa/acceptance/drivers.ts";
 
@@ -871,5 +871,59 @@ export const MUTANTS: Record<string, Mutant> = {
   "misaligned-carousel-control": {
     gate: "G3", defect: false, driver: null,
     render: () => <View className={ROOT}><CarouselPage /></View>,
+  },
+  "dead-calendar": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Next month", metrics: ["text"] },
+    render: () => (
+      <View className={ROOT}>
+        <View className={T["calendar.root"]}>
+          <View className={T["calendar.header"]}>
+            <Focusable look={[T["calendar.nav"], T["calendar.nav.idle"], T["calendar.focus"]].join(" ")}><Text className={T["calendar.nav.text"]}>Next month</Text></Focusable>
+            <Text className={T["calendar.title"]}>October 2026</Text>
+          </View>
+        </View>
+      </View>
+    ),
+  },
+  "dead-calendar-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Next month", metrics: ["text"] },
+    render: () => <View className={ROOT}><CalendarPage /></View>,
+  },
+  "calendar-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={T["calendar.root"]}><Text className="text-sm text-slate-300">15</Text></View></View>,
+  },
+  "calendar-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><CalendarPage /></View>,
+  },
+  "calendar-zero-width": {
+    gate: "G2", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className={T["calendar.root"]}>
+          <View className={T["calendar.cell"]} style={{ width: 0 }}><Text className={T["calendar.day.text"]}>15</Text></View>
+        </View>
+      </View>
+    ),
+  },
+  "calendar-zero-width-control": {
+    gate: "G2", defect: false, driver: null,
+    render: () => <View className={ROOT}><CalendarPage /></View>,
+  },
+  "misaligned-calendar": {
+    gate: "G3", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="flex-row items-center">
+          <View className={T["calendar.cell"]}><Text className={T["calendar.weekday"]}>Su</Text></View>
+          <View className={T["calendar.cell"]} style={{ marginTop: 10 }}><Text className={T["calendar.weekday"]}>Mo</Text></View>
+        </View>
+      </View>
+    ),
+  },
+  "misaligned-calendar-control": {
+    gate: "G3", defect: false, driver: null,
+    render: () => <View className={ROOT}><CalendarPage /></View>,
   },
 };

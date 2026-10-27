@@ -382,6 +382,24 @@ export const TOKENS = {
   "carousel.nav.disabled.text": "text-sm text-slate-500",
   "carousel.focus": "focus:border-blue-600",
   "carousel.press": "active:bg-slate-100",
+  "calendar.root": "w-[280px] flex-col p-2 bg-white border border-slate-200 rounded-md",
+  "calendar.header": "flex-row items-center justify-between",
+  "calendar.title": "text-sm font-bold text-slate-900",
+  "calendar.nav": "h-7 px-1 flex-row items-center justify-center rounded-md border-2",
+  "calendar.nav.idle": "border-transparent",
+  "calendar.nav.text": "text-xs font-bold text-slate-900",
+  "calendar.row": "flex-row items-center",
+  "calendar.cell": "w-9 h-7 flex-row items-center justify-center",
+  "calendar.weekday": "text-xs font-bold text-slate-500",
+  "calendar.day": "w-9 h-7 flex-row items-center justify-center rounded-md border-2",
+  "calendar.idle": "border-transparent",
+  "calendar.day.text": "text-sm text-slate-900",
+  "calendar.today": "border-slate-400",
+  "calendar.today.text": "text-sm font-bold text-slate-900",
+  "calendar.selected": "bg-slate-900 border-slate-900",
+  "calendar.selected.text": "text-sm font-bold text-white",
+  "calendar.focus": "focus:border-blue-600",
+  "calendar.press": "active:bg-slate-100",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -613,6 +631,16 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "carousel.nav.disabled": "bg-slate-900 border-transparent",
   "carousel.nav.text": "text-sm font-bold text-white",
   "carousel.press": "active:bg-slate-700",
+  "calendar.root": "w-[280px] flex-col p-2 bg-slate-800 border border-slate-700 rounded-md",
+  "calendar.title": "text-sm font-bold text-white",
+  "calendar.nav.text": "text-xs font-bold text-white",
+  "calendar.weekday": "text-xs font-bold text-slate-300",
+  "calendar.day.text": "text-sm text-slate-100",
+  "calendar.today": "border-slate-500",
+  "calendar.today.text": "text-sm font-bold text-white",
+  "calendar.selected": "bg-white border-white",
+  "calendar.selected.text": "text-sm font-bold text-slate-900",
+  "calendar.press": "active:bg-slate-700",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {
