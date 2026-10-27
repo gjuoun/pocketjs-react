@@ -30,7 +30,8 @@ export interface EmblaApi {
 }
 
 export type UseEmblaCarouselType = [
-  (node: NodeMirror | null) => void,
+  // An element ref: the vendored carousel hands it to a div. The value is the viewport's mirror node.
+  (node: unknown) => void,
   EmblaApi | undefined,
 ];
 
@@ -119,8 +120,10 @@ export default function useEmblaCarousel(
   const apiRef = useRef<EmblaApi | null>(null);
   if (apiRef.current === null) apiRef.current = makeApi(options, node);
   const [api] = useState<EmblaApi>(() => apiRef.current as EmblaApi);
-  const ref = useCallback((n: NodeMirror | null) => {
-    node.current = n;
+  // The vendored carousel hands this to a div's ref, so the parameter is typed as an element ref; the value is the
+  // viewport's mirror node (the compat host's), which is what the shim reads.
+  const ref = useCallback((n: unknown) => {
+    node.current = n as NodeMirror | null;
   }, []);
   return [ref, api];
 }
