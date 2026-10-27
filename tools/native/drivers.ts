@@ -17,7 +17,7 @@ export const PAGE_DRIVERS: Record<number, Driver[]> = {
   8: [{ kind: "static", reason: "a separator is a rule; it has no focus, no press and no state" }],
   9: [{ kind: "static", reason: "an avatar is a fallback circle; it has no focus, no press and no state" }],
   10: [{ kind: "driven", trigger: "Add 10%", metrics: ["text"] }],
-  11: [{ kind: "static", reason: "a skeleton has no focus, no press and no state; it pulses with no input" }],
+  11: [{ kind: "static", reason: "a skeleton has no focus, no press and no state; it is static (see skeleton.tsx)" }],
   12: [{ kind: "static", reason: "a spinner has no focus, no press and no state; it is a static arc (the core cannot spin an arc)" }],
   13: [{ kind: "driven", trigger: "Dark", metrics: ["text"] }],
 };
