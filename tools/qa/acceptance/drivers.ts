@@ -4,7 +4,7 @@
 // driver yet: it is reported, never passed.
 import type { SectionName } from "../../../test/fixtures/shadcn-gallery/layout.ts";
 
-export type Metric = "layer" | "text" | "ink" | "offset";
+export type Metric = "layer" | "text" | "ink" | "offset" | "menu";
 export type Driver =
   | { kind: "driven"; trigger: string; metrics: Metric[]; keys?: number[] }
   | { kind: "static"; reason: string }

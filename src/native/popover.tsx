@@ -51,11 +51,13 @@ export interface PopoverContentProps {
   align?: Align;
   /** Gap in px between the trigger and the panel (default 4). */
   sideOffset?: number;
+  /** A 264 px panel instead of 220 px, for content that is wider than the default (a Combobox's Command). */
+  wide?: boolean;
   children?: ReactNode;
 }
 
 /** The layer: the panel placed beside the trigger. Mounted only while the popover is open. */
-function PopoverLayer(props: Required<Pick<PopoverContentProps, "side" | "align" | "sideOffset">> & { children?: ReactNode }) {
+function PopoverLayer(props: Required<Pick<PopoverContentProps, "side" | "align" | "sideOffset">> & { wide: boolean; children?: ReactNode }) {
   const T = useTokens() as Record<string, string>;
   const ctx = usePopover("PopoverContent");
   const trigger = useAnchorBox(true, () => ctx.trigger.current);
@@ -70,7 +72,7 @@ function PopoverLayer(props: Required<Pick<PopoverContentProps, "side" | "align"
       focusFirst
       restore={ctx.trigger}
     >
-      <View className={T["popover.panel"]} debugName="popover-panel">{props.children}</View>
+      <View className={T[props.wide ? "popover.panel.wide" : "popover.panel"]} debugName="popover-panel">{props.children}</View>
     </PopperPanel>
   );
 }
@@ -79,7 +81,7 @@ export function PopoverContent(props: PopoverContentProps) {
   const ctx = usePopover("PopoverContent");
   if (!ctx.open) return null;
   return (
-    <PopoverLayer side={props.side ?? "bottom"} align={props.align ?? "center"} sideOffset={props.sideOffset ?? 4}>
+    <PopoverLayer side={props.side ?? "bottom"} align={props.align ?? "center"} sideOffset={props.sideOffset ?? 4} wide={props.wide === true}>
       {props.children}
     </PopoverLayer>
   );

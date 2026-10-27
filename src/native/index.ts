@@ -7,9 +7,12 @@ export { Avatar } from "./avatar.tsx";
 export { Badge } from "./badge.tsx";
 export { Breadcrumb } from "./breadcrumb.tsx";
 export { Button } from "./button.tsx";
+export { Carousel, type CarouselProps } from "./carousel.tsx";
+export { Calendar, type CalendarDate, type CalendarMonth, type CalendarProps } from "./calendar.tsx";
 export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./card.tsx";
 export { Checkbox } from "./checkbox.tsx";
 export { Chevron } from "./chevron.tsx";
+export { Combobox, comboboxLabel, type ComboboxProps } from "./combobox.tsx";
 export { Command, type CommandGroup, type CommandItem } from "./command.tsx";
 export {
   Dialog,
@@ -47,9 +50,11 @@ export { Pagination } from "./pagination.tsx";
 export { Popover, PopoverContent, PopoverTrigger } from "./popover.tsx";
 export { Progress } from "./progress.tsx";
 export { RadioGroup, RadioItem } from "./radio.tsx";
+export { Resizable, type ResizableProps } from "./resizable.tsx";
 export { Select } from "./select.tsx";
 export { Separator } from "./separator.tsx";
 export { Sheet, SheetContent, SheetTitle, SheetTrigger } from "./sheet.tsx";
+export { Sidebar, type SidebarGroup, type SidebarItem } from "./sidebar.tsx";
 export { Skeleton } from "./skeleton.tsx";
 export { Slider } from "./slider.tsx";
 export { Spinner } from "./spinner.tsx";

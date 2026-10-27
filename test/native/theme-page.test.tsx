@@ -50,13 +50,15 @@ test("the theme page draws the labels of the first twenty-four components (Butto
 
 /** The labels each later section draws when it is the one shown (section 1 is the COMPONENTS list above). */
 const SECTIONS: Array<{ label: string; drawn: string[] }> = [
-  { label: "2/4", drawn: ["Products", "Support", "Home", "Update ready", "_"] },
-  { label: "3/4", drawn: ["Email", "Optional", "Sync failed", "Calendar", "Calculator", "Suggestions", "Tools"] },
-  { label: "4/4", drawn: ["No projects yet", "Create project", "Projects you create show up here."] },
+  { label: "2/6", drawn: ["Products", "Support", "Home", "Update ready", "_"] },
+  { label: "3/6", drawn: ["Email", "Optional", "Sync failed", "Calendar", "Calculator", "Suggestions", "Tools"] },
+  { label: "4/6", drawn: ["No projects yet", "Create project", "Projects you create show up here.", "Workspace", "Inbox"] },
+  { label: "5/6", drawn: ["October 2026", "Next month", "Pick framework"] },
+  { label: "6/6", drawn: ["Files", "Editor", "Next slide", "Prev slide", "1 / 3"] },
 ];
 const settleFrames = async (c: Core) => { await new Promise((r) => setTimeout(r, 0)); for (let i = 0; i < 6; i++) { c.step(0); c.render(); } };
 
-test("the section switch shows sections 2 to 4 in turn; each shows its own components and hides the rest", async () => {
+test("the section switch shows sections 2 to 6 in turn; each shows its own components and hides the rest", async () => {
   const c = await bootTheme();
   for (const sec of SECTIONS) {
     focusNode(triggerNode(rootMirror, sec.label) as never);
@@ -68,9 +70,9 @@ test("the section switch shows sections 2 to 4 in turn; each shows its own compo
   }
 });
 
-test("the section switch wraps: section 4 leads back to section 1, which draws its badges again", async () => {
+test("the section switch wraps: section 6 leads back to section 1, which draws its badges again", async () => {
   const c = await bootTheme();
-  for (const sec of [...SECTIONS, { label: "1/4", drawn: [] }]) {
+  for (const sec of [...SECTIONS, { label: "1/6", drawn: [] }]) {
     focusNode(triggerNode(rootMirror, sec.label) as never);
     c.step(BTN.CIRCLE);
     await settleFrames(c);

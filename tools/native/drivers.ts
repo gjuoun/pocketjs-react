@@ -28,7 +28,9 @@ const BY_NAME: Record<string, Driver[]> = {
   Checkbox: [{ kind: "driven", trigger: "Email me updates", metrics: ["ink"] }],
   Switch: [{ kind: "driven", trigger: "Airplane mode", metrics: ["offset"] }],
   RadioGroup: [{ kind: "driven", trigger: "Monthly", metrics: ["text"], keys: [BTN.RIGHT] }],
-  Select: [{ kind: "driven", trigger: "Per month", metrics: ["text"] }],
+  // CIRCLE opens the list (its options are controls, so opening alone adds no panel text), DOWN and CIRCLE choose the next
+  // option, and the page's billing label changes: that changed panel text is what G4 counts.
+  Select: [{ kind: "driven", trigger: "Per month", metrics: ["text"], keys: [BTN.CIRCLE, BTN.DOWN, BTN.CIRCLE] }],
   Slider: [{ kind: "driven", trigger: "Volume", metrics: ["offset"], keys: [BTN.RIGHT] }],
   Accordion: [{ kind: "driven", trigger: "Shipping", metrics: ["text"] }],
   Sheet: [{ kind: "driven", trigger: "Open sheet", metrics: ["layer"] }],
@@ -50,11 +52,34 @@ const BY_NAME: Record<string, Driver[]> = {
   Command: [{ kind: "driven", trigger: "Calendar", metrics: ["text"] }],
   // The section switch shows each later section in turn, back to section 1, then the theme toggle (which reads section 1's label).
   // The judge re-judges G1-G3 after each pass.
+  // The item press changes the section label (panel text); the toggle then collapses the rail, and its readout changes.
+  // The item comes first: a collapsed rail hides the labels.
+  Sidebar: [
+    { kind: "driven", trigger: "Projects", metrics: ["text"] },
+    { kind: "driven", trigger: "Hide", metrics: ["text"] },
+  ],
+  // The divider is a focusable bar (its grip is "::"); RIGHT twice moves it, and the split readout changes.
+  Resizable: [{ kind: "driven", trigger: "::", metrics: ["offset", "text"], keys: [BTN.RIGHT, BTN.RIGHT] }],
+  // The next control moves the slide; the position readout (panel text) changes from "1 / 3" to "2 / 3".
+  Carousel: [{ kind: "driven", trigger: "Next slide", metrics: ["text"] }],
+  // The next-month control changes the title (panel text); then a day is chosen and the picked readout changes.
+  Calendar: [
+    { kind: "driven", trigger: "Next month", metrics: ["text"] },
+    { kind: "driven", trigger: "15", metrics: ["text"] },
+  ],
+  // The open panel is the layer (its items are controls: "menu" counts them); then CIRCLE, DOWN and CIRCLE choose the first
+  // item from the search input, and the framework readout changes.
+  Combobox: [
+    { kind: "driven", trigger: "Pick framework", metrics: ["menu"] },
+    { kind: "driven", trigger: "Pick framework", metrics: ["text"], keys: [BTN.CIRCLE, BTN.DOWN, BTN.CIRCLE] },
+  ],
   Theme: [
-    { kind: "driven", trigger: "2/4", metrics: ["text"] },
-    { kind: "driven", trigger: "3/4", metrics: ["text"] },
-    { kind: "driven", trigger: "4/4", metrics: ["text"] },
-    { kind: "driven", trigger: "1/4", metrics: ["text"] },
+    { kind: "driven", trigger: "2/6", metrics: ["text"] },
+    { kind: "driven", trigger: "3/6", metrics: ["text"] },
+    { kind: "driven", trigger: "4/6", metrics: ["text"] },
+    { kind: "driven", trigger: "5/6", metrics: ["text"] },
+    { kind: "driven", trigger: "6/6", metrics: ["text"] },
+    { kind: "driven", trigger: "1/6", metrics: ["text"] },
     { kind: "driven", trigger: "Dark", metrics: ["text"] },
   ],
 };

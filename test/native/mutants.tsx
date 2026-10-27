@@ -14,6 +14,10 @@ import { Checkbox } from "../../src/native/checkbox.tsx";
 import { Switch } from "../../src/native/switch.tsx";
 import { RadioGroup, RadioItem } from "../../src/native/radio.tsx";
 import { Select } from "../../src/native/select.tsx";
+import { Sidebar } from "../../src/native/sidebar.tsx";
+import { Resizable } from "../../src/native/resizable.tsx";
+import { Carousel } from "../../src/native/carousel.tsx";
+import { Combobox } from "../../src/native/combobox.tsx";
 import { Slider } from "../../src/native/slider.tsx";
 import { Accordion, AccordionItem } from "../../src/native/accordion.tsx";
 import { Chevron } from "../../src/native/chevron.tsx";
@@ -28,7 +32,7 @@ import { clearToasts, toast, Toaster } from "../../src/native/toast.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../src/native/table.tsx";
 import { Alert } from "../../src/native/alert.tsx";
 import { Empty } from "../../src/native/empty.tsx";
-import { ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage } from "./gallery/pages.tsx";
+import { ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage, SidebarPage, SIDEBAR_GROUPS, ResizablePage, CarouselPage, CAROUSEL_SLIDES, CalendarPage, ComboboxPage, FRAMEWORKS } from "./gallery/pages.tsx";
 import { Breadcrumb } from "../../src/native/breadcrumb.tsx";
 import type { Driver } from "../../tools/qa/acceptance/drivers.ts";
 
@@ -83,6 +87,26 @@ function LiveSelect() {
     <View className="flex-col gap-2">
       <Select value={plan} onValueChange={setPlan} options={[{ value: "monthly", label: "Live select" }, { value: "yearly", label: "Yearly" }]} />
       <Label>{"Plan " + plan}</Label>
+    </View>
+  );
+}
+
+function LiveSidebar() {
+  const [collapsed, setCollapsed] = useState(false);
+  return (
+    <View className="flex-col gap-2">
+      <Sidebar groups={SIDEBAR_GROUPS} defaultValue="home" collapsed={collapsed} onCollapsedChange={setCollapsed} />
+      <Label>{collapsed ? "Rail collapsed" : "Rail expanded"}</Label>
+    </View>
+  );
+}
+
+function LiveResizable() {
+  const [size, setSize] = useState(50);
+  return (
+    <View className="flex-col gap-2">
+      <Resizable first={<Label>Files</Label>} second={<Label>Editor</Label>} size={size} onSizeChange={setSize} />
+      <Label>{"Split " + size}</Label>
     </View>
   );
 }
@@ -344,7 +368,7 @@ export const MUTANTS: Record<string, Mutant> = {
     render: () => <View className={ROOT}><LiveRadio /></View>,
   },
   "dead-select": {
-    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead select", metrics: ["text"] },
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead select", metrics: ["text"], keys: [BTN.CIRCLE, BTN.DOWN, BTN.CIRCLE] },
     render: () => (
       <View className={ROOT}>
         <Focusable look={[T["select.trigger"], T["select.focus"]].join(" ")}>
@@ -354,7 +378,7 @@ export const MUTANTS: Record<string, Mutant> = {
     ),
   },
   "dead-select-control": {
-    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live select", metrics: ["text"] },
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live select", metrics: ["text"], keys: [BTN.CIRCLE, BTN.DOWN, BTN.CIRCLE] },
     render: () => <View className={ROOT}><LiveSelect /></View>,
   },
   "dead-slider": {
@@ -460,7 +484,7 @@ export const MUTANTS: Record<string, Mutant> = {
     render: () => <View className={ROOT}><Button>Dead actions</Button></View>,
   },
   "dead-dropdown-control": {
-    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live actions", metrics: ["layer"] },
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live actions", metrics: ["menu"] },
     render: () => (
       <View className={ROOT}>
         <DropdownMenu>
@@ -696,5 +720,250 @@ export const MUTANTS: Record<string, Mutant> = {
   "command-contrast-control": {
     gate: "G1", defect: false, driver: null,
     render: () => <View className={ROOT}><CommandPage /></View>,
+  },
+  "dead-sidebar": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Hide", metrics: ["text"] },
+    render: () => <View className={ROOT}><Focusable look={[T["sidebar.toggle"], T["sidebar.focus"]].join(" ")}><Text className={T["sidebar.toggle.text"]}>Hide</Text></Focusable></View>,
+  },
+  "dead-sidebar-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Hide", metrics: ["text"] },
+    render: () => <View className={ROOT}><LiveSidebar /></View>,
+  },
+  "sidebar-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={T["sidebar.root"]}><Text className="text-sm text-slate-300">Faint item</Text></View></View>,
+  },
+  "sidebar-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><SidebarPage /></View>,
+  },
+  "sidebar-zero-width": {
+    gate: "G2", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={T["sidebar.root"]} style={{ width: 0 }}><Text className={T["sidebar.label"]}>Home</Text></View></View>,
+  },
+  "sidebar-zero-width-control": {
+    gate: "G2", defect: false, driver: null,
+    render: () => <View className={ROOT}><SidebarPage /></View>,
+  },
+  "misaligned-sidebar": {
+    gate: "G3", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="flex-row items-center gap-2">
+          <View className={T["sidebar.item"]}><Text className={T["sidebar.label"]}>Home</Text></View>
+          <View className={T["sidebar.item"]} style={{ marginTop: 10 }}><Text className={T["sidebar.label"]}>Inbox</Text></View>
+        </View>
+      </View>
+    ),
+  },
+  "misaligned-sidebar-control": {
+    gate: "G3", defect: false, driver: null,
+    render: () => <View className={ROOT}><SidebarPage /></View>,
+  },
+  "dead-resizable": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "::", metrics: ["offset"], keys: [BTN.RIGHT, BTN.RIGHT] },
+    render: () => (
+      <View className={ROOT}>
+        <View className={T["resizable.group"]}>
+          <View className={T["resizable.pane"]} style={{ width: 120 }}><Label>Files</Label></View>
+          <Focusable look={[T["resizable.divider"], T["resizable.focus"]].join(" ")}><Text className={T["resizable.grip"]}>::</Text></Focusable>
+          <View className={T["resizable.pane.rest"]}><Label>Editor</Label></View>
+        </View>
+      </View>
+    ),
+  },
+  "dead-resizable-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "::", metrics: ["offset"], keys: [BTN.RIGHT, BTN.RIGHT] },
+    render: () => <View className={ROOT}><LiveResizable /></View>,
+  },
+  "resizable-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={T["resizable.divider"]}><View className={T["resizable.fill"]}><Text className="text-sm text-slate-300">::</Text></View></View></View>,
+  },
+  "resizable-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><ResizablePage /></View>,
+  },
+  "resizable-zero-width": {
+    gate: "G2", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className={T["resizable.group"]}>
+          <View className={T["resizable.pane"]} style={{ width: 0 }}><Label>Files</Label></View>
+          <View className={T["resizable.pane.rest"]}><Label>Editor</Label></View>
+        </View>
+      </View>
+    ),
+  },
+  "resizable-zero-width-control": {
+    gate: "G2", defect: false, driver: null,
+    render: () => <View className={ROOT}><ResizablePage /></View>,
+  },
+  "misaligned-resizable": {
+    gate: "G3", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="flex-row items-center gap-2">
+          <View className={T["resizable.divider"]} style={{ height: 40 }} />
+          <View className={T["resizable.divider"]} style={{ height: 40, marginTop: 10 }} />
+        </View>
+      </View>
+    ),
+  },
+  "misaligned-resizable-control": {
+    gate: "G3", defect: false, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="flex-row items-center gap-2">
+          <View className={T["resizable.divider"]} style={{ height: 40 }} />
+          <View className={T["resizable.divider"]} style={{ height: 40 }} />
+        </View>
+      </View>
+    ),
+  },
+  "dead-carousel": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Next slide", metrics: ["text"] },
+    render: () => (
+      <View className={ROOT}>
+        <View className={T["carousel.root"]}>
+          <Focusable look={[T["carousel.nav"], T["carousel.focus"], T["carousel.nav.idle"]].join(" ")}><Text className={T["carousel.nav.text"]}>Next slide</Text></Focusable>
+          <Text className={T["carousel.indicator"]}>1 / 3</Text>
+        </View>
+      </View>
+    ),
+  },
+  "dead-carousel-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Next slide", metrics: ["text"] },
+    render: () => <View className={ROOT}><CarouselPage /></View>,
+  },
+  "carousel-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={T["carousel.root"]}><Text className="text-sm text-slate-300">1 / 3</Text></View></View>,
+  },
+  "carousel-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><CarouselPage /></View>,
+  },
+  "carousel-overflow": {
+    gate: "G2", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="w-[120px] h-[96px] overflow-hidden bg-white border border-slate-200 rounded-md">
+          <View className={[T["carousel.slide"], T["carousel.at"]].join(" ")}><Text className={T["carousel.text"]}>{CAROUSEL_SLIDES[0]}</Text></View>
+        </View>
+      </View>
+    ),
+  },
+  "carousel-overflow-control": {
+    gate: "G2", defect: false, driver: null,
+    render: () => <View className={ROOT}><CarouselPage /></View>,
+  },
+  "misaligned-carousel": {
+    gate: "G3", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="flex-row items-center gap-2">
+          <View className={[T["carousel.nav"], T["carousel.nav.idle"]].join(" ")}><Text className={T["carousel.nav.text"]}>Prev slide</Text></View>
+          <View className={[T["carousel.nav"], T["carousel.nav.idle"]].join(" ")} style={{ marginTop: 10 }}><Text className={T["carousel.nav.text"]}>Next slide</Text></View>
+        </View>
+      </View>
+    ),
+  },
+  "misaligned-carousel-control": {
+    gate: "G3", defect: false, driver: null,
+    render: () => <View className={ROOT}><CarouselPage /></View>,
+  },
+  "dead-calendar": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Next month", metrics: ["text"] },
+    render: () => (
+      <View className={ROOT}>
+        <View className={T["calendar.root"]}>
+          <View className={T["calendar.header"]}>
+            <Focusable look={[T["calendar.nav"], T["calendar.nav.idle"], T["calendar.focus"]].join(" ")}><Text className={T["calendar.nav.text"]}>Next month</Text></Focusable>
+            <Text className={T["calendar.title"]}>October 2026</Text>
+          </View>
+        </View>
+      </View>
+    ),
+  },
+  "dead-calendar-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Next month", metrics: ["text"] },
+    render: () => <View className={ROOT}><CalendarPage /></View>,
+  },
+  "calendar-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={T["calendar.root"]}><Text className="text-sm text-slate-300">15</Text></View></View>,
+  },
+  "calendar-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><CalendarPage /></View>,
+  },
+  "calendar-zero-width": {
+    gate: "G2", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className={T["calendar.root"]}>
+          <View className={T["calendar.cell"]} style={{ width: 0 }}><Text className={T["calendar.day.text"]}>15</Text></View>
+        </View>
+      </View>
+    ),
+  },
+  "calendar-zero-width-control": {
+    gate: "G2", defect: false, driver: null,
+    render: () => <View className={ROOT}><CalendarPage /></View>,
+  },
+  "misaligned-calendar": {
+    gate: "G3", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="flex-row items-center">
+          <View className={T["calendar.cell"]}><Text className={T["calendar.weekday"]}>Su</Text></View>
+          <View className={T["calendar.cell"]} style={{ marginTop: 10 }}><Text className={T["calendar.weekday"]}>Mo</Text></View>
+        </View>
+      </View>
+    ),
+  },
+  "misaligned-calendar-control": {
+    gate: "G3", defect: false, driver: null,
+    render: () => <View className={ROOT}><CalendarPage /></View>,
+  },
+  "dead-combobox": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Pick framework", metrics: ["menu"] },
+    render: () => <View className={ROOT}><Button variant="outline">Pick framework</Button></View>,
+  },
+  "dead-combobox-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Pick framework", metrics: ["menu"] },
+    render: () => <View className={ROOT}><ComboboxPage /></View>,
+  },
+  "combobox-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={T["popover.panel.wide"]}><Text className="text-sm text-slate-300">React</Text></View></View>,
+  },
+  "combobox-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><Combobox groups={FRAMEWORKS} placeholder="Pick framework" defaultOpen /></View>,
+  },
+  "combobox-zero-width": {
+    gate: "G2", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={T["popover.panel.wide"]} style={{ width: 0 }}><Text className={T["command.item.text"]}>React</Text></View></View>,
+  },
+  "combobox-zero-width-control": {
+    gate: "G2", defect: false, driver: null,
+    render: () => <View className={ROOT}><Combobox groups={FRAMEWORKS} placeholder="Pick framework" defaultOpen /></View>,
+  },
+  "misaligned-combobox": {
+    gate: "G3", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="flex-row items-center gap-2">
+          <Button variant="outline">Pick framework</Button>
+          <View style={{ marginTop: 10 }}><Label>Framework none</Label></View>
+        </View>
+      </View>
+    ),
+  },
+  "misaligned-combobox-control": {
+    gate: "G3", defect: false, driver: null,
+    render: () => <View className={ROOT}><ComboboxPage /></View>,
   },
 };

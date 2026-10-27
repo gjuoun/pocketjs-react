@@ -19,6 +19,11 @@ import { Checkbox } from "../../../src/native/checkbox.tsx";
 import { Switch } from "../../../src/native/switch.tsx";
 import { RadioGroup, RadioItem } from "../../../src/native/radio.tsx";
 import { Select } from "../../../src/native/select.tsx";
+import { Sidebar, type SidebarGroup } from "../../../src/native/sidebar.tsx";
+import { Resizable } from "../../../src/native/resizable.tsx";
+import { Carousel } from "../../../src/native/carousel.tsx";
+import { Calendar, type CalendarDate } from "../../../src/native/calendar.tsx";
+import { Combobox } from "../../../src/native/combobox.tsx";
 import { Slider } from "../../../src/native/slider.tsx";
 import { Accordion, AccordionItem } from "../../../src/native/accordion.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
@@ -122,7 +127,7 @@ export function LabelPage() {
     <View className="flex-col gap-2">
       <Label>Email address</Label>
       <Label disabled>Account number</Label>
-      <Label disabled={dimmed}>Nickname</Label>
+      <Label disabled={dimmed}>{dimmed ? "Nickname (dimmed)" : "Nickname"}</Label>
       <Button variant="outline" onPress={() => setDimmed(!dimmed)}>{dimmed ? "Restore nickname" : "Dim nickname"}</Button>
     </View>
   );
@@ -271,6 +276,76 @@ export function SelectPage() {
         ]}
       />
       <Label>{"Billing " + plan}</Label>
+    </View>
+  );
+}
+
+// The sidebar's groups: the page and the mutant controls read the same list.
+export const SIDEBAR_GROUPS: SidebarGroup[] = [
+  { heading: "Workspace", items: [{ value: "home", label: "Home", icon: "H" }, { value: "inbox", label: "Inbox", icon: "I" }, { value: "projects", label: "Projects", icon: "P" }] },
+  { heading: "Account", items: [{ value: "settings", label: "Settings", icon: "S" }] },
+];
+
+export function SidebarPage() {
+  const [section, setSection] = useState("home");
+  const [collapsed, setCollapsed] = useState(false);
+  const label = SIDEBAR_GROUPS.flatMap((g) => g.items).find((i) => i.value === section)?.label ?? "";
+  return (
+    <View className="flex-row gap-2 items-start">
+      <Sidebar groups={SIDEBAR_GROUPS} value={section} onValueChange={setSection} collapsed={collapsed} onCollapsedChange={setCollapsed} />
+      <View className="flex-col gap-2 flex-1">
+        <Label>{"Section " + label}</Label>
+        <Label>{collapsed ? "Rail collapsed" : "Rail expanded"}</Label>
+      </View>
+    </View>
+  );
+}
+
+export function ResizablePage() {
+  const [size, setSize] = useState(50);
+  return (
+    <View className="flex-col gap-2">
+      <Resizable first={<Label>Files</Label>} second={<Label>Editor</Label>} size={size} onSizeChange={setSize} />
+      <Label>{"Split " + size}</Label>
+    </View>
+  );
+}
+
+export const CAROUSEL_SLIDES = ["Welcome", "Pricing", "Support"];
+
+export function CarouselPage() {
+  return (
+    <View className="flex-col gap-2">
+      <Carousel slides={CAROUSEL_SLIDES} />
+    </View>
+  );
+}
+
+export const CALENDAR_TODAY = { year: 2026, month: 10, day: 27 };
+
+export function CalendarPage() {
+  const [picked, setPicked] = useState<CalendarDate | null>(null);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    <View className="flex-row gap-2 items-start">
+      <Calendar today={CALENDAR_TODAY} defaultView={{ year: 2026, month: 10 }} value={picked} onValueChange={setPicked} />
+      <View className="flex-col gap-2 flex-1">
+        <Label>{picked ? "Picked " + picked.year + "-" + pad(picked.month) + "-" + pad(picked.day) : "Picked none"}</Label>
+      </View>
+    </View>
+  );
+}
+
+export const FRAMEWORKS: CommandGroup[] = [
+  { heading: "Frontend", items: [{ value: "react", label: "React" }, { value: "vue", label: "Vue" }, { value: "svelte", label: "Svelte" }] },
+];
+
+export function ComboboxPage() {
+  const [value, setValue] = useState("");
+  return (
+    <View className="flex-col gap-2">
+      <Combobox groups={FRAMEWORKS} placeholder="Pick framework" value={value} onValueChange={setValue} />
+      <Label>{"Framework " + (value || "none")}</Label>
     </View>
   );
 }
@@ -507,10 +582,11 @@ export function CommandPage() {
   );
 }
 
-/** The theme page: all thirty-two native components on one 480 by 252 surface. The top row (the triggers and the section
- * switch) is shared; the body is one of four sections of 204 px, shown one at a time. All four are mounted together, so one
- * theme toggle re-renders all thirty-two. Section 1 is the first twenty-four (the layout the page always had); sections 2 to 4
- * hold the eight later ones. The toggle, the section switch and each section's controls are judged by the native judge. */
+/** The theme page: all thirty-seven native components on one 480 by 252 surface. The top row (the triggers and the section
+ * switch) is shared; the body is one of six sections of 204 px, shown one at a time. All six are mounted together, so one
+ * theme toggle re-renders all thirty-seven. Section 1 is the first twenty-four (the layout the page always had); sections 2 to 4
+ * hold the eight later ones of the first round; sections 4 to 6 hold the five later components (the sidebar, the calendar, the
+ * combobox, the resizable and the carousel). The toggle, the section switch and each section's controls are judged by the native judge. */
 export function ThemePage() {
   const [theme, setTheme] = useState<ThemeName>("light");
   return (
@@ -520,7 +596,12 @@ export function ThemePage() {
   );
 }
 
-const SECTIONS = 4;
+const SECTIONS = 6;
+
+// The theme page's sidebar is one group of two items, so it fits the 204 px section beside the empty state.
+const THEME_SIDEBAR: SidebarGroup[] = [
+  { heading: "Workspace", items: [{ value: "home", label: "Home", icon: "H" }, { value: "inbox", label: "Inbox", icon: "I" }] },
+];
 
 function ThemeBody() {
   const T = useTokens() as Record<string, string>;
@@ -665,7 +746,7 @@ function ThemeBody() {
         <Command groups={THEME_GROUPS} />
       </View>) : null}
       {section === 3 ? (
-      <View className="w-full h-[204px] flex-col gap-2" debugName="theme-section-4">
+      <View className="w-full h-[204px] flex-row gap-2" debugName="theme-section-4">
         <View className="w-[300px]">
           <Empty
             icon={<View className="w-4 h-4 bg-slate-900" />}
@@ -673,6 +754,17 @@ function ThemeBody() {
             action={<Button variant="outline" size="sm">Create project</Button>}
           >Projects you create show up here.</Empty>
         </View>
+        <Sidebar groups={THEME_SIDEBAR} defaultValue="home" />
+      </View>) : null}
+      {section === 4 ? (
+      <View className="w-full h-[204px] flex-row gap-2" debugName="theme-section-5">
+        <Calendar today={CALENDAR_TODAY} defaultView={{ year: 2026, month: 10 }} />
+        <Combobox groups={FRAMEWORKS} placeholder="Pick framework" />
+      </View>) : null}
+      {section === 5 ? (
+      <View className="w-full h-[204px] flex-col gap-2" debugName="theme-section-6">
+        <Resizable first={<Label>Files</Label>} second={<Label>Editor</Label>} />
+        <Carousel slides={CAROUSEL_SLIDES} />
       </View>) : null}
     </View>
   );

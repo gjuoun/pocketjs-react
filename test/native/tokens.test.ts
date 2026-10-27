@@ -18,7 +18,11 @@ test("the build rewrite is an identity on every token (no C2 mapping changes a l
 // Phase 0 held 80; Phase 1 adds seven families and the dark table (91 distinct utilities with both themes).
 // Phase 2 tracks the measured count at each step: eight spinner arc-start steps and the skeleton pulse take it to 101,
 // the checkbox to 121, the switch to 128 and the radio group to 130 the select (with the chevron) to 139 the slider (eleven fill and thumb stops) to 168 the accordion (with its chevron turns) to 170; the badge's opaque border per variant (border-red-600, dark border-white) to 171; the sheet (its docked panel and side keys) to 172; the popover (a 220 px panel, p-3) to 174; the tooltip, dropdown menu (its own keys, existing utilities) and toast (bottom-0, a 280 px item) to 176; the table (its cell clip and the text tints) to 177; the spinner's eighteen arc-start steps, 20 degrees apart (one revolution in 90 frames), to 187. Phase 4 adds eight components (breadcrumb, alert with its four variant fills, empty, field with the invalid border, pagination, input-otp, navigation menu, command) and their light and dark keys, to 214. The budget is the count at the last green step.
-const BUDGET = 214;
+// Phase 5: the sidebar adds none; the resizable adds two (its grip's slate-600 text and the dark divider's slate-600 border), to 216;
+// the carousel adds three (its 168 px slide and viewport widths and the 96 px height, and its left-[-168px] entry), to 219;
+// the calendar adds two (its 36 px day cells, w-9, and its 28 px rows, h-7), to 221;
+// the combobox's wide popover panel adds one (w-[264px]), to 222.
+const BUDGET = 222;
 test("the vocabulary holds at most " + BUDGET + " distinct utilities, light and dark together", () => {
   const distinct = new Set(values.flatMap((l) => l.split(/\s+/).filter(Boolean)));
   expect(distinct.size).toBeLessThanOrEqual(BUDGET);
