@@ -5,7 +5,7 @@
 // Gates come unchanged from tools/qa/acceptance; this file only boots the native entries and drives them.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { relative, resolve, join, sep } from "node:path";
-import { BTN, focusNode } from "@pocketjs/framework/input";
+import { BTN } from "@pocketjs/framework/input";
 import { rootMirror, type NodeMirror } from "../../src/internal/pocket.ts";
 import { compatStats, resetCompatStats } from "../../src/index.ts";
 import { compileClasses } from "../../src/internal/pocket-build.ts";
@@ -99,8 +99,7 @@ async function judgePages() {
   if (pages.length !== PAGE_NAMES.length) throw new Error("judge: " + pages.length + " pages in the mirror, names.ts lists " + PAGE_NAMES.length);
   const rows: PageRow[] = [];
   for (let i = 0; i < pages.length; i++) {
-    // Leaving a page: clear focus first, so a layer that closes on focus loss (a tooltip) closes before its page unmounts.
-    if (i > 0) { focusNode(null); settle(core); core.press(BTN.RTRIGGER); }
+    if (i > 0) core.press(BTN.RTRIGGER);
     // The Toaster is global to the gallery: a toast raised by an earlier page's driver would otherwise sit over every later page.
     clearToasts();
     settle(core);
