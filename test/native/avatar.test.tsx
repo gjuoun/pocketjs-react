@@ -1,5 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { View } from "../../src/index.ts";
+import { rootMirror, type NodeMirror } from "../../src/internal/pocket.ts";
+import { walk } from "../../tools/qa/acceptance/geometry.ts";
 import { Avatar, type AvatarSize } from "../../src/native/avatar.tsx";
 import { ThemeProvider } from "../../src/native/theme.tsx";
 import { harness, inkOf, ROOT } from "./support.ts";
@@ -58,4 +60,35 @@ test("the dark theme draws the circle in slate-700 with white initials", async (
   const c = circle("#334155");
   expect(c.w).toBe(32);
   expect(inkOf(h.core, h.core.texts().find((t) => t.text === "AK")!)).toBe("#ffffff");
+});
+
+function markers(): string[] {
+  const out: string[] = [];
+  walk(rootMirror as NodeMirror, (n) => { if (n.debugName?.startsWith("avatar-fallback")) out.push(n.debugName); });
+  return out;
+}
+
+test("a src with no built image draws the initials, reports the miss once, and is marked in the mirror", async () => {
+  const misses: string[] = [];
+  await h.boot(() => <View className={ROOT}><Avatar src="team/ak.png" onImageMissing={(s) => misses.push(s)}>AK</Avatar></View>);
+  for (let i = 0; i < 5; i++) { h.core.step(0); h.core.render(); }
+  expect(misses).toEqual(["team/ak.png"]);
+  expect(markers()).toEqual(["avatar-fallback:missing"]);
+  expect(h.core.texts().map((t) => t.text)).toContain("AK");
+  expect(circle(FILL).w).toBe(32);
+});
+
+test("an avatar without a src reports nothing and is marked as a plain fallback", async () => {
+  const misses: string[] = [];
+  await h.boot(() => <View className={ROOT}><Avatar onImageMissing={(s) => misses.push(s)}>AK</Avatar></View>);
+  expect(misses).toEqual([]);
+  expect(markers()).toEqual(["avatar-fallback"]);
+});
+
+test("the miss path draws the same circle as the plain fallback", async () => {
+  await h.boot(() => <View className={ROOT}><Avatar>AK</Avatar></View>);
+  const plain = circle(FILL);
+  await h.boot(() => <View className={ROOT}><Avatar src="team/ak.png">AK</Avatar></View>);
+  const miss = circle(FILL);
+  expect(miss).toEqual(plain);
 });

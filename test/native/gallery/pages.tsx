@@ -138,6 +138,7 @@ export function SeparatorPage() {
 }
 
 export function AvatarPage() {
+  const [missing, setMissing] = useState("");
   return (
     <View className="flex-col gap-2">
       <View className="flex-row items-center gap-2">
@@ -145,7 +146,10 @@ export function AvatarPage() {
         <Avatar>AK</Avatar>
         <Avatar size="lg">AK</Avatar>
       </View>
-      <Label>Team</Label>
+      <View className="flex-row items-center gap-2">
+        <Avatar src="team/ak.png" onImageMissing={setMissing}>AK</Avatar>
+        <Label>{missing ? "No image built: " + missing + ", initials shown" : "Team"}</Label>
+      </View>
     </View>
   );
 }
