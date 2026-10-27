@@ -35,7 +35,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "qa:acceptance": "bun tools/qa/acceptance/run.ts --all --mutants",
+    "qa:acceptance": "bun tools/qa/acceptance/run.ts --all --mutants && bun tools/qa/acceptance/report.ts",
     "qa:defects": "bun tools/qa/acceptance/defects.ts",
     "qa:gallery": "bun tools/qa/acceptance/run.ts --page gallery",
     "test:e2e": "bun tools/e2e/prepare.ts && node node_modules/.bin/playwright test -c test/e2e/playwright.config.ts",
