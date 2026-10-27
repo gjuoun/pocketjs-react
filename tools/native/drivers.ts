@@ -5,9 +5,11 @@ import type { Driver } from "../qa/acceptance/drivers.ts";
 
 export const PAGE_DRIVERS: Record<number, Driver[]> = {
   1: [{ kind: "driven", trigger: "Default", metrics: ["text"] }],
+  // The keyboard's keys are focusable controls, so their labels are control text: G4's "layer" metric counts no panel text.
+  // The press still draws the caret in the field ("ink"), and the keyboard itself is pinned by test/native/osk-tap.test.tsx.
   2: [
-    { kind: "driven", trigger: "Name", metrics: ["layer"] },
-    { kind: "driven", trigger: "Notes", metrics: ["layer"] },
+    { kind: "driven", trigger: "Name", metrics: ["layer", "ink"] },
+    { kind: "driven", trigger: "Notes", metrics: ["layer", "ink"] },
   ],
   3: [{ kind: "static", reason: "a card is a layout container; its buttons are judged on the Button page" }],
   4: [{ kind: "driven", trigger: "Open dialog", metrics: ["layer"] }],
