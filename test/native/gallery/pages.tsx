@@ -22,6 +22,8 @@ import { Select } from "../../../src/native/select.tsx";
 import { Slider } from "../../../src/native/slider.tsx";
 import { Accordion, AccordionItem } from "../../../src/native/accordion.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
+import { Popover, PopoverContent, PopoverTrigger } from "../../../src/native/popover.tsx";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../../src/native/tooltip.tsx";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetTitle, SheetTrigger } from "../../../src/native/sheet.tsx";
 import { useState } from "react";
 
@@ -300,6 +302,34 @@ export function SheetPage() {
       </Sheet>
       <Label>{"Saved " + saved}</Label>
       <Label>Docked right, 75 percent of the screen</Label>
+    </View>
+  );
+}
+
+export function PopoverPage() {
+  const [sent, setSent] = useState("");
+  return (
+    <View className="flex-col gap-2">
+      <Popover>
+        <PopoverTrigger>Share</PopoverTrigger>
+        <PopoverContent>
+          <Button onPress={() => setSent("link")}>Copy link</Button>
+          <Button variant="outline" onPress={() => setSent("email")}>Email</Button>
+        </PopoverContent>
+      </Popover>
+      <Label>{sent ? "Sent by " + sent : "Nothing sent"}</Label>
+    </View>
+  );
+}
+
+export function TooltipPage() {
+  return (
+    <View className="flex-col gap-2">
+      <Tooltip>
+        <TooltipTrigger>Draft hint</TooltipTrigger>
+        <TooltipContent>Saves the draft</TooltipContent>
+      </Tooltip>
+      <Label>Focus the button to see its hint</Label>
     </View>
   );
 }

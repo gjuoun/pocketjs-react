@@ -22,6 +22,8 @@ import { Progress } from "../../src/native/progress.tsx";
 import { Label } from "../../src/native/label.tsx";
 import { Separator } from "../../src/native/separator.tsx";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "../../src/native/sheet.tsx";
+import { Popover, PopoverContent, PopoverTrigger } from "../../src/native/popover.tsx";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../src/native/tooltip.tsx";
 import { ThemePage } from "./gallery/pages.tsx";
 import type { Driver } from "../../tools/qa/acceptance/drivers.ts";
 
@@ -369,5 +371,73 @@ export const MUTANTS: Record<string, Mutant> = {
   "sheet-zero-width-control": {
     gate: "G2", defect: false, driver: null,
     render: () => <View className={ROOT}><Sheet defaultOpen><SheetContent size={75}><SheetTitle>Account</SheetTitle></SheetContent></Sheet></View>,
+  },
+  "dead-popover": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead popover", metrics: ["layer"] },
+    render: () => <View className={ROOT}><Button>Dead popover</Button></View>,
+  },
+  "dead-popover-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live popover", metrics: ["layer"] },
+    render: () => (
+      <View className={ROOT}>
+        <Popover>
+          <PopoverTrigger>Live popover</PopoverTrigger>
+          <PopoverContent><Text className="text-sm text-slate-900">Shared</Text></PopoverContent>
+        </Popover>
+      </View>
+    ),
+  },
+  "popover-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="flex-col gap-2 p-3 w-[220px] bg-white border border-slate-200 rounded-md">
+          <Text className="text-sm text-slate-300">Faint popover</Text>
+        </View>
+      </View>
+    ),
+  },
+  "popover-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <Popover defaultOpen>
+          <PopoverTrigger>Share</PopoverTrigger>
+          <PopoverContent><Text className="text-sm text-slate-900">Shared</Text></PopoverContent>
+        </Popover>
+      </View>
+    ),
+  },
+  "dead-tooltip": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead hint", metrics: ["text"] },
+    render: () => <View className={ROOT}><Button>Dead hint</Button></View>,
+  },
+  "dead-tooltip-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live hint", metrics: ["text"] },
+    render: () => (
+      <View className={ROOT}>
+        <View style={{ height: 60 }} />
+        <Tooltip>
+          <TooltipTrigger>Live hint</TooltipTrigger>
+          <TooltipContent>Saves the draft</TooltipContent>
+        </Tooltip>
+      </View>
+    ),
+  },
+  "tooltip-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="px-2 py-1 rounded-md bg-white border border-white"><Text className="text-xs font-bold text-white">Faint hint</Text></View>
+      </View>
+    ),
+  },
+  "tooltip-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className={[T["tooltip.panel"]].join(" ")}><Text className={T["tooltip.text"]}>Faint hint</Text></View>
+      </View>
+    ),
   },
 };

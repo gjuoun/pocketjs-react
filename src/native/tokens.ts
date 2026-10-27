@@ -211,6 +211,9 @@ export const TOKENS = {
   "sheet.title": "text-base font-bold text-slate-900",
   "sheet.description": "text-sm text-slate-500",
   "sheet.footer": "flex-row justify-end gap-2",
+  "popover.panel": "flex-col gap-2 p-3 w-[220px] bg-white border border-slate-200 rounded-md",
+  "tooltip.panel": "px-2 py-1 rounded-md bg-slate-900 border border-slate-900",
+  "tooltip.text": "text-xs font-bold text-white",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -336,6 +339,9 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "sheet.panel.col": "w-full flex-col gap-2 p-4 bg-slate-800 border border-slate-700",
   "sheet.title": "text-base font-bold text-white",
   "sheet.description": "text-sm text-slate-300",
+  "popover.panel": "flex-col gap-2 p-3 w-[220px] bg-slate-800 border border-slate-700 rounded-md",
+  "tooltip.panel": "px-2 py-1 rounded-md bg-white border border-white",
+  "tooltip.text": "text-xs font-bold text-slate-900",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {
