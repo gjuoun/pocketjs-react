@@ -9,6 +9,7 @@ import { Input, Textarea } from "../../../src/native/input.tsx";
 import { Label } from "../../../src/native/label.tsx";
 import { Badge } from "../../../src/native/badge.tsx";
 import { Separator } from "../../../src/native/separator.tsx";
+import { Avatar } from "../../../src/native/avatar.tsx";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
 
@@ -127,6 +128,19 @@ export function SeparatorPage() {
         <Separator orientation="vertical" />
         <Label>Docs</Label>
       </View>
+    </View>
+  );
+}
+
+export function AvatarPage() {
+  return (
+    <View className="flex-col gap-2">
+      <View className="flex-row items-center gap-2">
+        <Avatar size="sm">JG</Avatar>
+        <Avatar>JG</Avatar>
+        <Avatar size="lg">JG</Avatar>
+      </View>
+      <Label>Team</Label>
     </View>
   );
 }
