@@ -359,6 +359,13 @@ export const TOKENS = {
   "sidebar.icon": "text-sm font-bold text-slate-500",
   "sidebar.label": "text-sm text-slate-700",
   "sidebar.label.active": "text-sm font-bold text-slate-900",
+  "resizable.group": "h-[120px] w-full flex-row border border-slate-200 rounded-md bg-white",
+  "resizable.pane": "h-full flex-col p-2 gap-1",
+  "resizable.pane.rest": "flex-1 h-full flex-col p-2 gap-1",
+  "resizable.divider": "w-4 h-full flex-col border-2 border-slate-200",
+  "resizable.fill": "w-full h-full flex-col items-center justify-center bg-slate-100",
+  "resizable.focus": "focus:border-blue-600",
+  "resizable.grip": "text-sm text-slate-600",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -580,6 +587,10 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "sidebar.icon": "text-sm font-bold text-slate-300",
   "sidebar.label": "text-sm text-slate-200",
   "sidebar.label.active": "text-sm font-bold text-white",
+  "resizable.group": "h-[120px] w-full flex-row border border-slate-700 rounded-md bg-slate-800",
+  "resizable.divider": "w-4 h-full flex-col border-2 border-slate-600",
+  "resizable.fill": "w-full h-full flex-col items-center justify-center bg-slate-700",
+  "resizable.grip": "text-sm text-slate-300",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {

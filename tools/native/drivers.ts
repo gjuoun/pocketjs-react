@@ -58,6 +58,8 @@ const BY_NAME: Record<string, Driver[]> = {
     { kind: "driven", trigger: "Projects", metrics: ["text"] },
     { kind: "driven", trigger: "Hide", metrics: ["text"] },
   ],
+  // The divider is a focusable bar (its grip is "::"); RIGHT twice moves it, and the split readout changes.
+  Resizable: [{ kind: "driven", trigger: "::", metrics: ["offset", "text"], keys: [BTN.RIGHT, BTN.RIGHT] }],
   Theme: [
     { kind: "driven", trigger: "2/4", metrics: ["text"] },
     { kind: "driven", trigger: "3/4", metrics: ["text"] },

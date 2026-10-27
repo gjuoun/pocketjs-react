@@ -47,6 +47,7 @@ export { Pagination } from "./pagination.tsx";
 export { Popover, PopoverContent, PopoverTrigger } from "./popover.tsx";
 export { Progress } from "./progress.tsx";
 export { RadioGroup, RadioItem } from "./radio.tsx";
+export { Resizable, type ResizableProps } from "./resizable.tsx";
 export { Select } from "./select.tsx";
 export { Separator } from "./separator.tsx";
 export { Sheet, SheetContent, SheetTitle, SheetTrigger } from "./sheet.tsx";

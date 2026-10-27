@@ -20,6 +20,7 @@ import { Switch } from "../../../src/native/switch.tsx";
 import { RadioGroup, RadioItem } from "../../../src/native/radio.tsx";
 import { Select } from "../../../src/native/select.tsx";
 import { Sidebar, type SidebarGroup } from "../../../src/native/sidebar.tsx";
+import { Resizable } from "../../../src/native/resizable.tsx";
 import { Slider } from "../../../src/native/slider.tsx";
 import { Accordion, AccordionItem } from "../../../src/native/accordion.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
@@ -293,6 +294,16 @@ export function SidebarPage() {
         <Label>{"Section " + label}</Label>
         <Label>{collapsed ? "Rail collapsed" : "Rail expanded"}</Label>
       </View>
+    </View>
+  );
+}
+
+export function ResizablePage() {
+  const [size, setSize] = useState(50);
+  return (
+    <View className="flex-col gap-2">
+      <Resizable first={<Label>Files</Label>} second={<Label>Editor</Label>} size={size} onSizeChange={setSize} />
+      <Label>{"Split " + size}</Label>
     </View>
   );
 }

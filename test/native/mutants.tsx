@@ -15,6 +15,7 @@ import { Switch } from "../../src/native/switch.tsx";
 import { RadioGroup, RadioItem } from "../../src/native/radio.tsx";
 import { Select } from "../../src/native/select.tsx";
 import { Sidebar } from "../../src/native/sidebar.tsx";
+import { Resizable } from "../../src/native/resizable.tsx";
 import { Slider } from "../../src/native/slider.tsx";
 import { Accordion, AccordionItem } from "../../src/native/accordion.tsx";
 import { Chevron } from "../../src/native/chevron.tsx";
@@ -29,7 +30,7 @@ import { clearToasts, toast, Toaster } from "../../src/native/toast.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../src/native/table.tsx";
 import { Alert } from "../../src/native/alert.tsx";
 import { Empty } from "../../src/native/empty.tsx";
-import { ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage, SidebarPage, SIDEBAR_GROUPS } from "./gallery/pages.tsx";
+import { ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage, SidebarPage, SIDEBAR_GROUPS, ResizablePage } from "./gallery/pages.tsx";
 import { Breadcrumb } from "../../src/native/breadcrumb.tsx";
 import type { Driver } from "../../tools/qa/acceptance/drivers.ts";
 
@@ -94,6 +95,16 @@ function LiveSidebar() {
     <View className="flex-col gap-2">
       <Sidebar groups={SIDEBAR_GROUPS} defaultValue="home" collapsed={collapsed} onCollapsedChange={setCollapsed} />
       <Label>{collapsed ? "Rail collapsed" : "Rail expanded"}</Label>
+    </View>
+  );
+}
+
+function LiveResizable() {
+  const [size, setSize] = useState(50);
+  return (
+    <View className="flex-col gap-2">
+      <Resizable first={<Label>Files</Label>} second={<Label>Editor</Label>} size={size} onSizeChange={setSize} />
+      <Label>{"Split " + size}</Label>
     </View>
   );
 }
@@ -746,5 +757,66 @@ export const MUTANTS: Record<string, Mutant> = {
   "misaligned-sidebar-control": {
     gate: "G3", defect: false, driver: null,
     render: () => <View className={ROOT}><SidebarPage /></View>,
+  },
+  "dead-resizable": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "::", metrics: ["offset"], keys: [BTN.RIGHT, BTN.RIGHT] },
+    render: () => (
+      <View className={ROOT}>
+        <View className={T["resizable.group"]}>
+          <View className={T["resizable.pane"]} style={{ width: 120 }}><Label>Files</Label></View>
+          <Focusable look={[T["resizable.divider"], T["resizable.focus"]].join(" ")}><Text className={T["resizable.grip"]}>::</Text></Focusable>
+          <View className={T["resizable.pane.rest"]}><Label>Editor</Label></View>
+        </View>
+      </View>
+    ),
+  },
+  "dead-resizable-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "::", metrics: ["offset"], keys: [BTN.RIGHT, BTN.RIGHT] },
+    render: () => <View className={ROOT}><LiveResizable /></View>,
+  },
+  "resizable-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={T["resizable.divider"]}><View className={T["resizable.fill"]}><Text className="text-sm text-slate-300">::</Text></View></View></View>,
+  },
+  "resizable-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><ResizablePage /></View>,
+  },
+  "resizable-zero-width": {
+    gate: "G2", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className={T["resizable.group"]}>
+          <View className={T["resizable.pane"]} style={{ width: 0 }}><Label>Files</Label></View>
+          <View className={T["resizable.pane.rest"]}><Label>Editor</Label></View>
+        </View>
+      </View>
+    ),
+  },
+  "resizable-zero-width-control": {
+    gate: "G2", defect: false, driver: null,
+    render: () => <View className={ROOT}><ResizablePage /></View>,
+  },
+  "misaligned-resizable": {
+    gate: "G3", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="flex-row items-center gap-2">
+          <View className={T["resizable.divider"]} style={{ height: 40 }} />
+          <View className={T["resizable.divider"]} style={{ height: 40, marginTop: 10 }} />
+        </View>
+      </View>
+    ),
+  },
+  "misaligned-resizable-control": {
+    gate: "G3", defect: false, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="flex-row items-center gap-2">
+          <View className={T["resizable.divider"]} style={{ height: 40 }} />
+          <View className={T["resizable.divider"]} style={{ height: 40 }} />
+        </View>
+      </View>
+    ),
   },
 };
