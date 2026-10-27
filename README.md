@@ -425,9 +425,11 @@ Every primitive is controlled or uncontrolled (`useControllableState`: a control
   that layer (Dialog, Menu, Select, and the gamepad Dialog and Menu) and does not reach the app behind it.
   Nested layers close innermost first; CROSS still closes the innermost layer too. The Menu and Select shells
   are transparent (no dim); the Dialog scrim dims.
-- **`sr-only` text still draws.** shadcn's `sr-only` becomes `hidden` (C3), and `hidden` hides only its
-  own text node, not the text inside the span. The dialog's close button therefore shows the word "Close"
-  next to the X. Fixing it needs a compat cascade for `hidden` (a C10 core/compat gap).
+- **`sr-only` text draws nothing (C10).** shadcn's `sr-only` becomes `hidden` (C3), and the core hides a
+  display-none node including its text child. An earlier note here blamed a missing cascade; the real
+  cause was the QA harness booting with an empty style table, so `hidden` resolved to a stale id. The
+  harness now boots with the build's own literals and style table, and a test pins a hidden span to zero
+  ink.
 - **No Escape key.** The guest has no keyboard; CROSS is the back button, and it closes one sub-menu level at a time.
 
 ### Interaction semantics (C9)
