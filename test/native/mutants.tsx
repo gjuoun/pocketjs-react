@@ -14,6 +14,7 @@ import { Checkbox } from "../../src/native/checkbox.tsx";
 import { Switch } from "../../src/native/switch.tsx";
 import { RadioGroup, RadioItem } from "../../src/native/radio.tsx";
 import { Select } from "../../src/native/select.tsx";
+import { Sidebar } from "../../src/native/sidebar.tsx";
 import { Slider } from "../../src/native/slider.tsx";
 import { Accordion, AccordionItem } from "../../src/native/accordion.tsx";
 import { Chevron } from "../../src/native/chevron.tsx";
@@ -28,7 +29,7 @@ import { clearToasts, toast, Toaster } from "../../src/native/toast.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../src/native/table.tsx";
 import { Alert } from "../../src/native/alert.tsx";
 import { Empty } from "../../src/native/empty.tsx";
-import { ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage } from "./gallery/pages.tsx";
+import { ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage, SidebarPage, SIDEBAR_GROUPS } from "./gallery/pages.tsx";
 import { Breadcrumb } from "../../src/native/breadcrumb.tsx";
 import type { Driver } from "../../tools/qa/acceptance/drivers.ts";
 
@@ -83,6 +84,16 @@ function LiveSelect() {
     <View className="flex-col gap-2">
       <Select value={plan} onValueChange={setPlan} options={[{ value: "monthly", label: "Live select" }, { value: "yearly", label: "Yearly" }]} />
       <Label>{"Plan " + plan}</Label>
+    </View>
+  );
+}
+
+function LiveSidebar() {
+  const [collapsed, setCollapsed] = useState(false);
+  return (
+    <View className="flex-col gap-2">
+      <Sidebar groups={SIDEBAR_GROUPS} defaultValue="home" collapsed={collapsed} onCollapsedChange={setCollapsed} />
+      <Label>{collapsed ? "Rail collapsed" : "Rail expanded"}</Label>
     </View>
   );
 }
@@ -696,5 +707,44 @@ export const MUTANTS: Record<string, Mutant> = {
   "command-contrast-control": {
     gate: "G1", defect: false, driver: null,
     render: () => <View className={ROOT}><CommandPage /></View>,
+  },
+  "dead-sidebar": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Hide", metrics: ["text"] },
+    render: () => <View className={ROOT}><Focusable look={[T["sidebar.toggle"], T["sidebar.focus"]].join(" ")}><Text className={T["sidebar.toggle.text"]}>Hide</Text></Focusable></View>,
+  },
+  "dead-sidebar-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Hide", metrics: ["text"] },
+    render: () => <View className={ROOT}><LiveSidebar /></View>,
+  },
+  "sidebar-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={T["sidebar.root"]}><Text className="text-sm text-slate-300">Faint item</Text></View></View>,
+  },
+  "sidebar-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><SidebarPage /></View>,
+  },
+  "sidebar-zero-width": {
+    gate: "G2", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className={T["sidebar.root"]} style={{ width: 0 }}><Text className={T["sidebar.label"]}>Home</Text></View></View>,
+  },
+  "sidebar-zero-width-control": {
+    gate: "G2", defect: false, driver: null,
+    render: () => <View className={ROOT}><SidebarPage /></View>,
+  },
+  "misaligned-sidebar": {
+    gate: "G3", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="flex-row items-center gap-2">
+          <View className={T["sidebar.item"]}><Text className={T["sidebar.label"]}>Home</Text></View>
+          <View className={T["sidebar.item"]} style={{ marginTop: 10 }}><Text className={T["sidebar.label"]}>Inbox</Text></View>
+        </View>
+      </View>
+    ),
+  },
+  "misaligned-sidebar-control": {
+    gate: "G3", defect: false, driver: null,
+    render: () => <View className={ROOT}><SidebarPage /></View>,
   },
 };

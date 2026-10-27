@@ -345,6 +345,20 @@ export const TOKENS = {
   "command.press": "active:bg-slate-100",
   "command.item.text": "text-sm text-slate-900",
   "command.empty": "px-2 text-sm text-slate-500",
+  "sidebar.root": "flex-col gap-1 p-2 bg-white border border-slate-200 rounded-md",
+  "sidebar.toggle": "h-8 px-1 flex-row items-center justify-center rounded-md border-2 border-transparent",
+  "sidebar.toggle.text": "text-xs font-bold text-slate-900",
+  "sidebar.focus": "focus:border-blue-600",
+  "sidebar.press": "active:bg-slate-100",
+  "sidebar.group": "flex-col gap-1",
+  "sidebar.heading": "px-2 text-xs font-bold text-slate-500",
+  "sidebar.item": "h-8 px-2 gap-2 flex-row items-center rounded-md border-2 border-transparent",
+  "sidebar.item.collapsed": "h-8 px-1 flex-row items-center justify-center rounded-md border-2 border-transparent",
+  "sidebar.active": "bg-slate-100",
+  "sidebar.idle": "bg-white",
+  "sidebar.icon": "text-sm font-bold text-slate-500",
+  "sidebar.label": "text-sm text-slate-700",
+  "sidebar.label.active": "text-sm font-bold text-slate-900",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -557,6 +571,15 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "command.item.text": "text-sm text-white",
   "command.empty": "px-2 text-sm text-slate-300",
   "command.press": "active:bg-slate-700",
+  "sidebar.root": "flex-col gap-1 p-2 bg-slate-800 border border-slate-700 rounded-md",
+  "sidebar.toggle.text": "text-xs font-bold text-white",
+  "sidebar.press": "active:bg-slate-700",
+  "sidebar.heading": "px-2 text-xs font-bold text-slate-300",
+  "sidebar.active": "bg-slate-700",
+  "sidebar.idle": "bg-slate-800",
+  "sidebar.icon": "text-sm font-bold text-slate-300",
+  "sidebar.label": "text-sm text-slate-200",
+  "sidebar.label.active": "text-sm font-bold text-white",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {

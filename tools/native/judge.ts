@@ -1,6 +1,7 @@
 // The native judge, on the overlay core only (POCKETJS_CORE_ROOT must be set; stock geometry is not evidence).
 //   bun tools/native/judge.ts --page       gates 1-4 for every gallery page, plus a text-fit check (pages from names.ts)
 //   bun tools/native/judge.ts --mutants    each defect must fail its gate; each control must pass it
+//   bun tools/native/judge.ts --mutants sidebar resizable   only the targets whose name contains one of the words (no mutants.json written)
 // Gates come unchanged from tools/qa/acceptance; this file only boots the native entries and drives them.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { relative, resolve, join, sep } from "node:path";
@@ -133,12 +134,13 @@ function pageLine(channel: string, r: PageRow): string {
   return r.page + " " + r.name + " [" + channel + "]: G1 fails " + r.g1.fails.length + " · G2 findings " + r.g2.findings.length + " · G3 fails " + r.g3.fails.length + " · G4 " + g4 + " · text-fit outside " + r.fit.outside.length + "/" + r.fit.runs + after;
 }
 
-async function judgeMutants() {
+async function judgeMutants(filter: string[]) {
   const rel = relative(OUT, join(ROOT, "test/native/mutants.tsx")).split(sep).join("/");
   const mutantsImport = rel.startsWith(".") ? rel : "./" + rel;
   const rows: Array<{ name: string; defect: boolean; gate: string; fails: boolean; expected: boolean; ok: boolean }> = [];
   mkdirSync(OUT, { recursive: true });
   for (const name of Object.keys(MUTANTS)) {
+    if (filter.length && !filter.some((w) => name.includes(w))) continue;
     const m = MUTANTS[name];
     const entry = join(OUT, "mutant-" + name + ".tsx");
     writeFileSync(entry, [
@@ -173,8 +175,9 @@ async function main(): Promise<number> {
   if (!process.env.POCKETJS_CORE_ROOT) { console.error("judge: set POCKETJS_CORE_ROOT to the overlay core (stock geometry is not evidence)"); return 2; }
   mkdirSync(QA, { recursive: true });
   if (process.argv.includes("--mutants")) {
-    const rows = await judgeMutants();
-    writeFileSync(QA + "/mutants.json", JSON.stringify(rows, null, 2));
+    const filter = process.argv.slice(process.argv.indexOf("--mutants") + 1).filter((a) => !a.startsWith("--"));
+    const rows = await judgeMutants(filter);
+    if (filter.length === 0) writeFileSync(QA + "/mutants.json", JSON.stringify(rows, null, 2));
     const bad = rows.filter((r) => !r.ok).length;
     console.log("mutants: " + rows.length + " targets, " + bad + " mismatch");
     return bad === 0 ? 0 : 1;

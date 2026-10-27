@@ -19,6 +19,7 @@ import { Checkbox } from "../../../src/native/checkbox.tsx";
 import { Switch } from "../../../src/native/switch.tsx";
 import { RadioGroup, RadioItem } from "../../../src/native/radio.tsx";
 import { Select } from "../../../src/native/select.tsx";
+import { Sidebar, type SidebarGroup } from "../../../src/native/sidebar.tsx";
 import { Slider } from "../../../src/native/slider.tsx";
 import { Accordion, AccordionItem } from "../../../src/native/accordion.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
@@ -271,6 +272,27 @@ export function SelectPage() {
         ]}
       />
       <Label>{"Billing " + plan}</Label>
+    </View>
+  );
+}
+
+// The sidebar's groups: the page and the mutant controls read the same list.
+export const SIDEBAR_GROUPS: SidebarGroup[] = [
+  { heading: "Workspace", items: [{ value: "home", label: "Home", icon: "H" }, { value: "inbox", label: "Inbox", icon: "I" }, { value: "projects", label: "Projects", icon: "P" }] },
+  { heading: "Account", items: [{ value: "settings", label: "Settings", icon: "S" }] },
+];
+
+export function SidebarPage() {
+  const [section, setSection] = useState("home");
+  const [collapsed, setCollapsed] = useState(false);
+  const label = SIDEBAR_GROUPS.flatMap((g) => g.items).find((i) => i.value === section)?.label ?? "";
+  return (
+    <View className="flex-row gap-2 items-start">
+      <Sidebar groups={SIDEBAR_GROUPS} value={section} onValueChange={setSection} collapsed={collapsed} onCollapsedChange={setCollapsed} />
+      <View className="flex-col gap-2 flex-1">
+        <Label>{"Section " + label}</Label>
+        <Label>{collapsed ? "Rail collapsed" : "Rail expanded"}</Label>
+      </View>
     </View>
   );
 }

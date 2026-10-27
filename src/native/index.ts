@@ -50,6 +50,7 @@ export { RadioGroup, RadioItem } from "./radio.tsx";
 export { Select } from "./select.tsx";
 export { Separator } from "./separator.tsx";
 export { Sheet, SheetContent, SheetTitle, SheetTrigger } from "./sheet.tsx";
+export { Sidebar, type SidebarGroup, type SidebarItem } from "./sidebar.tsx";
 export { Skeleton } from "./skeleton.tsx";
 export { Slider } from "./slider.tsx";
 export { Spinner } from "./spinner.tsx";

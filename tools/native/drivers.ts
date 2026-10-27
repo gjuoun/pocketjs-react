@@ -52,6 +52,12 @@ const BY_NAME: Record<string, Driver[]> = {
   Command: [{ kind: "driven", trigger: "Calendar", metrics: ["text"] }],
   // The section switch shows each later section in turn, back to section 1, then the theme toggle (which reads section 1's label).
   // The judge re-judges G1-G3 after each pass.
+  // The item press changes the section label (panel text); the toggle then collapses the rail, and its readout changes.
+  // The item comes first: a collapsed rail hides the labels.
+  Sidebar: [
+    { kind: "driven", trigger: "Projects", metrics: ["text"] },
+    { kind: "driven", trigger: "Hide", metrics: ["text"] },
+  ],
   Theme: [
     { kind: "driven", trigger: "2/4", metrics: ["text"] },
     { kind: "driven", trigger: "3/4", metrics: ["text"] },
