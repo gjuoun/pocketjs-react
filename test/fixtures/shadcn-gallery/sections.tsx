@@ -522,18 +522,18 @@ function CardBody() {
 
 function CarouselBody() {
   return (
-    <Carousel className="w-full">
-      <CarouselContent>
+    <Carousel className="w-full flex-col">
+      <CarouselContent className="w-full">
         {["One", "Two", "Three"].map((t) => (
           <CarouselItem key={t}>
-            <div className="h-[60px] bg-slate-200 flex-col items-center justify-center">
+            <div className="h-[60px] w-full bg-slate-200 flex-col items-center justify-center">
               <span className="text-sm font-bold">{t}</span>
             </div>
           </CarouselItem>
         ))}
       </CarouselContent>
-      <CarouselPrevious />
-      <CarouselNext />
+      <CarouselPrevious className="top-[14px]" />
+      <CarouselNext className="top-[14px]" />
     </Carousel>
   );
 }

@@ -158,7 +158,7 @@ function ItemHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="item-header"
       className={cn(
-        "flex items-center justify-between gap-2",
+        "flex w-full items-center justify-between gap-2",
         className
       )}
       {...props}
@@ -171,7 +171,7 @@ function ItemFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="item-footer"
       className={cn(
-        "flex items-center justify-between gap-2",
+        "flex w-full items-center justify-between gap-2",
         className
       )}
       {...props}

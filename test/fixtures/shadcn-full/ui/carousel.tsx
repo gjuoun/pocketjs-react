@@ -162,7 +162,7 @@ function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
       aria-roledescription="slide"
       data-slot="carousel-item"
       className={cn(
-        "min-w-0 shrink-0 grow-0",
+        "min-w-0 shrink-0 grow-0 w-full",
         orientation === "horizontal" ? "pl-4" : "pt-4",
         className
       )}
@@ -187,8 +187,8 @@ function CarouselPrevious({
       className={cn(
         "absolute w-8 h-8 rounded-[16px]",
         orientation === "horizontal"
-          ? "top-1"
-          : "left-1 rotate-90",
+          ? "top-1 left-1"
+          : "top-1 left-1 rotate-90",
         className
       )}
       disabled={!canScrollPrev}
@@ -217,8 +217,8 @@ function CarouselNext({
       className={cn(
         "absolute w-8 h-8 rounded-[16px]",
         orientation === "horizontal"
-          ? "top-1"
-          : "left-1 rotate-90",
+          ? "top-1 right-1"
+          : "bottom-1 left-1 rotate-90",
         className
       )}
       disabled={!canScrollNext}

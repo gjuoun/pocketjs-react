@@ -182,3 +182,37 @@ test("calendar: the month grid lays out as a grid, every day inside the screen",
   expect(rowsOf).toBe(5);
   expect(Math.max(...runs.map((r) => r.x + r.w))).toBeLessThanOrEqual(FB_W);
 }, 120_000);
+
+test("carousel: the slide fills the screen, both arrows are drawn, and next moves one slide", async () => {
+  const core = await bootGallery();
+  await show(core, "carousel");
+  const slideRow = grab(core, 0, 50, FB_W, 51)[0];
+  const slideBg = "#e2e8f0"; // slate-200, the slide
+  const slideCols = slideRow.map((p, i) => (p === slideBg ? i : -1)).filter((i) => i >= 0);
+  const slideLeft = Math.min(...slideCols);
+  const slideRight = Math.max(...slideCols);
+  const arrowInk = (x0: number, x1: number) => {
+    let n = 0;
+    for (const row of grab(core, x0, 36, x1, 80)) for (const p of row) {
+      const r = parseInt(p.slice(1, 3), 16);
+      if (r < 200) n++;
+    }
+    return n;
+  };
+  const prevInk = arrowInk(8, 52);
+  const nextInk = arrowInk(428, 472);
+  const shown = () => core.texts().filter((r) => r.y >= TITLE_H && r.y < VIEW_H && r.x < FB_W);
+  const before = shown().map((r) => r.text);
+  await tap(core, 452, 58);
+  const after = shown().map((r) => r.text);
+  console.log(`carousel slide x ${slideLeft}..${slideRight} (${slideRight - slideLeft + 1} px of ${FB_W}) | arrow ink prev ${prevInk} next ${nextInk} | on screen before [${before}] after next [${after}]`);
+  expect(slideLeft).toBeGreaterThanOrEqual(0);
+  expect(slideRight).toBeLessThan(FB_W);
+  expect(slideRight - slideLeft).toBeGreaterThan(400);
+  expect(prevInk).toBeGreaterThan(10);
+  expect(nextInk).toBeGreaterThan(10);
+  expect(before).toContain("One");
+  expect(before).not.toContain("Two");
+  expect(after).toContain("Two");
+  expect(after).not.toContain("One");
+}, 120_000);
