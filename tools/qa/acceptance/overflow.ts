@@ -2,7 +2,8 @@
 //   2a  an unclipped node that runs past the screen (its box, untrimmed, is past the 480 x 272 screen).
 //   2b  a node that is cut by a clipping ancestor's edge while part of it is still shown: the visible part runs up to the
 //       clip and the node goes on past it (a slide 128 px past its viewport edge, with the viewport clipping the rest).
-//   2c  a zero-area node with text inside.
+//   2c  a zero-area node with text inside. A node the author hid with `hidden` (display none, unless a breakpoint variant
+//       shows it) is not shown, so its text is not a zero-area defect: the label is hidden on purpose (a sr-only label).
 // Content clipped away is not overflow: a node that lies wholly outside a clipping ancestor (or outside the intersection of
 // all of them) is never shown, so it is counted in clippedAway and not reported. A carousel keeping its off-screen slides
 // inside its track is that case. A scroll container exempts its children on its scroll axes (CSS: overflow-y:auto also makes
@@ -28,6 +29,12 @@ export interface OverflowReport {
 }
 
 export const nameOf = (n: NodeMirror): string => n.debugName ?? "node#" + n.id;
+
+/** The author hid the node with `hidden` (display none): no breakpoint variant on the class shows it again. */
+function hiddenByClass(n: NodeMirror): boolean {
+  const t = classOf(n).split(/\s+/);
+  return t.includes("hidden") && !t.some((c) => /^(sm|md|lg|xl|2xl):/.test(c));
+}
 
 function hasText(n: NodeMirror): boolean {
   return n.children.some((c) => (isText(c) && (c as unknown as { text: string }).text !== "") || hasText(c));
@@ -82,7 +89,7 @@ export function checkOverflow(root: NodeMirror, geo: Geometry): OverflowReport {
     checked++;
     const label = nameOf(n);
     if (r.w === 0 || r.h === 0) {
-      if (hasText(n))
+      if (hasText(n) && !hiddenByClass(n) && !anc.some(hiddenByClass))
         findings.push({ gate: "2c", node: label, overshoot: 0, detail: "zero-area " + r.w + "x" + r.h + " with text inside" });
       return;
     }
