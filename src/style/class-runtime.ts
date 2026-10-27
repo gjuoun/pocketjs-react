@@ -268,6 +268,11 @@ export function resolveClass(cls: string): number | null {
 }
 
 /** Apply a node's className (called by the host config on create and update). */
+/** Read-only: the class string last applied to a node (QA gates read it; no runtime effect). */
+export function classOf(node: NodeMirror): string {
+  return applied.get(node) ?? "";
+}
+
 export function applyClassName(node: NodeMirror, cls: unknown): void {
   const raw = typeof cls === "string" ? cls : "";
   if (applied.get(node) === raw) return;
