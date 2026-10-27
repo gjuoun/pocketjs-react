@@ -34,6 +34,7 @@ import { Alert } from "../../src/native/alert.tsx";
 import { Empty } from "../../src/native/empty.tsx";
 import { ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage, SidebarPage, SIDEBAR_GROUPS, ResizablePage, CarouselPage, CAROUSEL_SLIDES, CalendarPage, ComboboxPage, FRAMEWORKS } from "./gallery/pages.tsx";
 import { Breadcrumb } from "../../src/native/breadcrumb.tsx";
+import { Tooltip, TooltipTrigger } from "../../src/native/tooltip.tsx";
 import type { Driver } from "../../tools/qa/acceptance/drivers.ts";
 
 const T = TOKENS as Record<string, string>;
@@ -476,6 +477,17 @@ export const MUTANTS: Record<string, Mutant> = {
     render: () => (
       <View className={ROOT}>
         <View className={[T["tooltip.panel"]].join(" ")}><Text className={T["tooltip.text"]}>Faint hint</Text></View>
+      </View>
+    ),
+  },
+  // A tooltip with no content: its trigger takes focus and nothing opens. G4's focus driver must fail it.
+  "dead-tooltip": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Draft hint", metrics: ["text", "layer"], opens: "focus" },
+    render: () => (
+      <View className={ROOT}>
+        <Tooltip>
+          <TooltipTrigger>Draft hint</TooltipTrigger>
+        </Tooltip>
       </View>
     ),
   },

@@ -19,6 +19,7 @@ import { checkAlignment, type AlignmentReport } from "../qa/acceptance/alignment
 import { runDriver, settle, type Verdict } from "../qa/acceptance/interaction.ts";
 import { PAGE_DRIVERS, PAGE_REJUDGE } from "./drivers.ts";
 import { PAGE_NAMES } from "../../test/native/gallery/names.ts";
+import { clearToasts } from "../../src/native/toast.tsx";
 import { MUTANTS } from "../../test/native/mutants.tsx";
 
 const ROOT = resolve(import.meta.dir, "../..");
@@ -99,12 +100,14 @@ async function judgePages() {
   const rows: PageRow[] = [];
   for (let i = 0; i < pages.length; i++) {
     if (i > 0) core.press(BTN.RTRIGGER);
+    // The Toaster is global to the gallery: a toast raised by an earlier page's driver would otherwise sit over every later page.
+    clearToasts();
     settle(core);
     const { index, node: page } = pages[i];
     const name = titleName(page);
     if (name !== PAGE_NAMES[i]) throw new Error("judge: page " + index + " is titled " + JSON.stringify(name) + ", names.ts says " + JSON.stringify(PAGE_NAMES[i]));
     const box = geo.rect(page) ?? undefined;
-    const g1 = judgeLegibility(core, page, geo, box);
+    const g1 = judgeLegibility(core, geo, box);
     const g2 = checkOverflow(page, geo);
     const g3 = checkAlignment(page, geo);
     const fit = textFit(core, page, geo);
@@ -116,7 +119,7 @@ async function judgePages() {
       if (PAGE_REJUDGE[index] && v.status === "pass") {
         settle(core);
         const b = geo.rect(page) ?? undefined;
-        after.push({ trigger: d.kind === "driven" ? d.trigger : "", g1: judgeLegibility(core, page, geo, b), g2: checkOverflow(page, geo), g3: checkAlignment(page, geo) });
+        after.push({ trigger: d.kind === "driven" ? d.trigger : "", g1: judgeLegibility(core, geo, b), g2: checkOverflow(page, geo), g3: checkAlignment(page, geo) });
       }
       core.press(BTN.CROSS, 2);
       settle(core);
@@ -131,13 +134,15 @@ async function judgePages() {
 function pageLine(channel: string, r: PageRow): string {
   const g4 = r.g4.length ? r.g4.map((v) => v.status).join("/") : "n/a";
   const after = r.after.map((a) => " · after " + JSON.stringify(a.trigger) + ": G1 fails " + a.g1.fails.length + " · G2 findings " + a.g2.findings.length + " · G3 fails " + a.g3.fails.length).join("");
-  return r.page + " " + r.name + " [" + channel + "]: G1 fails " + r.g1.fails.length + " · G2 findings " + r.g2.findings.length + " · G3 fails " + r.g3.fails.length + " · G4 " + g4 + " · text-fit outside " + r.fit.outside.length + "/" + r.fit.runs + after;
+  const cj = r.g1.cannotJudge ? " (" + r.g1.cannotJudge + " could not judge)" : "";
+  const floor = " · 1 px floor " + r.g1.floorRuns + " runs (" + r.g1.floorDecided.length + " decided by it" + (r.g1.floorDecided.length ? ": " + r.g1.floorDecided.map((t) => JSON.stringify(t)).join(" ") : "") + ")";
+  return r.page + " " + r.name + " [" + channel + "]: G1 fails " + r.g1.fails.length + cj + " · G2 findings " + r.g2.findings.length + " (clipped away " + r.g2.clippedAway + ") · G3 fails " + r.g3.fails.length + " · G4 " + g4 + " · text-fit outside " + r.fit.outside.length + "/" + r.fit.runs + floor + after;
 }
 
 async function judgeMutants(filter: string[]) {
   const rel = relative(OUT, join(ROOT, "test/native/mutants.tsx")).split(sep).join("/");
   const mutantsImport = rel.startsWith(".") ? rel : "./" + rel;
-  const rows: Array<{ name: string; defect: boolean; gate: string; fails: boolean; expected: boolean; ok: boolean }> = [];
+  const rows: Array<{ name: string; defect: boolean; gate: string; fails: boolean; expected: boolean; ok: boolean; reason: string }> = [];
   mkdirSync(OUT, { recursive: true });
   for (const name of Object.keys(MUTANTS)) {
     if (filter.length && !filter.some((w) => name.includes(w))) continue;
@@ -159,12 +164,17 @@ async function judgeMutants(filter: string[]) {
     const geo = geometryFor(core);
     settle(core);
     let fails = false;
-    if (m.gate === "G1") fails = judgeLegibility(core, rootMirror, geo).fails.length > 0;
+    if (m.gate === "G1") fails = judgeLegibility(core, geo).fails.length > 0;
     if (m.gate === "G2") fails = checkOverflow(rootMirror, geo).findings.length > 0;
     if (m.gate === "G3") fails = checkAlignment(rootMirror, geo).fails.length > 0;
-    if (m.gate === "G4") fails = m.driver ? runDriver(core, rootMirror, geo, m.driver).status === "fail" : false;
-    rows.push({ name, defect: m.defect, gate: m.gate, fails, expected: m.defect, ok: fails === m.defect });
-    console.log(name + " [" + geo.channel + "]: " + m.gate + " " + (fails ? "fail" : "pass") + (m.defect ? " (defect, must fail)" : " (control, must pass)") + (fails === m.defect ? " ok" : " MISMATCH"));
+    let why = "";
+    if (m.gate === "G4" && m.driver) {
+      const v = runDriver(core, rootMirror, geo, m.driver);
+      fails = v.status === "fail";
+      why = v.reason;
+    }
+    rows.push({ name, defect: m.defect, gate: m.gate, fails, expected: m.defect, ok: fails === m.defect, reason: why });
+    console.log(name + " [" + geo.channel + "]: " + m.gate + " " + (fails ? "fail" : "pass") + (m.defect ? " (defect, must fail)" : " (control, must pass)") + (fails === m.defect ? " ok" : " MISMATCH") + (why ? " · " + why.slice(0, 160) : ""));
     try { mod.unmount(); } catch {}
     core.dispose();
   }

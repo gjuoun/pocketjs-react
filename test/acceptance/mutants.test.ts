@@ -3,6 +3,8 @@ import { afterEach, expect, test } from "bun:test";
 import { classOf } from "../../src/style/class-runtime.ts";
 import { disposeTarget, findNode, type Booted, bootTarget } from "../../tools/qa/acceptance/screen.ts";
 import { geometryFor } from "../../tools/qa/acceptance/geometry.ts";
+import { checkOverflow } from "../../tools/qa/acceptance/overflow.ts";
+import { rootMirror } from "../../src/internal/pocket.ts";
 
 let b: Booted | undefined;
 afterEach(() => {
@@ -35,6 +37,9 @@ test("mutant overflow-carousel: a 400 px slide, 200 px into its 400 px viewport,
   // Stock: the paint box is clipped to the screen, so it is narrower than 400; the stock channel can only call it partial.
   if (geo.channel === "overlay") expect(r).toMatchObject({ x: 208, w: 400 });
   else expect(r?.w ?? 0).toBeLessThan(400);
+  // The geometry is not the proof: gate 2 must fail on it (a gate that stops failing is what this test guards against).
+  const g2 = checkOverflow(rootMirror, geo);
+  if (geo.channel === "overlay") expect(g2.findings.some((f) => f.gate === "2b" && f.overshoot > 0)).toBe(true);
 });
 
 test("mutant empty-sheet: the trigger is there and the panel has no title", async () => {

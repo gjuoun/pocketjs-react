@@ -89,11 +89,13 @@ label and steps through the visible items with wrap.
 - **Arcs paint axis-aligned only**, so the spinner steps its arc start (eighteen steps, 90 frames
   per revolution) rather than rotating smoothly.
 - **No ARIA tree, no blur.** Command, Combobox and NavigationMenu expose no roles; do not design around them.
-- **Scrolling is not built (blocked).** The core rejects `overflow-y-scroll`, and the judge counts a clipped
-  off-screen child as a gate 2 finding. So the carousel holds one slide in its clip at rest, and ScrollArea
+- **Scrolling is not built (blocked).** The core rejects `overflow-y-scroll`. G2 is clip-aware, so a child wholly
+  clipped away is not overflow; the native carousel still holds one slide in its clip at rest, and ScrollArea
   waits for a scroll region the core declares.
 - **Backspace on an empty InputOTP cell does nothing.** The text-entry seam reports a change only when
-  the value changes, so an empty cell cannot step back; a filled cell clears and steps back one.
+  the value changes, so an empty cell cannot step back; a filled cell clears and steps back one. The gap is
+  `TextFieldInput` (`src/input/text-field.ts`): it has onChange, onInput and onClick only, so a no-op edit from
+  `text-entry.ts` reaches no element. Closing it needs a key callback on the field, fired for Backspace.
 
 ## Judging a change
 
@@ -103,17 +105,32 @@ bun tools/native/judge.ts --mutants         # each gate must still fail on its m
 bun tools/native/judge.ts --mutants sidebar # only the targets whose name contains a word
 ```
 
-The page sweep covers 38 pages (37 components and the theme page): G1 0 fails, G2 0 findings, G3 0 fails,
-text-fit 0 outside. G4 passes on 30 pages, and 8 are static with a reason (Card, Badge, Separator, Avatar,
-Skeleton, Spinner, Tooltip, Table). The pages run 40 driver steps in all.
+The page sweep covers 38 pages (37 components and the theme page): G1 0 fails and 0 could not judge, G2 0 findings,
+G3 0 fails, text-fit 0 outside. G4 passes on 31 pages, and 7 are static with a reason (Card, Badge, Separator, Avatar,
+Skeleton, Spinner, Table). The pages run 40 driver steps in all.
 
-G1 judges 182 of 254 drawn text runs. The other 72 are unresolved (their host box is mostly glyph, or
-the background is mixed) and are reported, not failed: a legibility fault in one of them would pass.
+The page sweep also prints, per page, the one-character ink floor (see the G1 paragraph below) and, for G2, how many
+nodes were clipped away (not overflow). A tooltip whose page is hidden closes itself; the judge no longer clears focus
+before paging, and the regression is pinned by test/native/tooltip.test.tsx (a mutant cannot model it: the ghost is a
+state change, and the gates only judge a settled screen).
+
+G2 is clip-aware. A node is judged on what is shown: wholly outside a clipping ancestor (or outside the intersection of
+all of them) it is clipped away and not reported; partly shown and cut by a clip edge it is a 2b finding, with the overshoot
+past that edge; an unclipped node keeps the 2a screen rule. `overflow-carousel` (a slide 128 px past its viewport) stays red.
+
+G1 judges every drawn run: 248 text runs and 29 one-character glyphs. The ink floor is 3 px for text and 1 px for a
+one-character run (an icon placeholder). The 1 px floor is accepted and counted: `floorRuns` is every run it judges, and
+`floorDecided` lists each run whose verdict flips at 3 px. Per page the sweep reports both. Breadcrumb's three "/"
+separators are decided by it (1 px of ink passes; at 3 px they read as no ink). A run's backdrop is the 3 px ring around it
+(text masked out), then each enclosing box at least twice its area, then the screen; the first that is 60% one colour
+is the background. A run the gate cannot judge fails with its cause ("could not judge: ..."), and gates.json records
+each one. There is no third state. Before this rule, 72 runs read as unresolved: 66 because the text's own box (mostly
+ink) was taken as the background, and 6 because a toast left by an earlier page sat outside that page's subtree.
 Two fixes this round were of that kind: the resizable's bar-shaped grip and a smaller `::` grip at `text-xs`
 were unresolved or unreadable, so the grip is `::` at `text-sm` in slate-600 on a solid fill.
 
-The mutant table holds 130 targets: 65 defects, each of which must fail its gate, and 65 controls, each of
-which must pass. The run reports 0 mismatches. Two controls (`dead-select-control`, `dead-dropdown-control`)
+The mutant table holds 131 targets: 66 defects, each of which must fail its gate, and 65 controls, each of
+which must pass. The run reports 0 mismatches. `--mutants` prints each G4 target's reason. Two controls (`dead-select-control`, `dead-dropdown-control`)
 were judged dead on correct components until the gate fix: a select's driver now chooses an option, and a
 `menu` metric counts a menu layer's item text.
 

@@ -51,3 +51,19 @@ test("overflow: the report counts what it checked and names the channel", async 
   expect(["overlay", "stock"]).toContain(rep.channel);
   expect(rep.checked).toBeGreaterThanOrEqual(5);
 });
+
+test("overflow: a slide wholly outside its clip is clipped away, not overflow (a carousel's off-track slide)", async () => {
+  const rep = await judge();
+  expect(rep.findings.some((x) => x.node === "track-slide-off")).toBe(false);
+  expect(rep.clippedAway).toBeGreaterThanOrEqual(1);
+});
+
+test("overflow: a slide that is partly shown and runs 128 px past its clip is a 2b finding", async () => {
+  b = await bootTarget({ kind: "mutant", name: "overflow-carousel" });
+  const geo = geometryFor(b.core);
+  const rep = checkOverflow(rootMirror, geo);
+  // The overshoot needs the overlay channel: the stock box is already clipped to the screen.
+  if (geo.channel !== "overlay") return;
+  const f = rep.findings.find((x) => x.gate === "2b" && x.overshoot === 128);
+  expect(f).toBeDefined();
+});

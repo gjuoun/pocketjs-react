@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
+import { useState } from "react";
 import { BTN, focusNode, getFocused } from "@pocketjs/framework/input";
 import { View } from "../../src/index.ts";
 import { rootMirror, type NodeMirror } from "../../src/internal/pocket.ts";
@@ -109,4 +110,82 @@ test("the tooltip sits above the trigger, 4 px clear of it", async () => {
   const t = geometryFor(h.core).rect(trigger())!;
   const p = rectOf("tooltip-panel");
   expect(p.y + p.h).toBe(t.y - 4);
+});
+
+// A page switch: the tooltip's trigger lives in a page. "hidden" is the gallery's display:none page (focus stays on its trigger);
+// "unmounted" removes the page. A tooltip left open must draw nothing once its page is gone.
+type Mode = "shown" | "hidden" | "unmounted";
+let setMode: ((m: Mode) => void) | undefined;
+function Paged() {
+  const [mode, set] = useState<Mode>("shown");
+  setMode = set;
+  return (
+    <View className={ROOT}>
+      {mode !== "unmounted" ? (
+        <View className="flex-row" style={{ display: mode === "hidden" ? "none" : "flex" }}>
+          <Tooltip>
+            <TooltipTrigger>Save</TooltipTrigger>
+            <TooltipContent>{HINT}</TooltipContent>
+          </Tooltip>
+        </View>
+      ) : (
+        <View className="flex-row"><Button>Other</Button></View>
+      )}
+    </View>
+  );
+}
+// setState from outside a press is flushed on the scheduler's next turn, so the switch waits one macrotask.
+const turn = () => new Promise((r) => setTimeout(r, 5));
+function panelsInMirror(): number {
+  let n = 0;
+  walk(rootMirror, (m) => { if (m.debugName === "tooltip-panel") n++; });
+  return n;
+}
+
+test("a page hidden under an open tooltip closes it within two frames: no tooltip text is drawn after the switch", async () => {
+  await h.boot(() => <Paged />);
+  focusNode(trigger() as never);
+  for (let i = 0; i < 30; i++) { h.core.step(0); h.core.render(); }
+  expect(drawn()).toContain(HINT);
+  setMode!("hidden");
+  await turn();
+  // The core lays the hidden trigger out on the frame after its style changes, and the tooltip reads that layout: two frames.
+  h.core.step(0);
+  h.core.step(0);
+  h.core.render();
+  // The premise: the core leaves focus on the hidden trigger, so focus alone cannot close the tooltip.
+  expect(getFocused()).toBe(trigger() as never);
+  expect(drawn()).not.toContain(HINT);
+  expect(panelsInMirror()).toBe(0);
+  expect(topLayer()).toBeUndefined();
+});
+
+test("an unmounted tooltip draws nothing on the next frame", async () => {
+  await h.boot(() => <Paged />);
+  focusNode(trigger() as never);
+  for (let i = 0; i < 30; i++) { h.core.step(0); h.core.render(); }
+  expect(drawn()).toContain(HINT);
+  setMode!("unmounted");
+  await turn();
+  h.core.step(0);
+  h.core.render();
+  expect(drawn()).not.toContain(HINT);
+  expect(panelsInMirror()).toBe(0);
+  expect(topLayer()).toBeUndefined();
+});
+
+test("showing the hidden page again reopens the tooltip after its delay, with focus still on the trigger", async () => {
+  await h.boot(() => <Paged />);
+  focusNode(trigger() as never);
+  for (let i = 0; i < 30; i++) { h.core.step(0); h.core.render(); }
+  setMode!("hidden");
+  await turn();
+  h.core.step(0);
+  h.core.step(0);
+  h.core.render();
+  expect(drawn()).not.toContain(HINT);
+  setMode!("shown");
+  await turn();
+  for (let i = 0; i < 30; i++) { h.core.step(0); h.core.render(); }
+  expect(drawn()).toContain(HINT);
 });
