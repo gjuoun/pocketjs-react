@@ -11,7 +11,8 @@ const GALLERY_SRC = await Bun.file(join(import.meta.dir, "../fixtures/shadcn-gal
 test("drivers: one entry per vendored component, and no stray names", () => {
   const files = readdirSync(UI).filter((f) => f.endsWith(".tsx")).map((f) => f.replace(/\.tsx$/, "")).sort();
   expect(Object.keys(DRIVERS).sort()).toEqual(files);
-  expect(SECTIONS.map((s) => s.name).sort()).toEqual(files);
+  const names: string[] = SECTIONS.map((s): string => s.name);
+  expect(names.sort()).toEqual(files);
 });
 
 test("drivers: every static entry says why, every unresolved entry says what is missing", () => {

@@ -10,11 +10,11 @@ import { bootCore } from "../../../test/harness.ts";
 import { SECTIONS, VIEW_H } from "../../../test/fixtures/shadcn-gallery/layout.ts";
 import { build } from "../../build.ts";
 import { checkAlignment, type AlignmentReport } from "./alignment.ts";
-import { type Box, geometryFor, isText, type Rect, walk } from "./geometry.ts";
+import { geometryFor, isText, type Rect, walk } from "./geometry.ts";
 import { judgeLegibility, type LegibilityReport } from "./gates.ts";
 import { checkOverflow, type OverflowReport } from "./overflow.ts";
 import { settle } from "./interaction.ts";
-import { SCREEN_W } from "./legibility.ts";
+import { type Box, SCREEN_W } from "./legibility.ts";
 
 const ROOT = join(import.meta.dir, "../../..");
 const ENTRY = join(ROOT, "test/fixtures/shadcn-gallery/main.tsx");
