@@ -32,6 +32,46 @@ test("the dark theme swaps the default badge to white with slate-900 text", asyn
   expect(inkOf(h.core, runOf("Stable"))).toBe("#0f172a");
 });
 
+/** The painted extent down one column (the first and last non-page pixel), in device pixels. */
+function paintedAt(x: number, y0: number, y1: number): number {
+  let top = -1, bot = -1;
+  for (let y = y0; y < y1; y++) if (h.core.pixel(x, y) !== "#ffffff") { if (top < 0) top = y; bot = y; }
+  return top < 0 ? 0 : bot - top + 1;
+}
+
+test("the four variants paint the same height: 20 px at the centre column, 18 px on the rounded edge", async () => {
+  await h.boot(() => (
+    <View className={ROOT}>
+      <View className="p-2 flex-row gap-2">
+        <Badge>Stable</Badge>
+        <Badge variant="secondary">Beta</Badge>
+        <Badge variant="destructive">Failed</Badge>
+        <Badge variant="outline">Draft</Badge>
+      </View>
+    </View>
+  ));
+  const centre: number[] = [];
+  const edge: number[] = [];
+  for (const label of ["Stable", "Beta", "Failed", "Draft"]) {
+    const r = runOf(label);
+    const left = r.x - 8; // px-2: the box starts 8 px left of the text
+    centre.push(paintedAt(r.x + Math.floor(r.w / 2), r.y - 8, r.y + r.h + 8));
+    edge.push(paintedAt(left + 1, r.y - 8, r.y + r.h + 8));
+  }
+  expect(centre).toEqual([20, 20, 20, 20]);
+  expect(edge).toEqual([18, 18, 18, 18]);
+});
+
+test("every variant has one border width, one height and one padding; only the colours differ", () => {
+  const rests = ["default", "secondary", "destructive", "outline"].map((v) => TOKENS[("badge." + v + ".rest") as keyof typeof TOKENS]);
+  for (const r of rests) {
+    expect(r).toMatch(/border-(?!transparent)/);
+    expect(r).not.toMatch(/\bh-|\bpx-|\bborder-\d|\bborder-\[/);
+  }
+  expect(TOKENS["badge.base"]).toContain("h-5 px-2");
+  expect(TOKENS["badge.base"]).toContain("border");
+});
+
 test("every variant has a rest and a text token (structure)", () => {
   for (const v of ["default", "secondary", "destructive", "outline"]) {
     expect(TOKENS[("badge." + v + ".rest") as keyof typeof TOKENS]).toBeDefined();
