@@ -8,6 +8,7 @@ import { View } from "../elements.ts";
 import type { NodeMirror } from "../internal/pocket.ts";
 import { bindField, openField, type TextFieldBinding, unbindField } from "../input/text-field.ts";
 import { Focusable } from "./focusable.tsx";
+import { useField } from "./field.tsx";
 import { useTokens } from "./theme.tsx";
 
 interface FieldProps {
@@ -16,6 +17,8 @@ interface FieldProps {
   disabled?: boolean;
   multiline?: boolean;
   onChange?: (next: string) => void;
+  /** The node ref of the control (a ref object or a callback), so a parent can focus it. */
+  nodeRef?: { current: NodeMirror | null } | ((node: NodeMirror | null) => void);
 }
 
 function Field(props: FieldProps) {
@@ -40,12 +43,24 @@ function Field(props: FieldProps) {
     }
   });
   useLayoutEffect(() => () => { if (node.current) unbindField(node.current); }, []);
+  // A control inside a Field takes the Field's state: disabled, or invalid (a red border, same size, no focus border).
+  const field = useField();
+  const disabled = props.disabled === true || field.disabled;
+  const invalid = field.invalid && !disabled;
   const base = props.multiline ? T["field.textarea"] : T["field.base"];
-  const look = props.disabled
+  const look = disabled
     ? [base, T["field.disabled"]].join(" ")
-    : [base, T["field.focus"]].join(" ");
+    : invalid
+      ? (props.multiline ? T["field.textarea.invalid"] : T["field.invalid"])
+      : [base, T["field.focus"]].join(" ");
+  const setNode = (n: NodeMirror | null) => {
+    node.current = n;
+    const ref = props.nodeRef;
+    if (typeof ref === "function") ref(n);
+    else if (ref) ref.current = n;
+  };
   return (
-    <Focusable look={look} disabled={props.disabled} nodeRef={node} onPress={() => { if (bound.current) openField(bound.current); }} />
+    <Focusable look={look} disabled={disabled} nodeRef={setNode} onPress={() => { if (bound.current) openField(bound.current); }} />
   );
 }
 

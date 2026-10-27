@@ -55,3 +55,31 @@ export function inkOf(core: Core, run: { x: number; y: number; w: number; h: num
   const sorted = [...m.entries()].sort((a, b) => b[1] - a[1]);
   return sorted[1]?.[0] ?? sorted[0][0];
 }
+
+/** A macrotask: React flushes a state change set by an input (a typed digit, a press) after this, not synchronously. */
+export const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+
+/** Flush a state change: wait for React, then step and draw two frames. */
+export async function settle(core: Core): Promise<void> { await tick(); core.step(0); core.step(0); core.render(); }
+
+/**
+ * The ink of a run: the colour that contrasts most with the fill beside it (the pixel two px left of the run's middle
+ * row, outside the glyphs), among colours drawn at least twice in the run. Anti-aliased edges lie between fill and ink,
+ * so the most contrasting colour is the glyph's own colour. Unlike inkOf, it does not pick a grey edge on small text.
+ */
+export function inkAgainst(core: Core, run: { x: number; y: number; w: number; h: number }): string {
+  const fill = core.pixel(run.x - 2, run.y + Math.floor(run.h / 2));
+  const m = new Map<string, number>();
+  for (let y = run.y; y < run.y + run.h; y++) for (let x = run.x; x < run.x + run.w; x++) {
+    const c = core.pixel(x, y);
+    m.set(c, (m.get(c) ?? 0) + 1);
+  }
+  const lum = (hex: string) => {
+    const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  };
+  const ratio = (a: string, b: string) => { const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+  const cands = [...m.entries()].filter(([c, n]) => c !== fill && n >= 2).map(([c]) => c);
+  if (cands.length === 0) return fill;
+  return cands.sort((a, b) => ratio(b, fill) - ratio(a, fill))[0];
+}

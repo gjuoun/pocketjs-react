@@ -29,6 +29,14 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetTi
 import { Toaster, toast } from "../../../src/native/toast.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../src/native/table.tsx";
 import { useState } from "react";
+import { Breadcrumb } from "../../../src/native/breadcrumb.tsx";
+import { Alert } from "../../../src/native/alert.tsx";
+import { Empty } from "../../../src/native/empty.tsx";
+import { Field } from "../../../src/native/field.tsx";
+import { Pagination } from "../../../src/native/pagination.tsx";
+import { InputOTP } from "../../../src/native/input-otp.tsx";
+import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLabel, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "../../../src/native/navigation-menu.tsx";
+import { Command, type CommandGroup } from "../../../src/native/command.tsx";
 
 export function PageFrame(props: { index: number; total: number; name: string; active: boolean; flush?: boolean; children?: ReactNode }) {
   const num = String(props.index).padStart(2, "0");
@@ -352,7 +360,7 @@ export function DropdownMenuPage() {
           <DropdownMenuItem value="delete">Delete</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Label>{"Chose " + picked}</Label>
+      <Label>{"Chosen: " + picked}</Label>
     </View>
   );
 }
@@ -386,10 +394,123 @@ export function TablePage() {
   );
 }
 
-/** The theme page: all twenty-four native components on one 480 by 252 surface, in four bands. The toggle is a state change
- * of the provider, so every component under it re-renders with the other table. Sizes are the components' own tokens; the
- * heights add up to 226 px inside the 236 px of content (the page's padding is 8 px each side), so nothing is squeezed:
- * the band of triggers (36), the badges and progress (20), select and slider (36), then four 110 px columns (122 px tall). */
+export function BreadcrumbPage() {
+  const [picked, setPicked] = useState("none");
+  return (
+    <View className="flex-col gap-2">
+      <Breadcrumb items={["Home", "Docs", "Guides", "Setup", "Usage", "Invoices"]} onSelect={(i) => setPicked(["Home", "Docs", "Guides", "Setup", "Usage", "Invoices"][i])} />
+      <Label>{"Opened " + picked}</Label>
+      <Label>Collapsed: the middle is one ellipsis; press it for the full trail</Label>
+    </View>
+  );
+}
+
+export function AlertPage() {
+  const [dismissed, setDismissed] = useState(0);
+  return (
+    <View className="flex-col gap-2">
+      <Alert variant="info" title="Update ready" icon={<View className="w-4 h-4 bg-blue-600" />} />
+      <Alert variant="success" title="Saved" />
+      <Alert variant="warning" title="Low disk space" />
+      <Alert variant="destructive" title="Sync failed" dismissible onDismiss={() => setDismissed(dismissed + 1)} />
+      <Label>{"Dismissed " + dismissed}</Label>
+    </View>
+  );
+}
+
+export function EmptyPage() {
+  const [made, setMade] = useState(0);
+  return (
+    <View className="flex-col gap-2">
+      <Empty
+        icon={<View className="w-4 h-4 bg-slate-900" />}
+        title="No projects yet"
+        action={<Button variant="outline" size="sm" onPress={() => setMade(made + 1)}>Create project</Button>}
+      >Projects you create show up here.</Empty>
+      <Label>{"Created " + made}</Label>
+    </View>
+  );
+}
+
+export function FormFieldPage() {
+  const [name, setName] = useState("");
+  const [invalid, setInvalid] = useState(false);
+  return (
+    <View className="flex-col gap-2">
+      <Field label="Name" hint="As on your ID"><Input placeholder="Full name" value={name} onChange={setName} /></Field>
+      <Field label="Email" error={invalid ? "Enter a valid email." : undefined}><Input placeholder="name@mail" value="" onChange={() => {}} /></Field>
+      <Button variant="outline" onPress={() => setInvalid(true)}>Validate</Button>
+    </View>
+  );
+}
+
+export function PaginationPage() {
+  const [page, setPage] = useState(3);
+  return (
+    <View className="flex-col gap-2">
+      <Pagination page={page} pageCount={10} onPageChange={setPage} />
+      <Label>{"Page " + page + " of 10"}</Label>
+    </View>
+  );
+}
+
+export function InputOTPPage() {
+  const [code, setCode] = useState("");
+  const [verified, setVerified] = useState(0);
+  return (
+    <View className="flex-col gap-2">
+      <InputOTP length={6} value={code} onChange={setCode} onComplete={() => setVerified(verified + 1)} />
+      <Label>{code.length === 6 ? "Verified " + verified : "Enter the 6-digit code"}</Label>
+    </View>
+  );
+}
+
+export function NavigationPage() {
+  const [picked, setPicked] = useState("none");
+  return (
+    <View className="flex-col gap-2">
+      <NavigationMenu>
+        <NavigationMenuList>
+          <NavigationMenuItem value="products">
+            <NavigationMenuTrigger>Products</NavigationMenuTrigger>
+            <NavigationMenuContent>
+              <NavigationMenuLabel>Shop by type</NavigationMenuLabel>
+              <NavigationMenuLink value="hardware" onSelect={setPicked}>Hardware</NavigationMenuLink>
+              <NavigationMenuLink value="software" onSelect={setPicked}>Software</NavigationMenuLink>
+            </NavigationMenuContent>
+          </NavigationMenuItem>
+          <NavigationMenuItem value="support">
+            <NavigationMenuTrigger>Support</NavigationMenuTrigger>
+            <NavigationMenuContent>
+              <NavigationMenuLink value="chat" onSelect={setPicked}>Chat</NavigationMenuLink>
+            </NavigationMenuContent>
+          </NavigationMenuItem>
+        </NavigationMenuList>
+      </NavigationMenu>
+      <Label>{"Chosen: " + picked}</Label>
+    </View>
+  );
+}
+
+const COMMAND_GROUPS: CommandGroup[] = [
+  { heading: "Suggestions", items: [{ value: "calendar", label: "Calendar" }, { value: "mail", label: "Mail" }] },
+  { heading: "Tools", items: [{ value: "calc", label: "Calculator" }, { value: "notes", label: "Notes" }] },
+];
+
+export function CommandPage() {
+  const [picked, setPicked] = useState("none");
+  return (
+    <View className="flex-row gap-2">
+      <Command groups={COMMAND_GROUPS} onSelect={setPicked} />
+      <Label>{"Selected " + picked}</Label>
+    </View>
+  );
+}
+
+/** The theme page: all thirty-two native components on one 480 by 252 surface. The top row (the triggers and the section
+ * switch) is shared; the body is one of four sections of 204 px, shown one at a time. All four are mounted together, so one
+ * theme toggle re-renders all thirty-two. Section 1 is the first twenty-four (the layout the page always had); sections 2 to 4
+ * hold the eight later ones. The toggle, the section switch and each section's controls are judged by the native judge. */
 export function ThemePage() {
   const [theme, setTheme] = useState<ThemeName>("light");
   return (
@@ -399,14 +520,20 @@ export function ThemePage() {
   );
 }
 
+const SECTIONS = 4;
+
 function ThemeBody() {
   const T = useTokens() as Record<string, string>;
   const { theme, setTheme } = useTheme();
+  const [section, setSection] = useState(0);
   const [checked, setChecked] = useState(true);
   const [sync, setSync] = useState(false);
   const [answer, setAnswer] = useState("yes");
   const [option, setOption] = useState("monthly");
   const [volume, setVolume] = useState(40);
+  const [page, setPage] = useState(3);
+  const [code, setCode] = useState("");
+  const next = (section + 1) % SECTIONS;
   return (
     <View className={T["theme.page"]}>
       <View className="flex-row items-center gap-1">
@@ -427,7 +554,7 @@ function ThemeBody() {
           </PopoverContent>
         </Popover>
         <Tooltip>
-          <TooltipTrigger>Hint</TooltipTrigger>
+          <TooltipTrigger>?</TooltipTrigger>
           <TooltipContent>Saves the draft</TooltipContent>
         </Tooltip>
         <DropdownMenu>
@@ -438,72 +565,123 @@ function ThemeBody() {
           </DropdownMenuContent>
         </DropdownMenu>
         <NotifyButton />
+        <Button variant="outline" size="sm" onPress={() => setSection(next)}>{(next + 1) + "/" + SECTIONS}</Button>
       </View>
-      <View className="flex-row items-center gap-2">
-        <Badge>Stable</Badge>
-        <Badge variant="secondary">Beta</Badge>
-        <Badge variant="destructive">Failed</Badge>
-        <Progress value={60} />
-        <Label>60%</Label>
-      </View>
-      <View className="flex-row items-center gap-2">
-        <Select
-          value={option}
-          onValueChange={setOption}
-          options={[
-            { value: "monthly", label: "Per month" },
-            { value: "yearly", label: "Per year" },
-          ]}
-        />
-        <Slider value={volume} onValueChange={setVolume} />
-      </View>
-      <View className="flex-row gap-1">
-        <View className="flex-col gap-1 w-[110px]">
-          <Input placeholder="Name" value="" onChange={() => {}} />
-          <Card>
-            <CardHeader><CardTitle>Account</CardTitle></CardHeader>
-          </Card>
-          <Skeleton />
+      {section === 0 ? (
+      <View className="w-full h-[204px] flex-col gap-2" debugName="theme-section-1">
+        <View className="flex-row items-center gap-2">
+          <Badge>Stable</Badge>
+          <Badge variant="secondary">Beta</Badge>
+          <Badge variant="destructive">Failed</Badge>
+          <Progress value={60} />
+          <Label>{theme + " 60%"}</Label>
         </View>
-        <View className="flex-col gap-1 w-[110px]">
-          <Tabs defaultValue="Info">
-            <TabsList>
-              <TabsTrigger value="Info">Info</TabsTrigger>
-              <TabsTrigger value="Use">Use</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <Separator />
-          <View className="flex-row items-center gap-1">
-            <Avatar>AK</Avatar>
-            <Avatar>AK</Avatar>
-            <Spinner size="sm" />
+        <View className="flex-row items-center gap-2">
+          <Select
+            value={option}
+            onValueChange={setOption}
+            options={[
+              { value: "monthly", label: "Per month" },
+              { value: "yearly", label: "Per year" },
+            ]}
+          />
+          <Slider value={volume} onValueChange={setVolume} />
+        </View>
+        <View className="flex-row gap-1">
+          <View className="flex-col gap-1 w-[110px]">
+            <Input placeholder="Name" value="" onChange={() => {}} />
+            <Card>
+              <CardHeader><CardTitle>Account</CardTitle></CardHeader>
+            </Card>
+            <Skeleton />
           </View>
-          <Accordion type="multiple">
-            <AccordionItem value="shipping" title="Shipping">{"Ships in 2 days."}</AccordionItem>
-          </Accordion>
+          <View className="flex-col gap-1 w-[110px]">
+            <Tabs defaultValue="Info">
+              <TabsList>
+                <TabsTrigger value="Info">Info</TabsTrigger>
+                <TabsTrigger value="Use">Use</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Separator />
+            <View className="flex-row items-center gap-1">
+              <Avatar>AK</Avatar>
+              <Avatar>AK</Avatar>
+              <Spinner size="sm" />
+            </View>
+            <Accordion type="multiple">
+              <AccordionItem value="shipping" title="Shipping">{"Ships in 2 days."}</AccordionItem>
+            </Accordion>
+          </View>
+          <View className="flex-col gap-1 w-[110px]">
+            <Checkbox checked={checked} onCheckedChange={setChecked}>Email</Checkbox>
+            <RadioGroup value={answer} onValueChange={setAnswer}>
+              <RadioItem value="yes">Yes</RadioItem>
+              <RadioItem value="no">No</RadioItem>
+            </RadioGroup>
+          </View>
+          <View className="flex-col gap-1 w-[110px]">
+            <Switch checked={sync} onCheckedChange={setSync}>Sync</Switch>
+            <Table columns={[{ width: 110 }]}>
+              <TableHeader>
+                <TableRow><TableHead>Plan</TableHead></TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow><TableCell>Team</TableCell></TableRow>
+              </TableBody>
+            </Table>
+          </View>
         </View>
-        <View className="flex-col gap-1 w-[110px]">
-          <Checkbox checked={checked} onCheckedChange={setChecked}>Email</Checkbox>
-          <RadioGroup value={answer} onValueChange={setAnswer}>
-            <RadioItem value="yes">Yes</RadioItem>
-            <RadioItem value="no">No</RadioItem>
-          </RadioGroup>
+      </View>) : null}
+      {section === 1 ? (
+      <View className="w-full h-[204px] flex-col gap-1" debugName="theme-section-2">
+        <NavigationMenu>
+          <NavigationMenuList>
+            <NavigationMenuItem value="products">
+              <NavigationMenuTrigger>Products</NavigationMenuTrigger>
+              <NavigationMenuContent>
+                <NavigationMenuLabel>Shop by type</NavigationMenuLabel>
+                <NavigationMenuLink value="hardware">Hardware</NavigationMenuLink>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+            <NavigationMenuItem value="support">
+              <NavigationMenuTrigger>Support</NavigationMenuTrigger>
+              <NavigationMenuContent>
+                <NavigationMenuLink value="chat">Chat</NavigationMenuLink>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+          </NavigationMenuList>
+        </NavigationMenu>
+        <Breadcrumb items={["Home", "Docs", "Guides", "Setup", "Usage", "Invoices"]} />
+        <Pagination page={page} pageCount={10} onPageChange={setPage} />
+        <InputOTP length={6} value={code} onChange={setCode} />
+        <Alert variant="info" title="Update ready" />
+      </View>) : null}
+      {section === 2 ? (
+      <View className="w-full h-[204px] flex-row gap-2" debugName="theme-section-3">
+        <View className="flex-col gap-2 w-[216px]">
+          <Field label="Email" hint="Optional"><Input placeholder="name@mail" value="" onChange={() => {}} /></Field>
+          <Alert variant="destructive" title="Sync failed" dismissible />
         </View>
-        <View className="flex-col gap-1 w-[110px]">
-          <Switch checked={sync} onCheckedChange={setSync}>Sync</Switch>
-          <Table columns={[{ width: 110 }]}>
-            <TableHeader>
-              <TableRow><TableHead>Plan</TableHead></TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow><TableCell>Team</TableCell></TableRow>
-            </TableBody>
-          </Table>
+        <Command groups={THEME_GROUPS} />
+      </View>) : null}
+      {section === 3 ? (
+      <View className="w-full h-[204px] flex-col gap-2" debugName="theme-section-4">
+        <View className="w-[300px]">
+          <Empty
+            icon={<View className="w-4 h-4 bg-slate-900" />}
+            title="No projects yet"
+            action={<Button variant="outline" size="sm">Create project</Button>}
+          >Projects you create show up here.</Empty>
         </View>
-      </View>
+      </View>) : null}
     </View>
   );
 }
+
+const THEME_GROUPS: CommandGroup[] = [
+  { heading: "Suggestions", items: [{ value: "calendar", label: "Calendar" }] },
+  { heading: "Tools", items: [{ value: "calc", label: "Calculator" }] },
+];
 
 /** The Notify trigger: each press queues a toast; the host is outside the page flow. */
 function NotifyButton() {

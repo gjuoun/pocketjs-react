@@ -10,7 +10,7 @@ import { useButton } from "../../../src/input/buttons.ts";
 import { onPointerTap } from "../../../src/input/pointer.ts";
 import { touchTap } from "./touch.ts";
 import { PAGE_NAMES, type PageName } from "./names.ts";
-import { ButtonPage, CardPage, CheckboxPage, SwitchPage, RadioPage, SelectPage, SliderPage, AccordionPage, SheetPage, PopoverPage, TooltipPage, DropdownMenuPage, ToastPage, TablePage, DialogPage, FieldPage, BadgePage, LabelPage, AvatarPage, PageFrame, ProgressPage, SeparatorPage, SkeletonPage, SpinnerPage, TabsPage, ThemePage } from "./pages.tsx";
+import { ButtonPage, CardPage, CheckboxPage, SwitchPage, RadioPage, SelectPage, SliderPage, AccordionPage, SheetPage, PopoverPage, TooltipPage, DropdownMenuPage, ToastPage, TablePage, DialogPage, FieldPage, BadgePage, LabelPage, AvatarPage, PageFrame, ProgressPage, SeparatorPage, SkeletonPage, SpinnerPage, TabsPage, ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage } from "./pages.tsx";
 
 export const PAGE_COUNT = PAGE_NAMES.length;
 
@@ -39,6 +39,14 @@ const BODY: Record<PageName, () => ReactNode> = {
   DropdownMenu: () => <DropdownMenuPage />,
   Toast: () => <ToastPage />,
   Table: () => <TablePage />,
+  Breadcrumb: () => <BreadcrumbPage />,
+  Alert: () => <AlertPage />,
+  Empty: () => <EmptyPage />,
+  Field: () => <FormFieldPage />,
+  Pagination: () => <PaginationPage />,
+  InputOTP: () => <InputOTPPage />,
+  NavigationMenu: () => <NavigationPage />,
+  Command: () => <CommandPage />,
   Theme: () => <ThemePage />,
 };
 
