@@ -200,6 +200,17 @@ export const TOKENS = {
   "accordion.trigger.text": "text-sm font-bold text-slate-900",
   "accordion.content": "flex-col gap-1 px-3 pb-3",
   "accordion.body": "text-sm text-slate-900",
+  "sheet.shell": "absolute inset-0",
+  "sheet.side.right": "flex-row justify-end",
+  "sheet.side.left": "flex-row justify-start",
+  "sheet.side.top": "flex-col justify-start",
+  "sheet.side.bottom": "flex-col justify-end",
+  "sheet.scrim": "absolute inset-0 bg-[#0f172a99]",
+  "sheet.panel.row": "h-full flex-col gap-2 p-4 bg-white border border-slate-200",
+  "sheet.panel.col": "w-full flex-col gap-2 p-4 bg-white border border-slate-200",
+  "sheet.title": "text-base font-bold text-slate-900",
+  "sheet.description": "text-sm text-slate-500",
+  "sheet.footer": "flex-row justify-end gap-2",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -321,6 +332,10 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "accordion.root": "flex-col border-2 border-slate-600 bg-slate-800 rounded-lg",
   "accordion.trigger.text": "text-sm font-bold text-white",
   "accordion.body": "text-sm text-slate-200",
+  "sheet.panel.row": "h-full flex-col gap-2 p-4 bg-slate-800 border border-slate-700",
+  "sheet.panel.col": "w-full flex-col gap-2 p-4 bg-slate-800 border border-slate-700",
+  "sheet.title": "text-base font-bold text-white",
+  "sheet.description": "text-sm text-slate-300",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {

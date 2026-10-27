@@ -26,8 +26,9 @@ export const PAGE_DRIVERS: Record<number, Driver[]> = {
   16: [{ kind: "driven", trigger: "Per month", metrics: ["text"] }],
   17: [{ kind: "driven", trigger: "Volume", metrics: ["offset"], keys: [BTN.RIGHT] }],
   18: [{ kind: "driven", trigger: "Shipping", metrics: ["text"] }],
-  19: [{ kind: "driven", trigger: "Dark", metrics: ["text"] }],
+  19: [{ kind: "driven", trigger: "Open sheet", metrics: ["layer"] }],
+  20: [{ kind: "driven", trigger: "Dark", metrics: ["text"] }],
 };
 
 /** Pages whose gates 1-3 run again after a passing driver (the driver changes the page's state, e.g. a theme). */
-export const PAGE_REJUDGE: Record<number, boolean> = { 19: true };
+export const PAGE_REJUDGE: Record<number, boolean> = { 20: true };

@@ -22,6 +22,7 @@ import { Select } from "../../../src/native/select.tsx";
 import { Slider } from "../../../src/native/slider.tsx";
 import { Accordion, AccordionItem } from "../../../src/native/accordion.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetTitle, SheetTrigger } from "../../../src/native/sheet.tsx";
 import { useState } from "react";
 
 export function PageFrame(props: { index: number; total: number; name: string; active: boolean; flush?: boolean; children?: ReactNode }) {
@@ -281,6 +282,24 @@ export function AccordionPage() {
         <AccordionItem value="returns" title="Returns">{"30 days, unused items."}</AccordionItem>
         <AccordionItem value="warranty" title="Warranty">{"One year on parts."}</AccordionItem>
       </Accordion>
+    </View>
+  );
+}
+
+export function SheetPage() {
+  const [saved, setSaved] = useState(0);
+  return (
+    <View className="flex-col gap-2">
+      <Sheet>
+        <SheetTrigger>Open sheet</SheetTrigger>
+        <SheetContent side="right" size={75}>
+          <SheetTitle>Account</SheetTitle>
+          <SheetDescription>Edit your details here.</SheetDescription>
+          <SheetFooter><SheetClose>Close</SheetClose><Button onPress={() => setSaved(saved + 1)}>Save</Button></SheetFooter>
+        </SheetContent>
+      </Sheet>
+      <Label>{"Saved " + saved}</Label>
+      <Label>Docked right, 75 percent of the screen</Label>
     </View>
   );
 }

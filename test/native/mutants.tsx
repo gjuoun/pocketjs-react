@@ -21,6 +21,7 @@ import { Avatar } from "../../src/native/avatar.tsx";
 import { Progress } from "../../src/native/progress.tsx";
 import { Label } from "../../src/native/label.tsx";
 import { Separator } from "../../src/native/separator.tsx";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "../../src/native/sheet.tsx";
 import { ThemePage } from "./gallery/pages.tsx";
 import type { Driver } from "../../tools/qa/acceptance/drivers.ts";
 
@@ -345,5 +346,28 @@ export const MUTANTS: Record<string, Mutant> = {
   "dead-accordion-control": {
     gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live accordion", metrics: ["text"] },
     render: () => <View className={ROOT}><LiveAccordion /></View>,
+  },
+  "dead-sheet": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead sheet", metrics: ["layer"] },
+    render: () => <View className={ROOT}><Button>Dead sheet</Button></View>,
+  },
+  "dead-sheet-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live sheet", metrics: ["layer"] },
+    render: () => (
+      <View className={ROOT}>
+        <Sheet>
+          <SheetTrigger>Live sheet</SheetTrigger>
+          <SheetContent size={75}><SheetTitle>Account</SheetTitle></SheetContent>
+        </Sheet>
+      </View>
+    ),
+  },
+  "sheet-zero-width": {
+    gate: "G2", defect: true, driver: null,
+    render: () => <View className={ROOT}><View className="absolute inset-0"><View className="h-full flex-col" style={{ width: 0 }}><SheetTitle>Account</SheetTitle></View></View></View>,
+  },
+  "sheet-zero-width-control": {
+    gate: "G2", defect: false, driver: null,
+    render: () => <View className={ROOT}><Sheet defaultOpen><SheetContent size={75}><SheetTitle>Account</SheetTitle></SheetContent></Sheet></View>,
   },
 };
