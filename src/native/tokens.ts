@@ -54,6 +54,7 @@ export const TOKENS = {
   "tabs.inactive.rest": "border-transparent",
   "tabs.inactive.text": "text-sm text-slate-500",
   "tabs.content": "flex-col gap-2 p-2",
+  "tabs.body": "text-sm text-slate-900",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
