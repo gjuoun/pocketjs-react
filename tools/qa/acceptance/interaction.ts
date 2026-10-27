@@ -107,20 +107,36 @@ export function panelTexts(root: NodeMirror): Set<string> {
 }
 
 /** Run one driver: settle, snapshot, press the trigger, settle, snapshot, then the metrics (any one passes). */
+/** Frames stepped after a focus before the verdict, for a layer with an open delay (a tooltip opens at 18 frames). */
+const FOCUS_FRAMES = 60;
+
 export function runDriver(core: Core, root: NodeMirror, geo: Geometry, driver: Driver): Verdict {
   if (driver.kind === "static") return { status: "n/a", reason: driver.reason };
   if (driver.kind === "unresolved") return { status: "unresolved", reason: driver.reason };
   settle(core);
   const target = triggerNode(root, driver.trigger);
-  if (!target) return { status: "unresolved", reason: "no element with text " + JSON.stringify(driver.trigger) };
+  // A driven entry whose trigger is missing is a failure, not an unresolved entry: a renamed trigger must not pass.
+  if (!target) return { status: "fail", reason: "trigger not found: no element with text " + JSON.stringify(driver.trigger) };
   const targetRect = geo.rect(target);
-  // Focus first, then the baseline: the focus ring is not the press's effect, so "ink" must not count it.
-  focusNode(target);
-  settle(core);
-  const before = snap(core, root, geo);
-  // Default: one CIRCLE press. A driver may name its own press sequence (arrows, CROSS, LEFT), each followed by a settle.
-  for (const key of driver.keys ?? [BTN.CIRCLE]) { core.press(key, 4); settle(core); }
-  const after = snap(core, root, geo);
+  let before: Snap;
+  let after: Snap;
+  if (driver.opens === "focus") {
+    // The focus is the action. The baseline is taken before it, and the frames are stepped (not settled) so an open delay
+    // is inside the window: a layer that never opens leaves no delta and fails.
+    before = snap(core, root, geo);
+    focusNode(target);
+    for (let i = 0; i < FOCUS_FRAMES; i++) { core.step(0); core.render(); }
+    settle(core);
+    after = snap(core, root, geo);
+  } else {
+    // Focus first, then the baseline: the focus ring is not the press's effect, so "ink" must not count it.
+    focusNode(target);
+    settle(core);
+    before = snap(core, root, geo);
+    // Default: one CIRCLE press. A driver may name its own press sequence (arrows, CROSS, LEFT), each followed by a settle.
+    for (const key of driver.keys ?? [BTN.CIRCLE]) { core.press(key, 4); settle(core); }
+    after = snap(core, root, geo);
+  }
   // A one-character run is an icon glyph on this runtime (the close X is an ASCII placeholder), not content.
   // Panel content is a run drawn outside every control: the sheet's own Close (a button) does not count.
   const panel = panelTexts(root);
@@ -146,6 +162,10 @@ export function runDriver(core: Core, root: NodeMirror, geo: Geometry, driver: D
       if (ink >= MIN_INK && added >= 1)
         return { status: "pass", metric: "layer", reason: "layer ink " + ink + " px, text added: " + JSON.stringify(addedTexts) };
       reasons.push("no panel text beyond its controls in the layer (layer ink " + ink + " px, panel texts added " + JSON.stringify(addedTexts) + ")");
+    }
+    if (m === "ink" && driver.opens === "focus") {
+      reasons.push("ink does not count for a focus-opened driver (the focus ring is ink)");
+      continue;
     }
     if (m === "ink" && targetRect) {
       const delta = Math.abs(inkIn(after.px, targetRect) - inkIn(before.px, targetRect));

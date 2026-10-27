@@ -1,12 +1,13 @@
 // Gate 4 drivers: one entry per vendored component (the 61 gallery names). A driven entry names the trigger
 // (the visible text of the element to focus and press) and the metrics that count as a state change. A static
 // entry says why the default usage has no input to exercise. An unresolved entry is interactive and has no
-// driver yet: it is reported, never passed.
+// driver yet: it is reported, never passed. `opens: "focus"` is for a layer that opens on focus (a tooltip): the baseline is
+// taken before the focus, and the focus is the action. Such a driver never counts "ink" (the focus ring is ink).
 import type { SectionName } from "../../../test/fixtures/shadcn-gallery/layout.ts";
 
 export type Metric = "layer" | "text" | "ink" | "offset" | "menu";
 export type Driver =
-  | { kind: "driven"; trigger: string; metrics: Metric[]; keys?: number[] }
+  | { kind: "driven"; trigger: string; metrics: Metric[]; keys?: number[]; opens?: "press" | "focus" }
   | { kind: "static"; reason: string }
   | { kind: "unresolved"; reason: string };
 

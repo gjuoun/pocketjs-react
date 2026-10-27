@@ -35,9 +35,9 @@ const BY_NAME: Record<string, Driver[]> = {
   Accordion: [{ kind: "driven", trigger: "Shipping", metrics: ["text"] }],
   Sheet: [{ kind: "driven", trigger: "Open sheet", metrics: ["layer"] }],
   Popover: [{ kind: "driven", trigger: "Share", metrics: ["layer"] }],
-  // A tooltip opens on focus, and the driver takes its baseline after focusing: the open is in the baseline, so no press shows it.
-  // Its frame-counted open and close are pinned by test/native/tooltip.test.tsx.
-  Tooltip: [{ kind: "static", reason: "a tooltip opens on focus; the driver's baseline is taken after focus, so the open is not a press's effect" }],
+  // A tooltip opens on focus after its delay: the focus is the action, the baseline is taken before it, and the open must add
+  // panel text and a layer within the window (a tooltip that never opens fails). Its frame-counted open is pinned by test/native/tooltip.test.tsx.
+  Tooltip: [{ kind: "driven", trigger: "Draft hint", metrics: ["text", "layer"], opens: "focus" }],
   DropdownMenu: [{ kind: "driven", trigger: "Actions", metrics: ["layer"] }],
   Toast: [{ kind: "driven", trigger: "Notify", metrics: ["text"] }],
   Table: [{ kind: "static", reason: "a table is display only: no focus, no press and no state" }],

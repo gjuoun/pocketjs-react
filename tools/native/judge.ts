@@ -141,7 +141,7 @@ function pageLine(channel: string, r: PageRow): string {
 async function judgeMutants(filter: string[]) {
   const rel = relative(OUT, join(ROOT, "test/native/mutants.tsx")).split(sep).join("/");
   const mutantsImport = rel.startsWith(".") ? rel : "./" + rel;
-  const rows: Array<{ name: string; defect: boolean; gate: string; fails: boolean; expected: boolean; ok: boolean }> = [];
+  const rows: Array<{ name: string; defect: boolean; gate: string; fails: boolean; expected: boolean; ok: boolean; reason: string }> = [];
   mkdirSync(OUT, { recursive: true });
   for (const name of Object.keys(MUTANTS)) {
     if (filter.length && !filter.some((w) => name.includes(w))) continue;
@@ -166,9 +166,14 @@ async function judgeMutants(filter: string[]) {
     if (m.gate === "G1") fails = judgeLegibility(core, geo).fails.length > 0;
     if (m.gate === "G2") fails = checkOverflow(rootMirror, geo).findings.length > 0;
     if (m.gate === "G3") fails = checkAlignment(rootMirror, geo).fails.length > 0;
-    if (m.gate === "G4") fails = m.driver ? runDriver(core, rootMirror, geo, m.driver).status === "fail" : false;
-    rows.push({ name, defect: m.defect, gate: m.gate, fails, expected: m.defect, ok: fails === m.defect });
-    console.log(name + " [" + geo.channel + "]: " + m.gate + " " + (fails ? "fail" : "pass") + (m.defect ? " (defect, must fail)" : " (control, must pass)") + (fails === m.defect ? " ok" : " MISMATCH"));
+    let why = "";
+    if (m.gate === "G4" && m.driver) {
+      const v = runDriver(core, rootMirror, geo, m.driver);
+      fails = v.status === "fail";
+      why = v.reason;
+    }
+    rows.push({ name, defect: m.defect, gate: m.gate, fails, expected: m.defect, ok: fails === m.defect, reason: why });
+    console.log(name + " [" + geo.channel + "]: " + m.gate + " " + (fails ? "fail" : "pass") + (m.defect ? " (defect, must fail)" : " (control, must pass)") + (fails === m.defect ? " ok" : " MISMATCH") + (why ? " · " + why.slice(0, 160) : ""));
     try { mod.unmount(); } catch {}
     core.dispose();
   }
