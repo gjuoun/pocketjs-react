@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from "../../../src/native/dialog.tsx";
 import { Input, Textarea } from "../../../src/native/input.tsx";
 import { Label } from "../../../src/native/label.tsx";
+import { Badge } from "../../../src/native/badge.tsx";
+import { Separator } from "../../../src/native/separator.tsx";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
 
@@ -96,6 +98,35 @@ export function LabelPage() {
       <Label disabled>Account number</Label>
       <Label disabled={dimmed}>Nickname</Label>
       <Button variant="outline" onPress={() => setDimmed(!dimmed)}>{dimmed ? "Restore nickname" : "Dim nickname"}</Button>
+    </View>
+  );
+}
+
+export function BadgePage() {
+  return (
+    <View className="flex-col gap-2">
+      <View className="flex-row gap-2">
+        <Badge>Stable</Badge>
+        <Badge variant="secondary">Beta</Badge>
+        <Badge variant="destructive">Failed</Badge>
+        <Badge variant="outline">Draft</Badge>
+      </View>
+      <Label>Release channel</Label>
+    </View>
+  );
+}
+
+export function SeparatorPage() {
+  return (
+    <View className="flex-col gap-2">
+      <Label>Profile</Label>
+      <Separator />
+      <Label>Billing</Label>
+      <View className="flex-row items-center h-8 gap-2">
+        <Label>Home</Label>
+        <Separator orientation="vertical" />
+        <Label>Docs</Label>
+      </View>
     </View>
   );
 }
