@@ -9,7 +9,14 @@ import { slotCrossProduct } from "../../tools/build.ts";
 import { bootCore, type Core } from "../harness.ts";
 
 export const ROOT = "w-full h-full flex-col bg-white";
-export const LITERALS: string[] = [...Object.values(TOKENS), ROOT];
+// Literals the framework on-screen keyboard (src/input/Osk.tsx) carries: the build scan collects them from src/.
+const OSK: string[] = [
+  "absolute rounded-sm items-center justify-center bg-slate-700 focus:bg-blue-600 active:bg-blue-500",
+  "absolute rounded-sm items-center justify-center bg-slate-800 focus:bg-blue-600 active:bg-blue-500",
+  "absolute bg-slate-900",
+  "text-xs font-bold text-white",
+];
+export const LITERALS: string[] = [...Object.values(TOKENS), ROOT, ...OSK];
 export const UTILITIES: string[] = LITERALS.flatMap((l) => l.split(/\s+/)).filter(Boolean);
 export const STRICT = { compat: { classMiss: "throw" as const, tokenMap: false } };
 
