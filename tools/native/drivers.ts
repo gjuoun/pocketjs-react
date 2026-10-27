@@ -18,6 +18,7 @@ export const PAGE_DRIVERS: Record<number, Driver[]> = {
   9: [{ kind: "static", reason: "an avatar is a fallback circle; it has no focus, no press and no state" }],
   10: [{ kind: "driven", trigger: "Add 10%", metrics: ["text"] }],
   11: [{ kind: "static", reason: "a skeleton has no focus, no press and no state; it pulses with no input" }],
+  12: [{ kind: "static", reason: "a spinner has no focus, no press and no state; it is a static arc (the core cannot spin an arc)" }],
 };
 
 /** Pages whose gates 1-3 run again after a passing driver (the driver changes the page's state, e.g. a theme). */

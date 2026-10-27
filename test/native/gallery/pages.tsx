@@ -12,6 +12,7 @@ import { Separator } from "../../../src/native/separator.tsx";
 import { Avatar } from "../../../src/native/avatar.tsx";
 import { Progress } from "../../../src/native/progress.tsx";
 import { Skeleton } from "../../../src/native/skeleton.tsx";
+import { Spinner } from "../../../src/native/spinner.tsx";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
 
@@ -166,6 +167,16 @@ export function SkeletonPage() {
         <Skeleton />
         <Skeleton shape="short" />
       </View>
+    </View>
+  );
+}
+
+export function SpinnerPage() {
+  return (
+    <View className="flex-col gap-2">
+      <View className="flex-row items-center gap-2"><Spinner size="sm" /><Label>Loading</Label></View>
+      <View className="flex-row items-center gap-2"><Spinner /><Label>Saving</Label></View>
+      <View className="flex-row items-center gap-2"><Spinner size="lg" /><Label>Syncing</Label></View>
     </View>
   );
 }
