@@ -35,7 +35,7 @@ function inkBox(fill: string, c: ReturnType<typeof circle>) {
 const SIZES: Array<[AvatarSize, number]> = [["sm", 24], ["md", 32], ["lg", 40]];
 for (const [size, px] of SIZES) {
   test(size + " avatar is a " + px + " px circle with its initials centred within 1 px", async () => {
-    await h.boot(() => <View className={ROOT}><Avatar size={size}>JG</Avatar></View>);
+    await h.boot(() => <View className={ROOT}><Avatar size={size}>AK</Avatar></View>);
     const c = circle(FILL);
     expect(Math.abs(c.w - px)).toBeLessThanOrEqual(1);
     expect(Math.abs(c.h - px)).toBeLessThanOrEqual(1);
@@ -49,13 +49,13 @@ for (const [size, px] of SIZES) {
 }
 
 test("the initials are drawn in slate-900 on the slate-200 fill", async () => {
-  await h.boot(() => <View className={ROOT}><Avatar>JG</Avatar></View>);
-  expect(inkOf(h.core, h.core.texts().find((t) => t.text === "JG")!)).toBe("#0f172a");
+  await h.boot(() => <View className={ROOT}><Avatar>AK</Avatar></View>);
+  expect(inkOf(h.core, h.core.texts().find((t) => t.text === "AK")!)).toBe("#0f172a");
 });
 
 test("the dark theme draws the circle in slate-700 with white initials", async () => {
-  await h.boot(() => <ThemeProvider theme="dark"><View className={ROOT}><Avatar>JG</Avatar></View></ThemeProvider>);
+  await h.boot(() => <ThemeProvider theme="dark"><View className={ROOT}><Avatar>AK</Avatar></View></ThemeProvider>);
   const c = circle("#334155");
   expect(c.w).toBe(32);
-  expect(inkOf(h.core, h.core.texts().find((t) => t.text === "JG")!)).toBe("#ffffff");
+  expect(inkOf(h.core, h.core.texts().find((t) => t.text === "AK")!)).toBe("#ffffff");
 });

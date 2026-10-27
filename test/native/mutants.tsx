@@ -132,11 +132,11 @@ export const MUTANTS: Record<string, Mutant> = {
   },
   "zero-size-avatar": {
     gate: "G2", defect: true, driver: null,
-    render: () => <View className={ROOT}><View className="flex-col" style={{ width: 0, height: 0 }}><Text className={T["avatar.text.md"]}>JG</Text></View></View>,
+    render: () => <View className={ROOT}><View className="flex-col" style={{ width: 0, height: 0 }}><Text className={T["avatar.text.md"]}>AK</Text></View></View>,
   },
   "zero-size-avatar-control": {
     gate: "G2", defect: false, driver: null,
-    render: () => <View className={ROOT}><Avatar>JG</Avatar></View>,
+    render: () => <View className={ROOT}><Avatar>AK</Avatar></View>,
   },
   "wide-progress": {
     gate: "G2", defect: true, driver: null,

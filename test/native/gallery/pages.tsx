@@ -141,9 +141,9 @@ export function AvatarPage() {
   return (
     <View className="flex-col gap-2">
       <View className="flex-row items-center gap-2">
-        <Avatar size="sm">JG</Avatar>
-        <Avatar>JG</Avatar>
-        <Avatar size="lg">JG</Avatar>
+        <Avatar size="sm">AK</Avatar>
+        <Avatar>AK</Avatar>
+        <Avatar size="lg">AK</Avatar>
       </View>
       <Label>Team</Label>
     </View>
@@ -226,8 +226,8 @@ function ThemeBody() {
           </Tabs>
           <Separator />
           <View className="flex-row items-center gap-2">
-            <Avatar size="sm">JG</Avatar>
-            <Avatar>JG</Avatar>
+            <Avatar size="sm">AK</Avatar>
+            <Avatar>AK</Avatar>
             <Spinner />
             <Label>Loading</Label>
           </View>
