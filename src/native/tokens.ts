@@ -120,6 +120,18 @@ export const TOKENS = {
   "spinner.lg.6": "w-8 h-8 arc-start-[270] arc-sweep-[270] arc-width-[4] bg-slate-900",
   "spinner.lg.7": "w-8 h-8 arc-start-[315] arc-sweep-[270] arc-width-[4] bg-slate-900",
   "theme.page": "w-full h-[252px] flex-col gap-2 p-2 bg-white",
+  "checkbox.row": "flex-row items-center gap-2 h-8 px-1 border-2 border-transparent rounded-md",
+  "checkbox.focus": "focus:border-blue-600",
+  "checkbox.box": "w-5 h-5 rounded-[4px] border-2 flex-row items-center justify-center",
+  "checkbox.box.off": "bg-white border-slate-500",
+  "checkbox.box.on": "bg-slate-900 border-slate-900",
+  "checkbox.box.disabled": "bg-slate-100 border-slate-300",
+  "checkbox.box.disabled.on": "bg-slate-500 border-slate-500",
+  "checkbox.mark.short": "absolute left-[6px] top-[9px] w-[2px] h-[5px] bg-white rotate-135",
+  "checkbox.mark.long": "absolute left-[11px] top-[5px] w-[2px] h-[10px] bg-white rotate-45",
+  "checkbox.dash": "absolute left-[5px] top-[9px] w-[8px] h-[2px] bg-white",
+  "checkbox.label.rest": "text-base text-slate-900",
+  "checkbox.label.disabled": "text-base text-slate-500",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -206,6 +218,15 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "spinner.lg.6": "w-8 h-8 arc-start-[270] arc-sweep-[270] arc-width-[4] bg-white",
   "spinner.lg.7": "w-8 h-8 arc-start-[315] arc-sweep-[270] arc-width-[4] bg-white",
   "theme.page": "w-full h-[252px] flex-col gap-2 p-2 bg-slate-900",
+  "checkbox.box.off": "bg-slate-900 border-slate-400",
+  "checkbox.box.on": "bg-white border-white",
+  "checkbox.box.disabled": "bg-slate-800 border-slate-600",
+  "checkbox.box.disabled.on": "bg-slate-600 border-slate-600",
+  "checkbox.mark.short": "absolute left-[6px] top-[9px] w-[2px] h-[5px] bg-slate-900 rotate-135",
+  "checkbox.mark.long": "absolute left-[11px] top-[5px] w-[2px] h-[10px] bg-slate-900 rotate-45",
+  "checkbox.dash": "absolute left-[5px] top-[9px] w-[8px] h-[2px] bg-slate-900",
+  "checkbox.label.rest": "text-base text-white",
+  "checkbox.label.disabled": "text-base text-slate-500",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {

@@ -9,6 +9,7 @@ import { Card, CardTitle } from "../../src/native/card.tsx";
 import { TOKENS } from "../../src/native/tokens.ts";
 import { Text as Txt, View as Vw } from "../../src/index.ts";
 import { Badge } from "../../src/native/badge.tsx";
+import { Checkbox } from "../../src/native/checkbox.tsx";
 import { Avatar } from "../../src/native/avatar.tsx";
 import { Progress } from "../../src/native/progress.tsx";
 import { Label } from "../../src/native/label.tsx";
@@ -26,6 +27,15 @@ function LiveProgress() {
       <Progress value={v} />
       <Label>{v + "%"}</Label>
       <Button onPress={() => setV(Math.min(100, v + 10))}>Live progress</Button>
+    </View>
+  );
+}
+
+function LiveCheckbox() {
+  const [on, setOn] = useState(false);
+  return (
+    <View className="flex-col gap-2">
+      <Checkbox checked={on} onCheckedChange={setOn}>Live checkbox</Checkbox>
     </View>
   );
 }
@@ -193,5 +203,28 @@ export const MUTANTS: Record<string, Mutant> = {
   "dead-theme-control": {
     gate: "G4", defect: false, driver: { kind: "driven", trigger: "Dark", metrics: ["text"] },
     render: () => <ThemePage />,
+  },
+  "dead-checkbox": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead checkbox", metrics: ["ink"] },
+    render: () => <View className={ROOT}><Checkbox checked={false}>Dead checkbox</Checkbox></View>,
+  },
+  "dead-checkbox-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live checkbox", metrics: ["ink"] },
+    render: () => <View className={ROOT}><LiveCheckbox /></View>,
+  },
+  "checkbox-contrast": {
+    gate: "G1", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <Focusable look={T["checkbox.row"]}>
+          <View className={[T["checkbox.box"], T["checkbox.box.off"]].join(" ")} />
+          <Text className="text-base text-slate-300">Faint checkbox</Text>
+        </Focusable>
+      </View>
+    ),
+  },
+  "checkbox-contrast-control": {
+    gate: "G1", defect: false, driver: null,
+    render: () => <View className={ROOT}><Checkbox checked={false}>Faint checkbox</Checkbox></View>,
   },
 };

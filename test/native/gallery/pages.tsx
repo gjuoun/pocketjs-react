@@ -15,6 +15,7 @@ import { Avatar } from "../../../src/native/avatar.tsx";
 import { Progress } from "../../../src/native/progress.tsx";
 import { Skeleton } from "../../../src/native/skeleton.tsx";
 import { Spinner } from "../../../src/native/spinner.tsx";
+import { Checkbox } from "../../../src/native/checkbox.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
 import { useState } from "react";
 
@@ -184,6 +185,21 @@ export function SpinnerPage() {
       <View className="flex-row items-center gap-2"><Spinner /><Label>Saving</Label></View>
       <View className="flex-row items-center gap-2"><Spinner size="lg" /><Label>Syncing</Label></View>
       <Label>Eight steps of 45 degrees, one step every 5 frames</Label>
+    </View>
+  );
+}
+
+export function CheckboxPage() {
+  const [email, setEmail] = useState(false);
+  const [terms, setTerms] = useState(true);
+  return (
+    <View className="flex-col gap-2">
+      <Checkbox checked={email} onCheckedChange={setEmail}>Email me updates</Checkbox>
+      <Checkbox checked={terms} onCheckedChange={setTerms}>Accept terms</Checkbox>
+      <Checkbox checked="indeterminate">Select all</Checkbox>
+      <Checkbox checked disabled>Locked on</Checkbox>
+      <Checkbox disabled>Locked off</Checkbox>
+      <Label>{"Email " + (email ? "on" : "off")}</Label>
     </View>
   );
 }
