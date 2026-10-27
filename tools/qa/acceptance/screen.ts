@@ -9,6 +9,7 @@ import { compileClasses } from "../../../src/internal/pocket-build.ts";
 import { installBuildStyles } from "../../../src/style/build-styles.ts";
 import { bootCore, type Core } from "../../../test/harness.ts";
 import { build } from "../../build.ts";
+import { MUTANTS } from "../../../test/fixtures/acceptance-defects/mutants.tsx";
 
 export const ROOT = resolve(import.meta.dir, "../../..");
 export const OUT = join(ROOT, "dist/qa/screens");
@@ -17,6 +18,12 @@ export type Target =
   | { kind: "mutant"; name: string }
   | { kind: "fixture"; name: string };
 export const targetId = (t: Target): string => t.kind + "-" + t.name;
+/** The bare name a report shows: the section or mutant name. */
+export const targetName = (t: Target): string => t.name;
+/** The gallery section a mutant replaces (its driver and its report row). */
+export function MUTANT_COMPONENT(name: string): string {
+  return MUTANTS[name].component;
+}
 
 /** The generated entry: the gallery Frame around a section body, or around a mutant body. */
 function entrySource(t: Target): string {
