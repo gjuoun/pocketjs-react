@@ -16,23 +16,25 @@ test("mutant white-button: the Save label sits on an element that is white-on-wh
   expect(findNode((n) => classOf(n).includes("bg-white") && classOf(n).includes("text-white"))).toBeDefined();
 });
 
-test("mutant zero-size-badge: the badge wrapper is 0 x 0 and its label is not drawn", async () => {
+test("mutant zero-size-badge: the badge itself is 0 x 0, and its label is a child of that box", async () => {
   b = await bootTarget({ kind: "mutant", name: "zero-size-badge" });
-  const wrap = findNode((n) => classOf(n).includes("w-0") && classOf(n).includes("h-0"));
-  expect(wrap).toBeDefined();
-  const r = geometryFor(b.core).rect(wrap!);
+  const badge = findNode((n) => classOf(n).includes("w-0") && classOf(n).includes("h-0"));
+  expect(badge).toBeDefined();
+  const r = geometryFor(b.core).rect(badge!);
   expect(r && r.w === 0 && r.h === 0).toBe(true);
-  expect(b.core.texts().map((t) => t.text)).not.toContain("New");
+  expect(findNode((n) => (n as unknown as { text?: string }).text === "New", badge!)).toBeDefined();
 });
 
-test("mutant overflow-carousel: the 600 px slide is wider than its 400 px viewport", async () => {
+test("mutant overflow-carousel: a 400 px slide, 200 px into its 400 px viewport, runs past the viewport", async () => {
   b = await bootTarget({ kind: "mutant", name: "overflow-carousel" });
   const slide = findNode((n) => classOf(n).includes("bg-slate-200"));
   expect(slide).toBeDefined();
   const geo = geometryFor(b.core);
   const r = geo.rect(slide!);
-  // Overlay: the untrimmed box is 600 wide. Stock: the paint box stops at the 480 px screen edge.
-  expect(r?.w).toBe(geo.channel === "overlay" ? 600 : 480);
+  // Overlay: the untrimmed box starts at x 208 and is 400 wide, so it runs to 608 past the 408 px viewport edge.
+  // Stock: the paint box is clipped to the screen, so it is narrower than 400; the stock channel can only call it partial.
+  if (geo.channel === "overlay") expect(r).toMatchObject({ x: 208, w: 400 });
+  else expect(r?.w ?? 0).toBeLessThan(400);
 });
 
 test("mutant empty-sheet: the trigger is there and the panel has no title", async () => {

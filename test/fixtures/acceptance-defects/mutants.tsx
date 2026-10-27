@@ -16,22 +16,23 @@ function WhiteButton() {
   );
 }
 
-/** Zero-size: the badge's wrapper collapses to 0 x 0; its label is not drawn inside it. */
+/** Zero-size: the badge itself is 0 x 0 (its own box, not a wrapper's); its label is a child of that box. */
 function ZeroSizeBadge() {
   return (
-    <View className="w-0 h-0 flex-row">
-      <Badge>New</Badge>
+    <View className="w-full flex-col items-start p-2">
+      <Badge className="w-0 h-0 p-0">New</Badge>
     </View>
   );
 }
 
-/** Overflow: a 600 px slide in a 400 px viewport with no clipping; the slide runs past the screen edge. */
+/** Overflow: a 400 px slide, absolutely placed 200 px into its 400 px viewport with no clipping, runs past the
+ *  viewport. The core clamps a flow child to its parent's width, so the slide is placed absolutely to overflow. */
 function OverflowCarousel() {
   return (
     <Carousel className="w-full">
-      <View className="flex-col" style={{ width: 400 }}>
-        <CarouselItem>
-          <View className="h-[60px] bg-slate-200 flex-col items-center justify-center" style={{ width: 600 }}>
+      <View className="relative flex-col h-[60px]" style={{ width: 400 }}>
+        <CarouselItem className="h-[60px]">
+          <View className="absolute left-[200px] top-0 w-[400px] h-[60px] bg-slate-200 flex-col items-center justify-center">
             <Text className="text-sm font-bold">One</Text>
           </View>
         </CarouselItem>
@@ -40,13 +41,13 @@ function OverflowCarousel() {
   );
 }
 
-/** Control: the same carousel with its viewport clipping (overflow-hidden); the gate must pass on it. */
+/** Control: the same viewport clipping (overflow-hidden) with a slide that fits inside it; the gate must pass on it. */
 function OverflowCarouselFixed() {
   return (
     <Carousel className="w-full">
-      <View className="flex-col overflow-hidden" style={{ width: 400 }}>
-        <CarouselItem>
-          <View className="h-[60px] bg-slate-200 flex-col items-center justify-center" style={{ width: 600 }}>
+      <View className="relative flex-col h-[60px] overflow-hidden" style={{ width: 400 }}>
+        <CarouselItem className="h-[60px]">
+          <View className="absolute left-0 top-0 w-[400px] h-[60px] bg-slate-200 flex-col items-center justify-center">
             <Text className="text-sm font-bold">One</Text>
           </View>
         </CarouselItem>
