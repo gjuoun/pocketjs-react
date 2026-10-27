@@ -16,6 +16,7 @@ import { Progress } from "../../../src/native/progress.tsx";
 import { Skeleton } from "../../../src/native/skeleton.tsx";
 import { Spinner } from "../../../src/native/spinner.tsx";
 import { Checkbox } from "../../../src/native/checkbox.tsx";
+import { Switch } from "../../../src/native/switch.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../src/native/tabs.tsx";
 import { useState } from "react";
 
@@ -200,6 +201,20 @@ export function CheckboxPage() {
       <Checkbox checked disabled>Locked on</Checkbox>
       <Checkbox disabled>Locked off</Checkbox>
       <Label>{"Email " + (email ? "on" : "off")}</Label>
+    </View>
+  );
+}
+
+export function SwitchPage() {
+  const [airplane, setAirplane] = useState(false);
+  const [sync, setSync] = useState(true);
+  return (
+    <View className="flex-col gap-2">
+      <Switch checked={airplane} onCheckedChange={setAirplane}>Airplane mode</Switch>
+      <Switch checked={sync} onCheckedChange={setSync}>Sync on Wi-Fi</Switch>
+      <Switch checked disabled>Locked on</Switch>
+      <Switch disabled>Locked off</Switch>
+      <Label>{"Airplane mode " + (airplane ? "on" : "off")}</Label>
     </View>
   );
 }

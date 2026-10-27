@@ -20,8 +20,9 @@ export const PAGE_DRIVERS: Record<number, Driver[]> = {
   11: [{ kind: "static", reason: "a skeleton has no focus, no press and no state; it is static (see skeleton.tsx)" }],
   12: [{ kind: "static", reason: "a spinner has no focus and no press; it steps its arc on a frame pump (see spinner.tsx)" }],
   13: [{ kind: "driven", trigger: "Email me updates", metrics: ["ink"] }],
-  14: [{ kind: "driven", trigger: "Dark", metrics: ["text"] }],
+  14: [{ kind: "driven", trigger: "Airplane mode", metrics: ["offset"] }],
+  15: [{ kind: "driven", trigger: "Dark", metrics: ["text"] }],
 };
 
 /** Pages whose gates 1-3 run again after a passing driver (the driver changes the page's state, e.g. a theme). */
-export const PAGE_REJUDGE: Record<number, boolean> = { 14: true };
+export const PAGE_REJUDGE: Record<number, boolean> = { 15: true };

@@ -10,6 +10,7 @@ import { TOKENS } from "../../src/native/tokens.ts";
 import { Text as Txt, View as Vw } from "../../src/index.ts";
 import { Badge } from "../../src/native/badge.tsx";
 import { Checkbox } from "../../src/native/checkbox.tsx";
+import { Switch } from "../../src/native/switch.tsx";
 import { Avatar } from "../../src/native/avatar.tsx";
 import { Progress } from "../../src/native/progress.tsx";
 import { Label } from "../../src/native/label.tsx";
@@ -36,6 +37,15 @@ function LiveCheckbox() {
   return (
     <View className="flex-col gap-2">
       <Checkbox checked={on} onCheckedChange={setOn}>Live checkbox</Checkbox>
+    </View>
+  );
+}
+
+function LiveSwitch() {
+  const [on, setOn] = useState(false);
+  return (
+    <View className="flex-col gap-2">
+      <Switch checked={on} onCheckedChange={setOn}>Live switch</Switch>
     </View>
   );
 }
@@ -226,5 +236,13 @@ export const MUTANTS: Record<string, Mutant> = {
   "checkbox-contrast-control": {
     gate: "G1", defect: false, driver: null,
     render: () => <View className={ROOT}><Checkbox checked={false}>Faint checkbox</Checkbox></View>,
+  },
+  "dead-switch": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Dead switch", metrics: ["offset"] },
+    render: () => <View className={ROOT}><Switch checked={false}>Dead switch</Switch></View>,
+  },
+  "dead-switch-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Live switch", metrics: ["offset"] },
+    render: () => <View className={ROOT}><LiveSwitch /></View>,
   },
 };

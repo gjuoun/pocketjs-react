@@ -132,6 +132,15 @@ export const TOKENS = {
   "checkbox.dash": "absolute left-[5px] top-[9px] w-[8px] h-[2px] bg-white",
   "checkbox.label.rest": "text-base text-slate-900",
   "checkbox.label.disabled": "text-base text-slate-500",
+  "switch.row": "flex-row items-center gap-2 h-8 px-1 border-2 border-transparent rounded-md",
+  "switch.focus": "focus:border-blue-600",
+  "switch.track.off": "w-10 h-6 rounded-[12px] px-[2px] flex-row items-center bg-slate-500 transition-colors duration-150",
+  "switch.track.on": "w-10 h-6 rounded-[12px] px-[2px] flex-row items-center bg-slate-900 transition-colors duration-150",
+  "switch.track.disabled": "w-10 h-6 rounded-[12px] px-[2px] flex-row items-center bg-slate-200",
+  "switch.thumb.off": "w-5 h-5 rounded-[10px] bg-white ml-0 transition-all duration-150",
+  "switch.thumb.on": "w-5 h-5 rounded-[10px] bg-white ml-[16px] transition-all duration-150",
+  "switch.label.rest": "text-base text-slate-900",
+  "switch.label.disabled": "text-base text-slate-500",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -227,6 +236,12 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "checkbox.dash": "absolute left-[5px] top-[9px] w-[8px] h-[2px] bg-slate-900",
   "checkbox.label.rest": "text-base text-white",
   "checkbox.label.disabled": "text-base text-slate-500",
+  "switch.track.off": "w-10 h-6 rounded-[12px] px-[2px] flex-row items-center bg-slate-500 transition-colors duration-150",
+  "switch.track.on": "w-10 h-6 rounded-[12px] px-[2px] flex-row items-center bg-white transition-colors duration-150",
+  "switch.track.disabled": "w-10 h-6 rounded-[12px] px-[2px] flex-row items-center bg-slate-700",
+  "switch.thumb.off": "w-5 h-5 rounded-[10px] bg-slate-900 ml-0 transition-all duration-150",
+  "switch.thumb.on": "w-5 h-5 rounded-[10px] bg-slate-900 ml-[16px] transition-all duration-150",
+  "switch.label.rest": "text-base text-white",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {
