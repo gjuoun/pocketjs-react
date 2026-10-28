@@ -17,6 +17,8 @@ interface FieldProps {
   disabled?: boolean;
   multiline?: boolean;
   onChange?: (next: string) => void;
+  /** Fired when the field is committed (physical Enter, or the on-screen keyboard's OK/START). */
+  onCommit?: (value: string) => void;
   /** The node ref of the control (a ref object or a callback), so a parent can focus it. */
   nodeRef?: { current: NodeMirror | null } | ((node: NodeMirror | null) => void);
 }
@@ -34,6 +36,7 @@ function Field(props: FieldProps) {
       placeholder: props.placeholder,
       multiline: props.multiline,
       onChange: (e: { target: { value: string } }) => props.onChange?.(e.target.value),
+      onCommit: (value: string) => props.onCommit?.(value),
     };
     const first = bound.current === null;
     bound.current = bindField(node.current, props.multiline ? "textarea" : "input", input as never);
