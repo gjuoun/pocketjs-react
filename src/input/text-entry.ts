@@ -11,6 +11,7 @@ import { getFocused, hitFocusable, pushFocusController } from "@pocketjs/framewo
 import { getOps } from "@pocketjs/framework/host";
 import type { NodeMirror } from "../internal/pocket.ts";
 import { addFramePump } from "../renderer/mount.ts";
+import { type InputSource, setInputSource } from "./input-source.ts";
 import { setFocusedPress } from "./pointer.ts";
 import {
   activeField,
@@ -22,9 +23,11 @@ import {
   display,
   FIELD_FONT_SLOT,
   fieldFor,
+  inKeyboardPanel,
   insertText,
   isAttached,
   isReadOnly,
+  keyboardMode,
   MASK,
   moveCaret,
   moveLine,
@@ -47,6 +50,7 @@ interface TextGlobals {
   __pocketText?: TextEvent[];
   __pocketTextEntry?: boolean;
   __pocketTextMultiline?: boolean;
+  __pocketTextField?: boolean;
   __pocketTextNative?: boolean;
   __pocketTextHitAt?: (x: number, y: number) => boolean;
 }
@@ -70,46 +74,54 @@ export function nativeKeyboard(): boolean {
   return g.__pocketTextNative === true;
 }
 
-/** The editable field that has focus, or null. Read-only fields never take typing. */
+/** The editable field that has focus, or null. Read-only fields never take typing. Focus on a key of the open
+ *  field's keyboard is still that field's entry: a physical key reaches it while its panel is up. */
 function focusedField(): TextFieldBinding | null {
   const node = getFocused() as NodeMirror | null;
   if (!node) return null;
-  const binding = fieldFor(node);
+  const binding = fieldFor(node) ?? (inKeyboardPanel(node) ? activeField() : undefined);
   return binding && !isReadOnly(binding) ? binding : null;
 }
 
+/** The source a pointer press on the focused field records: the on-screen keyboard, or the native one on a touch host. */
+function summonSource(): InputSource {
+  return nativeKeyboard() ? "physical" : "onscreen";
+}
+
+/** A physical key (or the native keyboard's text) reaches the field: it is the last input, so the panel hides. */
 function apply(field: TextFieldBinding, event: KeyEvent): void {
+  setInputSource("physical");
   if (event.t === "ch") {
-    if (!field.open) openField(field, "direct");
+    if (!field.open) openField(field, "physical");
     insertText(field, event.s);
     return;
   }
   switch (event.k) {
     case "Backspace":
-      if (!field.open) openField(field, "direct");
+      if (!field.open) openField(field, "physical");
       backspace(field);
       break;
     case "Delete":
-      if (!field.open) openField(field, "direct");
+      if (!field.open) openField(field, "physical");
       deleteAfter(field);
       break;
     case "Left":
     case "Right":
-      if (!field.open) openField(field, "direct");
+      if (!field.open) openField(field, "physical");
       moveCaret(field, event.k === "Left" ? -1 : 1);
       break;
     case "Up":
     case "Down":
       // The host sends these only for a textarea; the field checks again.
       if (field.input.multiline) {
-        if (!field.open) openField(field, "direct");
+        if (!field.open) openField(field, "physical");
         moveLine(field, event.k === "Up" ? -1 : 1);
       }
       break;
     case "Enter":
       // ENT is a newline in a textarea and a commit in an input (F2).
       if (field.input.multiline) {
-        if (!field.open) openField(field, "direct");
+        if (!field.open) openField(field, "physical");
         insertText(field, "\n");
       } else commitField(field);
       break;
@@ -143,7 +155,9 @@ function armCapture(field: TextFieldBinding): void {
 }
 
 function startCaret(field: TextFieldBinding, x: number, y: number): void {
-  if (!field.open) openField(field, "direct");
+  // A press on the field summons its keyboard: a closed field opens with that source, an open one takes it.
+  if (!field.open) openField(field, summonSource());
+  else setInputSource(summonSource());
   pending = { field, x, y, expect: drawnLines(field), tries: 0 };
   armCapture(field);
 }
@@ -199,7 +213,7 @@ export function installTextEntry(): () => void {
     caretNode = field?.node ?? null;
     if (!field) return;
     disposeCaret = pushFocusController(field.node, (direction) => {
-      if (!field.open || field.mode !== "direct") return false;
+      if (!field.open || keyboardMode() !== "direct") return false;
       if (direction === "left") moveCaret(field, -1);
       else if (direction === "right") moveCaret(field, 1);
       else return false;
@@ -210,7 +224,7 @@ export function installTextEntry(): () => void {
   const remove = addFramePump(() => {
     // A direct field closes when focus leaves it or React removes it.
     const open = activeField();
-    if (open && open.mode === "direct" && (open !== focusedField() || !isAttached(open))) {
+    if (open && keyboardMode() === "direct" && (open !== focusedField() || !isAttached(open))) {
       closeField(open, false);
     }
     // One queued event per frame: a controlled field's value prop catches up with its onChange on
@@ -227,10 +241,14 @@ export function installTextEntry(): () => void {
       }
     }
     const live = activeField();
-    setCaretController(live?.mode === "direct" ? live : null);
+    setCaretController(live && keyboardMode() === "direct" ? live : null);
     const focused = focusedField();
     g.__pocketTextEntry = focused !== null;
     g.__pocketTextMultiline = focused?.input.multiline === true;
+    // The field itself has focus (not a key of its panel): the native entry follows this, so the platform keyboard
+    // lets go when the panel takes focus.
+    const node = getFocused() as NodeMirror | null;
+    g.__pocketTextField = focused !== null && node !== null && fieldFor(node) !== undefined;
   });
 
   return () => {
@@ -240,6 +258,7 @@ export function installTextEntry(): () => void {
     setCaretController(null);
     g.__pocketTextEntry = false;
     g.__pocketTextMultiline = false;
+    g.__pocketTextField = false;
     delete g.__pocketTextHitAt;
   };
 }

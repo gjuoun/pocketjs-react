@@ -332,8 +332,8 @@ test("text events with no focused field are dropped, not typed", async () => {
   expect(seen).toEqual([]);
 });
 
-// C4b: the flag the host reads is true only while a text field itself has focus.
-test("the entry flag follows focus: on a field yes, on a panel key or no focus no", async () => {
+// C4b: the flag the host reads is true while a text field has focus, or one of its keyboard's keys (the panel is its field).
+test("the entry flag follows focus: on a field yes, on a panel key yes too, no focus no", async () => {
   const c = await boot();
   mountApp(<input placeholder="Name" />);
   c.step(0);
@@ -342,8 +342,8 @@ test("the entry flag follows focus: on a field yes, on a panel key or no focus n
   expect(flag()).toBe(false);
   c.press(BTN.DOWN); // focus the field
   expect(flag()).toBe(true);
-  c.press(BTN.CIRCLE); // panel open: focus moves to a key
-  expect(flag()).toBe(false);
+  c.press(BTN.CIRCLE); // panel open: focus moves to a key, still the field's entry (a physical key types)
+  expect(flag()).toBe(true);
   c.press(BTN.CROSS); // back to the field
   expect(flag()).toBe(true);
 });

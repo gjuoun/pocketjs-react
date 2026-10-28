@@ -19,6 +19,7 @@ import {
 // The class runtime owns "compiled but not yet loaded": applying a class through it queues
 // the node until the table grows, which setProp alone would not do.
 import { applyClassName } from "../style/class-runtime.ts";
+import { type InputSource, inputSource, resetInputSource, setInputSource, subscribeInputSource } from "./input-source.ts";
 
 /** Value text and placeholder text are fixed literals: the core has no text-color
  *  inheritance (the C2 known gap), so the field picks its own pair. */
@@ -60,7 +61,6 @@ export interface TextFieldBinding {
   /** Insertion point, clamped live against the current value. */
   caret: number;
   open: boolean;
-  mode: FieldMode;
   texts: NodeMirror[];
   classes: string[];
 }
@@ -152,6 +152,31 @@ function notify(): void {
   for (const listener of [...listeners]) listener();
 }
 
+// The last input's source is read by the panel, so a change re-reads every subscriber.
+subscribeInputSource(notify);
+
+/** The keyboard an open field shows: "direct" (no panel) while the last input was physical, else "panel". */
+export function keyboardMode(): FieldMode {
+  return inputSource() === "physical" ? "direct" : "panel";
+}
+
+/** The keyboard panel's container while it is mounted: its keys are the open field's controls. */
+let panelNode: NodeMirror | null = null;
+
+export function setKeyboardPanel(node: NodeMirror | null): void {
+  panelNode = node;
+}
+
+export function keyboardPanel(): NodeMirror | null {
+  return panelNode;
+}
+
+/** True when the node is the keyboard panel or one of its keys (focus there is still the open field's entry). */
+export function inKeyboardPanel(node: NodeMirror): boolean {
+  for (let at: NodeMirror | null = node; at; at = at.parent) if (at === panelNode) return true;
+  return false;
+}
+
 /** The value the field currently shows and edits. */
 export function valueOf(binding: TextFieldBinding): string {
   return binding.input.value ?? binding.internal;
@@ -232,15 +257,15 @@ export interface FieldResult {
   value: string;
 }
 
-/** Open the field's keyboard (a no-op for a read-only field). */
+/** Open the field's keyboard (a no-op for a read-only field). `source` is what opened it: a physical key, or the pointer / pad. */
 export function openField(
   binding: TextFieldBinding,
-  mode: FieldMode = "panel",
+  source: InputSource = "onscreen",
 ): void {
   if (isReadOnly(binding)) return;
   if (active && active !== binding) closeField(active, false);
+  setInputSource(source);
   binding.open = true;
-  binding.mode = mode;
   binding.caret = valueOf(binding).length;
   active = binding;
   render(binding);
@@ -254,7 +279,6 @@ export function closeField(
 ): void {
   if (!binding.open) return;
   binding.open = false;
-  binding.mode = "panel";
   if (restoreCaret) binding.caret = valueOf(binding).length;
   if (active === binding) active = null;
   render(binding);
@@ -309,7 +333,6 @@ export function bindField(
       internal: input.defaultValue ?? "",
       caret: (input.defaultValue ?? "").length,
       open: false,
-      mode: "panel",
       texts: [],
       classes: [],
     };
@@ -347,6 +370,7 @@ export function isAttached(binding: TextFieldBinding): boolean {
 
 /** Forget the open field (mount() teardown: a fresh mount starts with no keyboard). */
 export function resetTextFields(): void {
+  resetInputSource();
   if (active) {
     active.open = false;
     active = null;
