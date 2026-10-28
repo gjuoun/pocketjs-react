@@ -86,7 +86,7 @@
       inst = null;
     }
     // The native keyboard leaves only when the guest field loses focus (an edge, not a level: see createFocusFollower).
-    if (follow.update(globalThis.__pocketTextEntry === true) && document.activeElement === nativeEntry) nativeEntry.blur();
+    if (follow.update(globalThis.__pocketTextField === true) && document.activeElement === nativeEntry) nativeEntry.blur();
     return performance.now() - t;
   };
   const start = async () => {

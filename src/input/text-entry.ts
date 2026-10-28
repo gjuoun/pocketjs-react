@@ -50,6 +50,7 @@ interface TextGlobals {
   __pocketText?: TextEvent[];
   __pocketTextEntry?: boolean;
   __pocketTextMultiline?: boolean;
+  __pocketTextField?: boolean;
   __pocketTextNative?: boolean;
   __pocketTextHitAt?: (x: number, y: number) => boolean;
 }
@@ -244,6 +245,10 @@ export function installTextEntry(): () => void {
     const focused = focusedField();
     g.__pocketTextEntry = focused !== null;
     g.__pocketTextMultiline = focused?.input.multiline === true;
+    // The field itself has focus (not a key of its panel): the native entry follows this, so the platform keyboard
+    // lets go when the panel takes focus.
+    const node = getFocused() as NodeMirror | null;
+    g.__pocketTextField = focused !== null && node !== null && fieldFor(node) !== undefined;
   });
 
   return () => {
@@ -253,6 +258,7 @@ export function installTextEntry(): () => void {
     setCaretController(null);
     g.__pocketTextEntry = false;
     g.__pocketTextMultiline = false;
+    g.__pocketTextField = false;
     delete g.__pocketTextHitAt;
   };
 }

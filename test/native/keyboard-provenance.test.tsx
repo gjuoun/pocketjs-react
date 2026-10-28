@@ -133,6 +133,13 @@ test("a press on a key of the on-screen keyboard types into the field and keeps 
   expect(panelUp(c)).toBe(true);
 });
 
+test("the field's own focus flag drops while a key of its panel has focus, so the native entry lets go", async () => {
+  const c = await h.boot(() => <Field seen={[]} />);
+  tap(c, FIELD.x, FIELD.y);
+  expect(panelUp(c)).toBe(true);
+  expect((globalThis as { __pocketTextField?: boolean }).__pocketTextField).toBe(false);
+});
+
 test("Combobox: a pointer press on its search field shows the on-screen keyboard", async () => {
   const picked: string[] = [];
   const c = await h.boot(() => <Pick picked={picked} />);
