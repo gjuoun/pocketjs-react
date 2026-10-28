@@ -266,8 +266,8 @@ test("the pad alone types field B through the row-strip keyboard: 54 d-pad moves
   await press(page, BTN.DOWN); // focus A
   await keyTap(page, "Escape"); // close direct typing on A
   await press(page, BTN.DOWN); // A -> B
-  await press(page, BTN.CIRCLE); // open B's keyboard
-  expect(await flag(page)).toBe(false);
+  await press(page, BTN.CIRCLE); // open B's keyboard: focus is on a key, still the field's entry
+  expect(await flag(page)).toBe(true);
   expect(await keycapsDrawn(page)).toEqual(
     expect.arrayContaining(["DEL", "ENT"]),
   );

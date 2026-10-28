@@ -22,6 +22,7 @@ import { reconciler } from "../renderer/host-config.ts";
 import { oskTargetIs } from "../renderer/osk-target.ts";
 import { useFrame } from "../renderer/use-frame.ts";
 import { useButton } from "./buttons.ts";
+import { setInputSource } from "./input-source.ts";
 import {
   clampPos,
   homePos,
@@ -46,7 +47,9 @@ import {
   commitField,
   insertText,
   isAttached,
+  keyboardMode,
   moveCaret,
+  setKeyboardPanel,
   subscribe,
   type TextFieldBinding,
 } from "./text-field.ts";
@@ -61,9 +64,15 @@ const LABEL = "text-xs font-bold text-white";
 const SCREEN_W = 480;
 const innerWidth = SCREEN_W - 2 * OSK_PAD;
 
-/** True while any field's keyboard is open; React reads this through the store. */
+/** The open field whose panel is up. A physical key leaves no panel, so the store reads null then. */
+function shownField(): TextFieldBinding | null {
+  const field = activeField();
+  return field && keyboardMode() === "panel" ? field : null;
+}
+
+/** React reads the shown field through the store; the store changes with the field and with the last input's source. */
 function useOpenField(): TextFieldBinding | null {
-  return useSyncExternalStore(subscribe, activeField, () => null);
+  return useSyncExternalStore(subscribe, shownField, () => null);
 }
 
 function OskPanel(props: { field: TextFieldBinding }) {
@@ -91,6 +100,7 @@ function OskPanel(props: { field: TextFieldBinding }) {
 
   const activate = (key: OskKeyDef): void => {
     const field = props.field;
+    setInputSource("onscreen");
     if (key.ch !== undefined) {
       insertText(field, key.ch);
       if (layerRef.current === "upper") setLayer("lower");
@@ -140,7 +150,9 @@ function OskPanel(props: { field: TextFieldBinding }) {
       },
     );
     focusKey(pos.current);
+    setKeyboardPanel(container.current);
     return () => {
+      setKeyboardPanel(null);
       controller();
       scope();
       keyNodes.current.clear();
@@ -149,8 +161,14 @@ function OskPanel(props: { field: TextFieldBinding }) {
 
   // Chords: SQUARE deletes, TRIANGLE spaces, CROSS closes, START commits, shoulders
   // switch layers. Registered while the panel lives, so they shadow the app's handlers.
-  useButton(BTN.SQUARE, () => backspace(props.field));
-  useButton(BTN.TRIANGLE, () => insertText(props.field, " "));
+  useButton(BTN.SQUARE, () => {
+    setInputSource("onscreen");
+    backspace(props.field);
+  });
+  useButton(BTN.TRIANGLE, () => {
+    setInputSource("onscreen");
+    insertText(props.field, " ");
+  });
   useButton(BTN.CROSS, () => closeField(props.field));
   useButton(BTN.START, () => commitField(props.field));
   useButton(BTN.RTRIGGER, () => setLayer(oskLayerToggle(layerRef.current)));
@@ -197,8 +215,8 @@ function OskPanel(props: { field: TextFieldBinding }) {
  * keyboard exists; Osk.tsx deliberately does not import mount.ts. */
 export function OskHost(props: { target: NodeMirror }): ReactNode {
   const field = useOpenField();
-  // A direct-typing field (physical keys) has no panel; only a panel-mode field portals one.
-  if (!field || field.mode !== "panel") return null;
+  // A direct-typing field (physical keys) has no panel: useOpenField reads null for it.
+  if (!field) return null;
   // A root from a disposed mount must not portal a keyboard into the live core.
   if (!oskTargetIs(props.target)) return null;
   return reconciler.createPortal(
