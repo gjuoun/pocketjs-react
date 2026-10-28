@@ -155,3 +155,16 @@ test.skipIf(!OVERLAY)("native-select: the chevron reads on the field (gate 1, no
   expect(gateRow("native-select").g1.fails.map((f) => f.text)).toEqual([]);
 }, 120_000);
 
+// @@heights
+test.skipIf(!OVERLAY)("section heights: each section's content sits inside its fixed height (gate 2)", () => {
+  const names = ["accordion", "button", "calendar", "empty", "label", "table"];
+  const bad = names.map((name) => ({ name, findings: gateRow(name).g2.findings.map((f) => f.detail) })).filter((s) => s.findings.length > 0);
+  console.log(bad.map((s) => s.name + ": " + s.findings.length + " finding(s), first: " + s.findings[0]).join(" | ") || "all six clean");
+  expect(bad.map((s) => s.name)).toEqual([]);
+}, 300_000);
+
+// @@command
+test.skipIf(!OVERLAY)("command: the input is not cut by the command root (gate 2)", () => {
+  expect(gateRow("command").g2.findings.map((f) => f.detail)).toEqual([]);
+}, 120_000);
+
