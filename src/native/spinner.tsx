@@ -1,19 +1,13 @@
-// Spinner: a loading ring, a 270-degree arc in three sizes: sm 16 px, md 24 px, lg 32 px.
-// DECISION: rotate the arc geometry in steps, not a static ring. The core cannot animate arcStart (it is timeline-only, not in
-// the transition mask), and a rotating node paints its arc as a filled box, so the rotation is a closed set of eighteen arc-start
-// tokens (0 to 340 degrees, 20 apart). A frame pump advances one step every SPINNER_STEP_FRAMES frames: 12 steps a second,
-// one revolution every 18 steps, 90 frames (1.5 s at 60 Hz). Each step is a class change React writes; the core only draws the new arc.
-// States: sm, md, lg, each at steps 0 to 17. No focus, no press.
-import { useLayoutEffect, useState } from "react";
+// Spinner: a loading ring, a 270-degree arc in three sizes: sm 16 px, md 24 px, lg 32 px. No focus, no press.
+// DECISION: the arc turns on a core timeline, not a React frame pump. The spin-arc timeline (src/internal/animation-theme.ts)
+// moves arcStart from 0 to 360 degrees in 1.5 s, linear and infinite; the core interpolates it on every tick, so the arc
+// changes orientation every frame (60 a second at the realm's 60 Hz tick) and React writes nothing while it turns.
+// The constraint: a class transition cannot move arcStart (it is not in the transition mask), but a timeline can (arcStart
+// is a degree prop in the keyframe table). The arc is painted axis-aligned, so the turn is the arc start, not a node rotation.
 import { View } from "../elements.ts";
-import { addFramePump } from "../renderer/mount.ts";
 import { useTokens } from "./theme.tsx";
 
 export type SpinnerSize = "sm" | "md" | "lg";
-
-/** Arc-start steps in one revolution, and the frames each step holds. */
-export const SPINNER_STEPS = 18;
-export const SPINNER_STEP_FRAMES = 5;
 
 export interface SpinnerProps {
   size?: SpinnerSize;
@@ -21,14 +15,5 @@ export interface SpinnerProps {
 
 export function Spinner(props: SpinnerProps) {
   const T = useTokens() as Record<string, string>;
-  const size = props.size ?? "md";
-  const [step, setStep] = useState(0);
-  useLayoutEffect(() => {
-    let frames = 0;
-    return addFramePump(() => {
-      frames++;
-      if (frames % SPINNER_STEP_FRAMES === 0) setStep((s) => (s + 1) % SPINNER_STEPS);
-    });
-  }, []);
-  return <View className={T["spinner." + size + "." + step]} />;
+  return <View className={T["spinner." + (props.size ?? "md")]} />;
 }

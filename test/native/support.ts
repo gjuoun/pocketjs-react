@@ -29,9 +29,12 @@ export function harness() {
   let unmount: (() => void) | undefined;
   return {
     get core(): Core { if (!core) throw new Error("harness: not booted"); return core; },
-    async boot(app: () => ReactNode): Promise<Core> {
-      core = await bootCore({ classes: LITERALS, fontSlots: slotCrossProduct(LITERALS, []) });
-      installBuildStyles(STYLES.ids, STYLES.bin, UTILITIES);
+    /** `extra`: literals compiled beside the vocabulary (a mutant's own class string, never in the token set). */
+    async boot(app: () => ReactNode, extra: string[] = []): Promise<Core> {
+      const lits = extra.length ? [...LITERALS, ...extra] : LITERALS;
+      core = await bootCore({ classes: lits, fontSlots: slotCrossProduct(lits, []) });
+      const styles = extra.length ? compileClasses([...lits]) : STYLES;
+      installBuildStyles(styles.ids, styles.bin, extra.length ? lits.flatMap((l) => l.split(/\s+/)).filter(Boolean) : UTILITIES);
       unmount = mount(app(), STRICT);
       core.step(0); core.step(0); core.render();
       return core;

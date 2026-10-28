@@ -29,6 +29,13 @@ export {
   suspectClassLiteral,
   unknownUtilities,
 } from "@pocket-internal/framework/compiler/tailwind.ts";
+import { registerAnimationTheme } from "@pocket-internal/framework/compiler/animation.ts";
+import { ANIMATION_THEME } from "./animation-theme.ts";
+
+// The app's timelines (spin-arc) are registered once, before any class literal compiles: every consumer of this module
+// (the build, the tests, the judge) compiles through the same theme. Registering again would reset the baked table.
+registerAnimationTheme(ANIMATION_THEME);
+
 /**
  * Absolute directory of the PocketJS core root. POCKETJS_CORE_ROOT selects a core overlay built by
  * tools/core-overlay.ts; unset, it is the pinned @pocketjs/framework package in node_modules.

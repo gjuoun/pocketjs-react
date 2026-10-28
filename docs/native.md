@@ -86,8 +86,8 @@ label and steps through the visible items with wrap.
   slide enters on a transition, and a Slider's thumb moves the same way. There is no animation runtime here.
 - **Percentages are resolved by the library**, not the core: a size or inset given as a fraction of
   the parent is converted to pixels after commit and re-resolved when the parent changes.
-- **Arcs paint axis-aligned only**, so the spinner steps its arc start (eighteen steps, 90 frames
-  per revolution) rather than rotating smoothly.
+- **Arcs paint axis-aligned only**, so the spinner turns its arc start on a timeline (`animate-spin-arc`: 0 to
+  360 degrees in 1.5 s, linear, infinite). The core interpolates it every tick; a class transition cannot move arcStart.
 - **No ARIA tree, no blur.** Command, Combobox and NavigationMenu expose no roles; do not design around them.
 - **Scrolling is not built (blocked).** The core rejects `overflow-y-scroll`. G2 is clip-aware, so a child wholly
   clipped away is not overflow; the native carousel still holds one slide in its clip at rest, and ScrollArea
