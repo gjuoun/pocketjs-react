@@ -1,0 +1,77 @@
+# The todo example's acceptance run, on the browser host, driven by the pad and the keyboard.
+#
+#   bun tools/build.ts examples/todo/main.tsx --name=todo
+#   bun tools/shot.ts --js dist/todo.js --pak dist/todo.pak --out dist/todo-shots --script-file examples/todo/accept.txt
+#
+# Every line is one step (see the header of tools/shot.ts). A run fails on a blank shot, a missing
+# text, or a text that is still drawn when it should be gone.
+
+# The seed list is on screen, and the input row owns the focus at boot.
+shot
+expect:Todos
+expect:Ship the todo example
+
+# ADD — CIRCLE opens the keyboard, typing goes in, Enter commits, the new row appears.
+press
+type:Buy milk
+key:Enter
+expect:Buy milk
+shot
+
+# COMPLETE — CIRCLE on the focused row (the one just added) fills its box; the tally moves.
+press
+wait
+expect:2/7 done
+shot
+
+# ORDER — a shoulder trigger moves the focused todo one place up among its siblings.
+ltrig
+wait
+expect:Buy milk
+shot
+
+# SUB-TODO — SQUARE opens a sub-task field under the focused root; Enter creates the child row.
+square
+type:Get oat milk
+key:Enter
+expect:Get oat milk
+shot
+
+# DUE (quick pick) — TRIANGLE opens the picker; the first button is Today, CIRCLE sets it.
+triangle
+expect:Due date
+shot
+press
+wait
+
+# DUE (month grid) — walk to "Pick a date", the grid opens focused on today, step two days back.
+triangle
+down
+down
+down
+down
+press
+wait
+expect:October 2026
+shot
+left
+left
+press
+wait
+expect:2d late
+shot
+
+# DELETE — SELECT asks first; Delete removes the focused row.
+select
+expect:Delete this todo
+shot
+press
+wait
+absent:Get oat milk
+shot
+
+# PERSISTENCE — the host file system survives a reload.
+reload
+expect:Buy milk
+expect:Todos
+shot
