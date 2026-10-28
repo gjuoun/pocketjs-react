@@ -159,10 +159,15 @@ function recordsOf(
   );
 }
 
-/** Take in any timelines the compiler has baked since the table was last read (ids only grow). */
+/**
+ * Take in timelines the compiler has baked since the table was read. The table the build shipped is authoritative:
+ * a registry shorter than it never replaces it. In a built bundle this module's registry is its own copy and starts
+ * empty (the build baked the timelines in another process), so replacing the table with it dropped every animation
+ * from the grown table and left the records' animation ids dangling.
+ */
 function syncTimelines(): void {
   const live = bakedTimelines();
-  if (live.length === timelines.length) return;
+  if (live.length <= timelines.length) return;
   timelines = live.slice();
   animBytes = animSection(timelines);
 }
