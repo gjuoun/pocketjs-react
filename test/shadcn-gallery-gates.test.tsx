@@ -150,3 +150,8 @@ test.skipIf(!OVERLAY)("empty: the Action label is legible in its section (gate 1
   expect(gateRow("empty").g1.fails.map((f) => f.text)).toEqual([]);
 }, 120_000);
 
+// @@chevron
+test.skipIf(!OVERLAY)("native-select: the chevron reads on the field (gate 1, no opacity exemption)", () => {
+  expect(gateRow("native-select").g1.fails.map((f) => f.text)).toEqual([]);
+}, 120_000);
+
