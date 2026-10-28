@@ -167,6 +167,10 @@ export function setKeyboardPanel(node: NodeMirror | null): void {
   panelNode = node;
 }
 
+export function keyboardPanel(): NodeMirror | null {
+  return panelNode;
+}
+
 /** True when the node is the keyboard panel or one of its keys (focus there is still the open field's entry). */
 export function inKeyboardPanel(node: NodeMirror): boolean {
   for (let at: NodeMirror | null = node; at; at = at.parent) if (at === panelNode) return true;

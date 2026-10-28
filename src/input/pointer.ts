@@ -22,6 +22,7 @@ import { type Layer, topLayer } from "../primitives/layer-stack.ts";
 import { addFramePump } from "../renderer/mount.ts";
 import { hoverClear, hoverMove } from "./hover.ts";
 import { focusLabelControlAt } from "./label-map.ts";
+import { keyboardPanel } from "./text-field.ts";
 
 export interface PointerEvent {
   x: number;
@@ -145,10 +146,13 @@ export function setFocusedPress(fn: typeof focusedPress): void {
   focusedPress = fn;
 }
 
-/** A point outside a layer's panel: the topmost hit there is not the panel or a node inside it. */
+/** A point outside a layer's panel: the topmost hit there is not the panel or a node inside it. The on-screen
+ *  keyboard belongs to the field in the layer, so a tap on one of its keys is typing, not a dismiss. */
 function outsideLayer(layer: Layer, x: number, y: number): boolean {
   const panel = layer.panel();
-  return panel !== null && !hitsWithin(panel, x, y);
+  if (panel === null || hitsWithin(panel, x, y)) return false;
+  const keyboard = keyboardPanel();
+  return !(keyboard !== null && hitsWithin(keyboard, x, y));
 }
 
 export function installPointer(): () => void {
