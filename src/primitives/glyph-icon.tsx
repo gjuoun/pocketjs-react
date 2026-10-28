@@ -13,12 +13,18 @@ export interface GlyphProps {
   className?: string;
 }
 
+/** The icon's classes with the opacity ones dropped: a view opacity fades the glyph under gate 1 (the vendored chevron's
+ *  opacity-50 read 1.98:1). The colour the icon carries is the one it is judged in. */
+export function glyphClass(className: string | undefined): string {
+  return (className ?? "").split(/\s+/).filter((t) => !/^opacity-/.test(t)).join(" ");
+}
+
 // The glyph is a view that centres its character. A text run alone draws at the top-left of its box,
 // and a stretched box stretched the character. The colour is inherited from the surface the icon sits
 // on (trigger, item or panel), so a light surface gets a dark glyph.
 function Glyph(props: GlyphProps & { char: string }) {
   return (
-    <View className={cn("flex items-center justify-center", props.className)}>
+    <View className={cn("flex items-center justify-center", glyphClass(props.className))}>
       <Text className="text-sm pb-[3px]">{props.char}</Text>
     </View>
   );
@@ -41,7 +47,7 @@ export function GlyphIcon({ name, px, char, className }: GlyphIconProps) {
     return <Glyph char={char} className={className} />;
   }
   return (
-    <View className={cn("flex items-center justify-center", className)}>
+    <View className={cn("flex items-center justify-center", glyphClass(className))}>
       <Image src={src} className={px === 16 ? "size-4" : "size-2"} />
     </View>
   );

@@ -72,6 +72,22 @@ export function plainLabel(children: ReactNode): ReactNode {
   return typeof children === "string" || typeof children === "number" ? <Text>{children}</Text> : children;
 }
 
+/** A colour utility of the text itself (text-white, text-slate-900), not a size. */
+const TEXT_COLOUR = /^text-(white|black|transparent|(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3})$/;
+/** A dark base fill: a label on it reads white. */
+const DARK_FILL = /^bg-(black|(slate|gray|zinc|neutral|stone)-(700|800|900|950)|(red|blue|green|indigo|violet|purple|emerald)-(500|600|700|800|900))$/;
+
+/**
+ * The class of a Pressable's text label. It takes its surface's colour by inheritance: a label with no colour of its own
+ * is drawn in the colour its surface sets (the nearest text colour above it), so a light surface gets dark text. Only a
+ * dark base fill with no text colour of its own gets white, since nothing above it would set one.
+ */
+export function labelClass(className: string | undefined): string {
+  const tokens = (className ?? "").split(/\s+/);
+  if (tokens.some((t) => TEXT_COLOUR.test(t))) return "text-sm";
+  return tokens.some((t) => DARK_FILL.test(t)) ? "text-sm text-white" : "text-sm";
+}
+
 export function Pressable(props: PressableProps) {
   if (props.asChild && isValidElement(props.children)) {
     const child = props.children as ReactElement<ChildProps & { ref?: Ref<NodeMirror> }>;
@@ -87,7 +103,7 @@ export function Pressable(props: PressableProps) {
   }
   const body =
     typeof props.children === "string" || typeof props.children === "number" ? (
-      <Text className="text-sm text-white">{props.children}</Text>
+      <Text className={labelClass(props.className)}>{props.children}</Text>
     ) : (
       props.children
     );

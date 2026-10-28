@@ -76,7 +76,8 @@ function Input(props: {
     <TextField
       value={c.query}
       placeholder={props.placeholder}
-      className={props.className}
+      // The input fills its row (h-9, 36 px). A 40 px input (h-10) stood 2 px above the row and the root clipped it.
+      className={cn(props.className, "h-full py-2")}
       onChange={(e) => {
         c.setQuery(e.target.value);
         props.onValueChange?.(e.target.value);

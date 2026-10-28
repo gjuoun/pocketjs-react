@@ -1,6 +1,6 @@
 // Gallery layout as data: one entry per vendored shadcn component (test/fixtures/shadcn-full/ui/*.tsx),
 // each section's fixed height, and the scroll arithmetic. No React here, so the proof test reads the same
-// numbers the page uses. A section is at most 260px, so a section snapped to the top fits the 272px screen.
+// numbers the page uses. A section is at most VIEW_H px (272), so a section snapped to the top fits the screen.
 // The column ends with a tail (TAIL_H) so the last section can also snap to the top of the screen.
 
 /** The logical screen height the page scrolls inside. */
@@ -9,7 +9,7 @@ export const VIEW_H = 272;
 export const TITLE_H = 20;
 
 export const SECTIONS = [
-  { name: "accordion", h: 110 },
+  { name: "accordion", h: 155 },
   { name: "alert-dialog", h: 80 },
   { name: "alert", h: 90 },
   { name: "aspect-ratio", h: 170 },
@@ -19,8 +19,8 @@ export const SECTIONS = [
   { name: "breadcrumb", h: 70 },
   { name: "bubble", h: 110 },
   { name: "button-group", h: 90 },
-  { name: "button", h: 140 },
-  { name: "calendar", h: 260 },
+  { name: "button", h: 156 },
+  { name: "calendar", h: 263 },
   { name: "card", h: 200 },
   { name: "carousel", h: 150 },
   { name: "chart", h: 170 },
@@ -33,7 +33,7 @@ export const SECTIONS = [
   { name: "direction", h: 60 },
   { name: "drawer", h: 80 },
   { name: "dropdown-menu", h: 80 },
-  { name: "empty", h: 150 },
+  { name: "empty", h: 184 },
   { name: "field", h: 220 },
   { name: "form", h: 200 },
   { name: "hover-card", h: 80 },
@@ -42,7 +42,7 @@ export const SECTIONS = [
   { name: "input", h: 80 },
   { name: "item", h: 150 },
   { name: "kbd", h: 60 },
-  { name: "label", h: 80 },
+  { name: "label", h: 85 },
   { name: "marker", h: 60 },
   { name: "menubar", h: 80 },
   { name: "message-scroller", h: 180 },
@@ -64,7 +64,7 @@ export const SECTIONS = [
   { name: "sonner", h: 80 },
   { name: "spinner", h: 60 },
   { name: "switch", h: 80 },
-  { name: "table", h: 180 },
+  { name: "table", h: 200 },
   { name: "tabs", h: 150 },
   { name: "textarea", h: 100 },
   { name: "toggle-group", h: 90 },
