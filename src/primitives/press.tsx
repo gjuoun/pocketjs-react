@@ -85,9 +85,10 @@ export function Pressable(props: PressableProps) {
       },
     });
   }
+  // A string label takes its surface's colour, as plainLabel does: a white default made it invisible on a light surface.
   const body =
     typeof props.children === "string" || typeof props.children === "number" ? (
-      <Text className="text-sm text-white">{props.children}</Text>
+      <Text className="text-sm">{props.children}</Text>
     ) : (
       props.children
     );
