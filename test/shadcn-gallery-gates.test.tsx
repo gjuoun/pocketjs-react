@@ -145,3 +145,8 @@ test("labels on light surfaces: command, menubar, navigation-menu and toggle-gro
   expect(bad).toEqual([]);
 }, 180_000);
 
+// @@empty
+test.skipIf(!OVERLAY)("empty: the Action label is legible in its section (gate 1)", () => {
+  expect(gateRow("empty").g1.fails.map((f) => f.text)).toEqual([]);
+}, 120_000);
+

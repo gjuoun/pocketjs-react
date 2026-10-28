@@ -33,7 +33,7 @@ export const SECTIONS = [
   { name: "direction", h: 60 },
   { name: "drawer", h: 80 },
   { name: "dropdown-menu", h: 80 },
-  { name: "empty", h: 150 },
+  { name: "empty", h: 184 },
   { name: "field", h: 220 },
   { name: "form", h: 200 },
   { name: "hover-card", h: 80 },
