@@ -373,6 +373,13 @@ export const TOKENS = {
   "collapsible.trigger.text": "text-sm font-bold text-slate-900",
   "collapsible.content": "flex-col gap-1 px-2 pb-2",
   "collapsible.body": "text-sm text-slate-900",
+  // AlertDialog: the Dialog shell under its own keys (an alert panel may diverge) and an actions row at the bottom.
+  "alert-dialog.shell": "absolute inset-0 flex-col items-center justify-center",
+  "alert-dialog.scrim": "absolute inset-0 bg-[#0f172a99]",
+  "alert-dialog.panel": "flex-col gap-2 p-4 w-[300px] bg-white rounded-xl border border-slate-200",
+  "alert-dialog.title": "text-base font-bold text-slate-900",
+  "alert-dialog.description": "text-sm text-slate-500",
+  "alert-dialog.actions": "flex-row justify-end gap-2",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -574,6 +581,9 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "collapsible.press": "active:bg-slate-700",
   "collapsible.trigger.text": "text-sm font-bold text-white",
   "collapsible.body": "text-sm text-slate-200",
+  "alert-dialog.panel": "flex-col gap-2 p-4 w-[300px] bg-slate-800 rounded-xl border border-slate-700",
+  "alert-dialog.title": "text-base font-bold text-white",
+  "alert-dialog.description": "text-sm text-slate-300",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {

@@ -3,6 +3,16 @@
 // list.
 export { Accordion, AccordionItem } from "./accordion.tsx";
 export { Alert, type AlertVariant } from "./alert.tsx";
+export {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./alert-dialog.tsx";
 export { AspectRatio, type AspectRatioProps } from "./aspect-ratio.tsx";
 export { Avatar } from "./avatar.tsx";
 export { Badge } from "./badge.tsx";
