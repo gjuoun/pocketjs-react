@@ -366,6 +366,13 @@ export const TOKENS = {
   "toggle.text.disabled": "text-sm font-bold text-slate-500",
   "toggle.group": "flex-row items-center gap-1",
   "toggle.group.col": "flex-col items-start gap-1",
+  // Collapsible: a full-width trigger row with a chevron at its end; the region under it is a column of lines.
+  "collapsible.trigger": "h-9 px-2 flex-row items-center justify-between rounded-md border-2 border-transparent",
+  "collapsible.focus": "focus:border-blue-600",
+  "collapsible.press": "active:bg-slate-100",
+  "collapsible.trigger.text": "text-sm font-bold text-slate-900",
+  "collapsible.content": "flex-col gap-1 px-2 pb-2",
+  "collapsible.body": "text-sm text-slate-900",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -564,6 +571,9 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "toggle.on.press": "active:bg-slate-200",
   "toggle.text.on": "text-sm font-bold text-slate-900",
   "toggle.disabled": "bg-slate-800 border-transparent",
+  "collapsible.press": "active:bg-slate-700",
+  "collapsible.trigger.text": "text-sm font-bold text-white",
+  "collapsible.body": "text-sm text-slate-200",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {
