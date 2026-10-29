@@ -20,6 +20,7 @@ import { runDriver, settle, type Verdict } from "../qa/acceptance/interaction.ts
 import { PAGE_DRIVERS, PAGE_REJUDGE } from "./drivers.ts";
 import { PAGE_NAMES } from "../../test/native/gallery/names.ts";
 import { clearToasts } from "../../src/native/toast.tsx";
+import { topLayer } from "../../src/primitives/layer-stack.ts";
 import { MUTANTS } from "../../test/native/mutants.tsx";
 
 const ROOT = resolve(import.meta.dir, "../..");
@@ -123,12 +124,26 @@ async function judgePages() {
       }
       core.press(BTN.CROSS, 2);
       settle(core);
+      closeLayers(core);
     }
     rows.push({ page: index, name, g1, g2, g3, g4, fit, after });
   }
   const s = compatStats();
   core.dispose();
   return { channel: geo.channel, rows, compat: { unsupported: s.unsupported, classMiss: s.classMiss.tokens, tokenMap: s.tokenMap } };
+}
+
+/**
+ * Close every layer a driver left open. A dialog answers CROSS itself, but an alert dialog does not (its action is the
+ * only exit), so the judge closes the stack explicitly: an open layer would swallow the next page's input.
+ */
+function closeLayers(core: Core): void {
+  for (let i = 0; i < 4; i++) {
+    const layer = topLayer();
+    if (!layer) return;
+    layer.close();
+    settle(core);
+  }
 }
 
 function pageLine(channel: string, r: PageRow): string {

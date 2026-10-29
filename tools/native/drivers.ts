@@ -73,6 +73,20 @@ const BY_NAME: Record<string, Driver[]> = {
     { kind: "driven", trigger: "Pick framework", metrics: ["menu"] },
     { kind: "driven", trigger: "Pick framework", metrics: ["text"], keys: [BTN.CIRCLE, BTN.DOWN, BTN.CIRCLE] },
   ],
+  // The gap batch. The alert dialog is a layer with panel text (its title and description); the hover card opens on focus,
+  // like a tooltip; the two menus have no panel text of their own (their items are controls), so they count as "menu"; the
+  // scroll area's readout changes when the window shifts.
+  AlertDialog: [{ kind: "driven", trigger: "Delete file", metrics: ["layer"] }],
+  HoverCard: [{ kind: "driven", trigger: "@design", metrics: ["text", "layer"], opens: "focus" }],
+  ContextMenu: [{ kind: "driven", trigger: "Report item", metrics: ["menu"], keys: [BTN.TRIANGLE] }],
+  Menubar: [{ kind: "driven", trigger: "File", metrics: ["menu"] }],
+  Collapsible: [{ kind: "driven", trigger: "Show details", metrics: ["text"] }],
+  Toggle: [{ kind: "driven", trigger: "Bold", metrics: ["text", "ink"] }],
+  ToggleGroup: [{ kind: "driven", trigger: "Center", metrics: ["text"] }],
+  Drawer: [{ kind: "driven", trigger: "Open drawer", metrics: ["layer"] }],
+  Form: [{ kind: "driven", trigger: "Check email", metrics: ["text"] }],
+  ScrollArea: [{ kind: "driven", trigger: "Row 0", metrics: ["text"], keys: [BTN.DOWN, BTN.DOWN, BTN.DOWN, BTN.DOWN, BTN.DOWN] }],
+  AspectRatio: [{ kind: "static", reason: "an aspect box has no focus, no press and no state; its math is pinned by test/native/aspect-ratio.test.tsx" }],
   Theme: [
     { kind: "driven", trigger: "2/6", metrics: ["text"] },
     { kind: "driven", trigger: "3/6", metrics: ["text"] },

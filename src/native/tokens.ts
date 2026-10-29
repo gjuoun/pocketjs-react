@@ -363,7 +363,7 @@ export const TOKENS = {
   "toggle.on.press": "active:bg-slate-700",
   "toggle.text.on": "text-sm font-bold text-white",
   "toggle.disabled": "bg-slate-200 border-transparent",
-  "toggle.text.disabled": "text-sm font-bold text-slate-500",
+  "toggle.text.disabled": "text-sm font-bold text-slate-600",
   "toggle.group": "flex-row items-center gap-1",
   "toggle.group.col": "flex-col items-start gap-1",
   // Collapsible: a full-width trigger row with a chevron at its end; the region under it is a column of lines.
