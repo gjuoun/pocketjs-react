@@ -52,6 +52,7 @@ export { HoverCard, HoverCardContent, HoverCardTrigger } from "./hover-card.tsx"
 export { Input } from "./input.tsx";
 export { InputOTP } from "./input-otp.tsx";
 export { Label } from "./label.tsx";
+export { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarTrigger } from "./menubar.tsx";
 export {
   NavigationMenu,
   NavigationMenuContent,

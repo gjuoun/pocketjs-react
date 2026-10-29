@@ -395,6 +395,13 @@ export const TOKENS = {
   // ContextMenu: the region a long press is held on; its panel and items are the dropdown's tokens.
   "context-menu.trigger": "h-9 px-3 flex-row items-center rounded-md border-2 border-slate-300 bg-white",
   "context-menu.focus": "focus:border-blue-600",
+  // Menubar: a bar of triggers with the open one filled; its panels are the dropdown's tokens.
+  "menubar.bar": "h-10 flex-row items-center gap-1 px-1 bg-white border border-slate-200 rounded-md",
+  "menubar.trigger": "h-8 px-3 flex-row items-center rounded-md border-2 border-transparent",
+  "menubar.focus": "focus:border-blue-600",
+  "menubar.text": "text-sm text-slate-700",
+  "menubar.open": "bg-slate-100",
+  "menubar.open.text": "text-sm font-bold text-slate-900",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -607,6 +614,10 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "hover-card.title": "text-sm font-bold text-white",
   "hover-card.body": "text-sm text-slate-300",
   "context-menu.trigger": "h-9 px-3 flex-row items-center rounded-md border-2 border-slate-600 bg-slate-900",
+  "menubar.bar": "h-10 flex-row items-center gap-1 px-1 bg-slate-800 border border-slate-700 rounded-md",
+  "menubar.text": "text-sm text-slate-300",
+  "menubar.open": "bg-slate-700",
+  "menubar.open.text": "text-sm font-bold text-white",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {
