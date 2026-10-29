@@ -380,6 +380,11 @@ export const TOKENS = {
   "alert-dialog.title": "text-base font-bold text-slate-900",
   "alert-dialog.description": "text-sm text-slate-500",
   "alert-dialog.actions": "flex-row justify-end gap-2",
+  // Drawer: the Sheet's bottom panel with its own surface, a 32 px handle bar centred at the top, and the sheet's parts.
+  "drawer.panel": "w-full flex-col gap-2 p-4 bg-white border border-slate-200 rounded-xl",
+  "drawer.handle.row": "w-full flex-row justify-center",
+  "drawer.handle": "w-8 h-1 rounded-[2px] bg-slate-300",
+  "drawer.footer": "flex-row justify-end gap-2",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -584,6 +589,8 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "alert-dialog.panel": "flex-col gap-2 p-4 w-[300px] bg-slate-800 rounded-xl border border-slate-700",
   "alert-dialog.title": "text-base font-bold text-white",
   "alert-dialog.description": "text-sm text-slate-300",
+  "drawer.panel": "w-full flex-col gap-2 p-4 bg-slate-800 border border-slate-700 rounded-xl",
+  "drawer.handle": "w-8 h-1 rounded-[2px] bg-slate-600",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {

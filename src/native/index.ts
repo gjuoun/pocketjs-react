@@ -43,6 +43,7 @@ export {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./dropdown-menu.tsx";
+export { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerTitle, DrawerTrigger } from "./drawer.tsx";
 export { Empty } from "./empty.tsx";
 export { Field, useField } from "./field.tsx";
 export { Focusable } from "./focusable.tsx";
