@@ -385,6 +385,13 @@ export const TOKENS = {
   "drawer.handle.row": "w-full flex-row justify-center",
   "drawer.handle": "w-8 h-1 rounded-[2px] bg-slate-300",
   "drawer.footer": "flex-row justify-end gap-2",
+  // HoverCard: a focusable label and a small anchored panel of supplementary lines.
+  "hover-card.trigger": "h-8 px-1 flex-row items-center rounded-md border-2 border-transparent bg-white",
+  "hover-card.focus": "focus:border-blue-600",
+  "hover-card.text": "text-sm font-bold text-slate-900",
+  "hover-card.panel": "flex-col gap-1 p-3 w-[200px] bg-white border border-slate-200 rounded-md",
+  "hover-card.title": "text-sm font-bold text-slate-900",
+  "hover-card.body": "text-sm text-slate-500",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -591,6 +598,11 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "alert-dialog.description": "text-sm text-slate-300",
   "drawer.panel": "w-full flex-col gap-2 p-4 bg-slate-800 border border-slate-700 rounded-xl",
   "drawer.handle": "w-8 h-1 rounded-[2px] bg-slate-600",
+  "hover-card.trigger": "h-8 px-1 flex-row items-center rounded-md border-2 border-transparent bg-slate-900",
+  "hover-card.text": "text-sm font-bold text-white",
+  "hover-card.panel": "flex-col gap-1 p-3 w-[200px] bg-slate-800 border border-slate-700 rounded-md",
+  "hover-card.title": "text-sm font-bold text-white",
+  "hover-card.body": "text-sm text-slate-300",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {
