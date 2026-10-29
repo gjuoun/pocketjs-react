@@ -350,6 +350,8 @@ export const TOKENS = {
   "calendar.selected.text": "text-sm font-bold text-white",
   "calendar.focus": "focus:border-blue-600",
   "calendar.press": "active:bg-slate-100",
+  // AspectRatio: the box clips its children; the width and height are set from the parent's width (see aspect-ratio.tsx).
+  "aspect.box": "w-full overflow-hidden bg-slate-100",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
