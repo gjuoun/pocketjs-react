@@ -392,6 +392,9 @@ export const TOKENS = {
   "hover-card.panel": "flex-col gap-1 p-3 w-[200px] bg-white border border-slate-200 rounded-md",
   "hover-card.title": "text-sm font-bold text-slate-900",
   "hover-card.body": "text-sm text-slate-500",
+  // ContextMenu: the region a long press is held on; its panel and items are the dropdown's tokens.
+  "context-menu.trigger": "h-9 px-3 flex-row items-center rounded-md border-2 border-slate-300 bg-white",
+  "context-menu.focus": "focus:border-blue-600",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -603,6 +606,7 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "hover-card.panel": "flex-col gap-1 p-3 w-[200px] bg-slate-800 border border-slate-700 rounded-md",
   "hover-card.title": "text-sm font-bold text-white",
   "hover-card.body": "text-sm text-slate-300",
+  "context-menu.trigger": "h-9 px-3 flex-row items-center rounded-md border-2 border-slate-600 bg-slate-900",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {
