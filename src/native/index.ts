@@ -68,6 +68,7 @@ export { Popover, PopoverContent, PopoverTrigger } from "./popover.tsx";
 export { Progress } from "./progress.tsx";
 export { RadioGroup, RadioItem } from "./radio.tsx";
 export { Resizable, type ResizableProps } from "./resizable.tsx";
+export { ScrollArea, scrollToChild, type ScrollAreaProps } from "./scroll-area.tsx";
 export { Select } from "./select.tsx";
 export { Separator } from "./separator.tsx";
 export { Sheet, SheetContent, SheetTitle, SheetTrigger } from "./sheet.tsx";

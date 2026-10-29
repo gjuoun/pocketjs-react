@@ -405,6 +405,9 @@ export const TOKENS = {
   // Form: the Field unit's column and its fixed message row, under the form's own keys.
   "form.field": "flex-col gap-1 w-full",
   "form.message": "h-4 w-full flex-row items-center",
+  // ScrollArea: the clipped viewport and the plain column box each mounted row sits in.
+  "scroll-area.viewport": "w-full overflow-hidden flex-col bg-white",
+  "scroll-area.row": "w-full flex-col",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -621,6 +624,7 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "menubar.text": "text-sm text-slate-300",
   "menubar.open": "bg-slate-700",
   "menubar.open.text": "text-sm font-bold text-white",
+  "scroll-area.viewport": "w-full overflow-hidden flex-col bg-slate-900",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {
