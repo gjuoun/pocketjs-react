@@ -64,6 +64,8 @@ export { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 export { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs.tsx";
 export { ThemeProvider, useTheme } from "./theme.tsx";
 export { Toaster, toast, toastState, clearToasts } from "./toast.tsx";
+export { Toggle, type ToggleProps } from "./toggle.tsx";
+export { ToggleGroup, ToggleGroupItem, type ToggleGroupProps, type ToggleGroupType } from "./toggle-group.tsx";
 export { Tooltip } from "./tooltip.tsx";
 export { TOKENS, type TokenTable, type ThemeName } from "./tokens.ts";
 export { percentOf } from "./percent.ts";

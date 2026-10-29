@@ -352,6 +352,20 @@ export const TOKENS = {
   "calendar.press": "active:bg-slate-100",
   // AspectRatio: the box clips its children; the width and height are set from the parent's width (see aspect-ratio.tsx).
   "aspect.box": "w-full overflow-hidden bg-slate-100",
+  // Toggle and ToggleGroup: a pressed button fills slate-900 and its label turns white (the inverse in the dark table); the
+  // rest state is a white fill with a slate-300 border, and the group's row is a run of them.
+  "toggle.base": "h-8 px-3 flex-row items-center justify-center rounded-md border-2",
+  "toggle.focus": "focus:border-blue-600",
+  "toggle.off": "bg-white border-slate-300",
+  "toggle.off.press": "active:bg-slate-100",
+  "toggle.text.off": "text-sm font-bold text-slate-900",
+  "toggle.on": "bg-slate-900 border-slate-900",
+  "toggle.on.press": "active:bg-slate-700",
+  "toggle.text.on": "text-sm font-bold text-white",
+  "toggle.disabled": "bg-slate-200 border-transparent",
+  "toggle.text.disabled": "text-sm font-bold text-slate-500",
+  "toggle.group": "flex-row items-center gap-1",
+  "toggle.group.col": "flex-col items-start gap-1",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -543,6 +557,13 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "calendar.selected": "bg-white border-white",
   "calendar.selected.text": "text-sm font-bold text-slate-900",
   "calendar.press": "active:bg-slate-700",
+  "toggle.off": "bg-slate-900 border-slate-600",
+  "toggle.off.press": "active:bg-slate-800",
+  "toggle.text.off": "text-sm font-bold text-white",
+  "toggle.on": "bg-white border-white",
+  "toggle.on.press": "active:bg-slate-200",
+  "toggle.text.on": "text-sm font-bold text-slate-900",
+  "toggle.disabled": "bg-slate-800 border-transparent",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {

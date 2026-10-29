@@ -10,15 +10,17 @@ export interface FocusableProps {
   disabled?: boolean;
   onPress?: () => void;
   nodeRef?: Ref<NodeMirror>;
+  /** Marks the node in the mirror, so a test can read its box (the toggle's pressed fill, for one). */
+  debugName?: string;
   children?: ReactNode;
 }
 
 export function Focusable(props: FocusableProps) {
   if (props.disabled) {
-    return <View ref={props.nodeRef} className={props.look}>{props.children}</View>;
+    return <View ref={props.nodeRef} className={props.look} debugName={props.debugName}>{props.children}</View>;
   }
   return (
-    <View ref={props.nodeRef} className={props.look} focusable onPress={props.onPress}>
+    <View ref={props.nodeRef} className={props.look} debugName={props.debugName} focusable onPress={props.onPress}>
       {props.children}
     </View>
   );
