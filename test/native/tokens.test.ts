@@ -22,7 +22,11 @@ test("the build rewrite is an identity on every token (no C2 mapping changes a l
 // the carousel adds three (its 168 px slide and viewport widths and the 96 px height, and its left-[-168px] entry), to 219;
 // the calendar adds two (its 36 px day cells, w-9, and its 28 px rows, h-7), to 221;
 // the combobox's wide popover panel adds one (w-[264px]), to 222.
-const BUDGET = 206;
+// The gap batch adds five: the toggle group's vertical column (items-start) and the collapsible body's padding (pb-2),
+// the drawer's 32 by 4 px handle (h-1, rounded-[2px], bg-slate-300), to 211. The aspect box, the alert dialog, the hover
+// card, the context menu, the menubar, the form and the scroll area add none (they reuse the dropdown, field and dialog
+// utilities).
+const BUDGET = 211;
 test("the vocabulary holds at most " + BUDGET + " distinct utilities, light and dark together", () => {
   const distinct = new Set(values.flatMap((l) => l.split(/\s+/).filter(Boolean)));
   expect(distinct.size).toBeLessThanOrEqual(BUDGET);
