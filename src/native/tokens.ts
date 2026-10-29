@@ -402,6 +402,9 @@ export const TOKENS = {
   "menubar.text": "text-sm text-slate-700",
   "menubar.open": "bg-slate-100",
   "menubar.open.text": "text-sm font-bold text-slate-900",
+  // Form: the Field unit's column and its fixed message row, under the form's own keys.
+  "form.field": "flex-col gap-1 w-full",
+  "form.message": "h-4 w-full flex-row items-center",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;

@@ -14,6 +14,15 @@ export interface FieldState {
 
 const FieldContext = createContext<FieldState>({ invalid: false, disabled: false });
 
+/** The field state a control reads. Field and Form both provide it; a control inside either draws the red border. */
+export function FieldProvider(props: { invalid?: boolean; disabled?: boolean; children?: ReactNode }) {
+  return (
+    <FieldContext.Provider value={{ invalid: props.invalid === true, disabled: props.disabled === true }}>
+      {props.children}
+    </FieldContext.Provider>
+  );
+}
+
 /** The Field this control sits in (a control outside a Field is valid and enabled). */
 export function useField(): FieldState {
   return useContext(FieldContext);
@@ -33,7 +42,7 @@ export function Field(props: FieldProps) {
   const invalid = !!props.error;
   const message = props.error ?? props.hint ?? "";
   return (
-    <FieldContext.Provider value={{ invalid, disabled: props.disabled === true }}>
+    <FieldProvider invalid={invalid} disabled={props.disabled}>
       <View className={T["field.wrap"]} debugName="field">
         {props.label ? <Label disabled={props.disabled}>{props.label}</Label> : null}
         {props.children}
@@ -41,6 +50,6 @@ export function Field(props: FieldProps) {
           {message ? <Text className={invalid ? T["field.error.text"] : T["field.hint.text"]}>{message}</Text> : null}
         </View>
       </View>
-    </FieldContext.Provider>
+    </FieldProvider>
   );
 }

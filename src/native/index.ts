@@ -48,6 +48,7 @@ export { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, Dr
 export { Empty } from "./empty.tsx";
 export { Field, useField } from "./field.tsx";
 export { Focusable } from "./focusable.tsx";
+export { Form, FormField, FormLabel, FormMessage } from "./form.tsx";
 export { HoverCard, HoverCardContent, HoverCardTrigger } from "./hover-card.tsx";
 export { Input } from "./input.tsx";
 export { InputOTP } from "./input-otp.tsx";
