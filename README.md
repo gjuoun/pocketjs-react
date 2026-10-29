@@ -23,6 +23,7 @@ The demo above shows an English and a simplified Chinese book in the macOS app.
 - **Mouse as a second layer** — a click focuses and presses what it points at, through the same focus system (an open dialog keeps clicks behind it inert).
 - **Per-frame hook** — `useFrame(cb)` runs once per host frame with a 0-based counter (the React counterpart of the framework's frame pump), for games and animations.
 - **E-book reader example** — `examples/reader`: an EPUB reader with the Bitcoin whitepaper bundled, which also reads Chinese EPUBs on both hosts (see below).
+- **Todo example** — `examples/todo`: the SDK's reference app (list, add, complete, re-order, sub-todos, due dates, saved through the host fs). Start your own next to it with `bun tools/scaffold.ts examples/<name>`; the manual is [docs/sdk.md](./docs/sdk.md).
 - **ASCII animation example** — `examples/ascii-anim`: a 40×18 monospace plasma (`text-xs font-mono`) redrawn every frame; CROSS pauses and restarts. Measured by `bun run measure:web --app=ascii-anim`.
 - **macOS app** — `bun run build:app` packages the reader and the desktop host as a double-clickable, ad-hoc-signed `PocketReader.app` that opens an EPUB from disk (see below).
 - **Build** — `tools/build.ts` turns TSX and Tailwind class strings into one guest bundle and a `.pak` (styles + baked font atlases), using PocketJS's own compiler.
@@ -41,6 +42,11 @@ bun run measure:web                               # example in the browser host 
 POCKETJS_ROOT=../pocketjs bun run measure:desktop # example on the macOS desktop host
 POCKETJS_ROOT=../pocketjs bun run measure:desktop-shot
 ```
+
+Writing your own app? [docs/sdk.md](./docs/sdk.md) is the manual: scaffold, build, serve, the
+component list, the class and input rules, and the drive script (`tools/shot.ts`) that proves a
+screen drew what you meant. `bun run build:todo && bun run check:todo` runs the reference app's
+whole acceptance script.
 
 The desktop host is not part of the npm package. Clone [PocketJS](https://github.com/pocket-nexus/pocketjs) next to this repo at the version pinned in `package.json`, run `bun install && bun run macos hero --build-only` there once, and point `POCKETJS_ROOT` at it. The measure scripts refuse a checkout whose version differs from the pinned package.
 

@@ -47,6 +47,9 @@ export interface TextFieldInput {
   onChange?: (event: TextFieldEvent) => void;
   onInput?: (event: TextFieldEvent) => void;
   onClick?: () => void;
+  /** Fired when the field is committed (physical Enter, or the on-screen keyboard's OK/START),
+   *  after the final onChange. A single-line "add" field clears itself here. */
+  onCommit?: (value: string) => void;
 }
 
 /** "panel": the on-screen keyboard is up. "direct": a physical key is typing; no panel. */
@@ -311,6 +314,7 @@ export function commitField(binding: TextFieldBinding): void {
   const value = valueOf(binding);
   closeField(binding);
   report(binding, value);
+  binding.input.onCommit?.(value);
 }
 
 // ---------------------------------------------------------------------------

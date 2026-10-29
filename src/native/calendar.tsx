@@ -70,6 +70,9 @@ export interface CalendarProps {
   onValueChange?: (value: CalendarDate) => void;
   /** The day drawn as today (default: the local date). */
   today?: CalendarDate;
+  /** Focus a day when the calendar mounts: the selected one, else today. A calendar on its own
+   *  page has no trigger to move the focus in, so it asks for it here. */
+  autoFocus?: boolean;
 }
 
 const sameMonth = (a: CalendarMonth, b: CalendarMonth) => a.year === b.year && a.month === b.month;
@@ -101,6 +104,14 @@ export function Calendar(props: CalendarProps) {
       if (next !== at) focusNode(days.current.get(next) as never);
       return true;
     });
+  }, []);
+
+  // A calendar that is the whole page asks for the focus itself (a dialog trigger would do it).
+  useLayoutEffect(() => {
+    if (!props.autoFocus) return;
+    const day = value !== null && sameMonth(value, view) ? value.day : today.day;
+    const node = days.current.get(day);
+    if (node) focusNode(node as never);
   }, []);
 
   const weeks: Array<Array<number | null>> = [];

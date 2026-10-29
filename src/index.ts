@@ -16,7 +16,8 @@ export {
   rmSync,
   write,
 } from "@pocketjs/framework/fs";
-export { BTN } from "@pocketjs/framework/input";
+export { BTN, focusNode, getFocused, pushFocusController } from "@pocketjs/framework/input";
+export type { FocusDirection } from "@pocketjs/framework/input";
 export { entries as pakEntries, get as pakGet } from "@pocketjs/framework/pak";
 export {
   bakedGlyphs,
@@ -60,7 +61,7 @@ export { takeHostMessages } from "./input/pointer.ts";
 // Text input (C4): <TextField> is the native spelling of <input>/<textarea> (same field,
 // same keyboard, same onChange contract).
 export { TextField, type TextFieldProps } from "./input/TextField.tsx";
-export { activeField, type TextFieldEvent } from "./input/text-field.ts";
+export { activeField, closeField, fieldFor, openField, type TextFieldEvent } from "./input/text-field.ts";
 export { missingCharacters, missingNotice } from "./reader/coverage.ts";
 export {
   createGlyphWarmer,
