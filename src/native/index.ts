@@ -3,6 +3,17 @@
 // list.
 export { Accordion, AccordionItem } from "./accordion.tsx";
 export { Alert, type AlertVariant } from "./alert.tsx";
+export {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./alert-dialog.tsx";
+export { AspectRatio, type AspectRatioProps } from "./aspect-ratio.tsx";
 export { Avatar } from "./avatar.tsx";
 export { Badge } from "./badge.tsx";
 export { Breadcrumb } from "./breadcrumb.tsx";
@@ -12,6 +23,7 @@ export { Calendar, type CalendarDate, type CalendarMonth, type CalendarProps } f
 export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./card.tsx";
 export { Checkbox } from "./checkbox.tsx";
 export { Chevron } from "./chevron.tsx";
+export { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./collapsible.tsx";
 export { Combobox, comboboxLabel, type ComboboxProps } from "./combobox.tsx";
 export { Command, type CommandGroup, type CommandItem } from "./command.tsx";
 export {
@@ -31,12 +43,17 @@ export {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./dropdown-menu.tsx";
+export { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuTrigger } from "./context-menu.tsx";
+export { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerTitle, DrawerTrigger } from "./drawer.tsx";
 export { Empty } from "./empty.tsx";
 export { Field, useField } from "./field.tsx";
 export { Focusable } from "./focusable.tsx";
+export { Form, FormField, FormLabel, FormMessage } from "./form.tsx";
+export { HoverCard, HoverCardContent, HoverCardTrigger } from "./hover-card.tsx";
 export { Input } from "./input.tsx";
 export { InputOTP } from "./input-otp.tsx";
 export { Label } from "./label.tsx";
+export { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarTrigger } from "./menubar.tsx";
 export {
   NavigationMenu,
   NavigationMenuContent,
@@ -51,6 +68,7 @@ export { Popover, PopoverContent, PopoverTrigger } from "./popover.tsx";
 export { Progress } from "./progress.tsx";
 export { RadioGroup, RadioItem } from "./radio.tsx";
 export { Resizable, type ResizableProps } from "./resizable.tsx";
+export { ScrollArea, scrollToChild, type ScrollAreaProps } from "./scroll-area.tsx";
 export { Select } from "./select.tsx";
 export { Separator } from "./separator.tsx";
 export { Sheet, SheetContent, SheetTitle, SheetTrigger } from "./sheet.tsx";
@@ -63,6 +81,8 @@ export { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 export { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs.tsx";
 export { ThemeProvider, useTheme } from "./theme.tsx";
 export { Toaster, toast, toastState, clearToasts } from "./toast.tsx";
+export { Toggle, type ToggleProps } from "./toggle.tsx";
+export { ToggleGroup, ToggleGroupItem, type ToggleGroupProps, type ToggleGroupType } from "./toggle-group.tsx";
 export { Tooltip } from "./tooltip.tsx";
 export { TOKENS, type TokenTable, type ThemeName } from "./tokens.ts";
 export { percentOf } from "./percent.ts";

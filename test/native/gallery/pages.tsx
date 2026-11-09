@@ -42,6 +42,18 @@ import { Pagination } from "../../../src/native/pagination.tsx";
 import { InputOTP } from "../../../src/native/input-otp.tsx";
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLabel, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "../../../src/native/navigation-menu.tsx";
 import { Command, type CommandGroup } from "../../../src/native/command.tsx";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle, AlertDialogTrigger } from "../../../src/native/alert-dialog.tsx";
+import { AspectRatio } from "../../../src/native/aspect-ratio.tsx";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../src/native/collapsible.tsx";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "../../../src/native/context-menu.tsx";
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerTitle, DrawerTrigger } from "../../../src/native/drawer.tsx";
+import { Focusable } from "../../../src/native/focusable.tsx";
+import { Form, FormField } from "../../../src/native/form.tsx";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "../../../src/native/hover-card.tsx";
+import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from "../../../src/native/menubar.tsx";
+import { ScrollArea } from "../../../src/native/scroll-area.tsx";
+import { Toggle } from "../../../src/native/toggle.tsx";
+import { ToggleGroup, ToggleGroupItem } from "../../../src/native/toggle-group.tsx";
 
 export function PageFrame(props: { index: number; total: number; name: string; active: boolean; flush?: boolean; children?: ReactNode }) {
   const num = String(props.index).padStart(2, "0");
@@ -582,6 +594,199 @@ export function CommandPage() {
   );
 }
 
+
+// ---- the shadcn gap batch: the nine interactive families and the tail ----------------------------------------------
+
+export function AlertDialogPage() {
+  const [deleted, setDeleted] = useState(0);
+  return (
+    <View className="flex-col gap-2">
+      <AlertDialog>
+        <AlertDialogTrigger>Delete file</AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogTitle>Delete this file?</AlertDialogTitle>
+          <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction destructive onPress={() => setDeleted(deleted + 1)}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <Label>{"Deleted " + deleted}</Label>
+    </View>
+  );
+}
+
+export function HoverCardPage() {
+  return (
+    <View className="flex-col gap-2">
+      <HoverCard>
+        <HoverCardTrigger>@design</HoverCardTrigger>
+        <HoverCardContent>
+          <Text className="text-sm font-bold text-slate-900">Design team</Text>
+          <Text className="text-sm text-slate-500">Three people, one channel.</Text>
+        </HoverCardContent>
+      </HoverCard>
+      <Label>Focus the handle to see the card</Label>
+    </View>
+  );
+}
+
+export function ContextMenuPage() {
+  const [picked, setPicked] = useState("none");
+  return (
+    <View className="flex-col gap-2">
+      <ContextMenu onSelect={setPicked}>
+        <ContextMenuTrigger><Text className="text-sm text-slate-900">Report item</Text></ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem value="copy">Copy</ContextMenuItem>
+          <ContextMenuItem value="rename">Rename</ContextMenuItem>
+          <ContextMenuItem value="delete" disabled>Delete</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+      <Label>{"Chosen: " + picked}</Label>
+      <Label>Hold the row, or press TRIANGLE on it</Label>
+    </View>
+  );
+}
+
+export function MenubarPage() {
+  const [picked, setPicked] = useState("none");
+  return (
+    <View className="flex-col gap-2">
+      <Menubar onSelect={setPicked}>
+        <MenubarMenu value="file">
+          <MenubarTrigger>File</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem value="new">New</MenubarItem>
+            <MenubarItem value="open">Open</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+        <MenubarMenu value="view">
+          <MenubarTrigger>View</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem value="zoom">Zoom</MenubarItem>
+            <MenubarItem value="full">Full screen</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>
+      <Label>{"Chosen: " + picked}</Label>
+      <Label>Left and right swap a panel; up and down walk it</Label>
+    </View>
+  );
+}
+
+export function CollapsiblePage() {
+  return (
+    <View className="flex-col gap-2">
+      <Collapsible>
+        <CollapsibleTrigger>Show details</CollapsibleTrigger>
+        <CollapsibleContent>
+          <Text className="text-sm text-slate-900">Ships in two days.</Text>
+          <Text className="text-sm text-slate-900">Free over $50.</Text>
+        </CollapsibleContent>
+      </Collapsible>
+      <Label>Press the header to expand it</Label>
+    </View>
+  );
+}
+
+export function TogglePage() {
+  const [bold, setBold] = useState(false);
+  return (
+    <View className="flex-col gap-2">
+      <View className="flex-row items-center gap-2">
+        <Toggle pressed={bold} onPressedChange={setBold}>Bold</Toggle>
+        <Toggle>Italic</Toggle>
+        <Toggle disabled>Locked</Toggle>
+      </View>
+      <Label>{"Bold " + (bold ? "on" : "off")}</Label>
+    </View>
+  );
+}
+
+export function ToggleGroupPage() {
+  const [align, setAlign] = useState("left");
+  return (
+    <View className="flex-col gap-2">
+      <ToggleGroup type="single" value={align} onValueChange={(v) => setAlign(v as string)}>
+        <ToggleGroupItem value="left">Left</ToggleGroupItem>
+        <ToggleGroupItem value="center">Center</ToggleGroupItem>
+        <ToggleGroupItem value="right">Right</ToggleGroupItem>
+      </ToggleGroup>
+      <Label>{"Align " + align}</Label>
+      <Label>Arrows move; CIRCLE presses</Label>
+    </View>
+  );
+}
+
+export function DrawerPage() {
+  return (
+    <View className="flex-col gap-2">
+      <Drawer>
+        <DrawerTrigger>Open drawer</DrawerTrigger>
+        <DrawerContent>
+          <DrawerTitle>Filters</DrawerTitle>
+          <DrawerDescription>Pick what to show.</DrawerDescription>
+          <DrawerFooter><DrawerClose>Close</DrawerClose></DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+      <Label>Docked bottom, 60 percent of the screen</Label>
+    </View>
+  );
+}
+
+export function FormPage() {
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  return (
+    <View className="flex-col gap-2">
+      <Form errors={errors}>
+        <FormField name="email" label="Email" hint="We never share it.">
+          <Input placeholder="name@mail" value="" onChange={() => {}} />
+        </FormField>
+      </Form>
+      <Button variant="outline" onPress={() => setErrors({ email: "Enter a valid email." })}>Check email</Button>
+      <Label>The app owns the errors map</Label>
+    </View>
+  );
+}
+
+const SCROLL_ROWS = Array.from({ length: 12 }, (_, i) => "Row " + i);
+
+export function ScrollAreaPage() {
+  const [offset, setOffset] = useState(0);
+  return (
+    <View className="flex-col gap-2">
+      <ScrollArea height={120} rowHeight={24} onOffsetChange={setOffset}>
+        {SCROLL_ROWS.map((row) => (
+          <Focusable key={row} look="h-6 px-1 bg-white">
+            <Text className="text-sm text-slate-900">{row}</Text>
+          </Focusable>
+        ))}
+      </ScrollArea>
+      <Label>{"Window " + offset}</Label>
+      <Label>Drag a row, or walk it with up and down</Label>
+    </View>
+  );
+}
+
+export function AspectRatioPage() {
+  return (
+    <View className="flex-row gap-2 items-start">
+      <View style={{ width: 160 }}>
+        <AspectRatio ratio={16 / 9}>
+          <View className="w-full h-full bg-slate-900 flex-col items-center justify-center">
+            <Text className="text-sm font-bold text-white">16:9</Text>
+          </View>
+        </AspectRatio>
+      </View>
+      <View className="flex-col gap-2">
+        <Label>Width 160, height 90</Label>
+        <Label>Height comes from the parent width</Label>
+      </View>
+    </View>
+  );
+}
 /** The theme page: all thirty-seven native components on one 480 by 252 surface. The top row (the triggers and the section
  * switch) is shared; the body is one of six sections of 204 px, shown one at a time. All six are mounted together, so one
  * theme toggle re-renders all thirty-seven. Section 1 is the first twenty-four (the layout the page always had); sections 2 to 4

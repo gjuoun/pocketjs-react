@@ -350,6 +350,64 @@ export const TOKENS = {
   "calendar.selected.text": "text-sm font-bold text-white",
   "calendar.focus": "focus:border-blue-600",
   "calendar.press": "active:bg-slate-100",
+  // AspectRatio: the box clips its children; the width and height are set from the parent's width (see aspect-ratio.tsx).
+  "aspect.box": "w-full overflow-hidden bg-slate-100",
+  // Toggle and ToggleGroup: a pressed button fills slate-900 and its label turns white (the inverse in the dark table); the
+  // rest state is a white fill with a slate-300 border, and the group's row is a run of them.
+  "toggle.base": "h-8 px-3 flex-row items-center justify-center rounded-md border-2",
+  "toggle.focus": "focus:border-blue-600",
+  "toggle.off": "bg-white border-slate-300",
+  "toggle.off.press": "active:bg-slate-100",
+  "toggle.text.off": "text-sm font-bold text-slate-900",
+  "toggle.on": "bg-slate-900 border-slate-900",
+  "toggle.on.press": "active:bg-slate-700",
+  "toggle.text.on": "text-sm font-bold text-white",
+  "toggle.disabled": "bg-slate-200 border-transparent",
+  "toggle.text.disabled": "text-sm font-bold text-slate-600",
+  "toggle.group": "flex-row items-center gap-1",
+  "toggle.group.col": "flex-col items-start gap-1",
+  // Collapsible: a full-width trigger row with a chevron at its end; the region under it is a column of lines.
+  "collapsible.trigger": "h-9 px-2 flex-row items-center justify-between rounded-md border-2 border-transparent",
+  "collapsible.focus": "focus:border-blue-600",
+  "collapsible.press": "active:bg-slate-100",
+  "collapsible.trigger.text": "text-sm font-bold text-slate-900",
+  "collapsible.content": "flex-col gap-1 px-2 pb-2",
+  "collapsible.body": "text-sm text-slate-900",
+  // AlertDialog: the Dialog shell under its own keys (an alert panel may diverge) and an actions row at the bottom.
+  "alert-dialog.shell": "absolute inset-0 flex-col items-center justify-center",
+  "alert-dialog.scrim": "absolute inset-0 bg-[#0f172a99]",
+  "alert-dialog.panel": "flex-col gap-2 p-4 w-[300px] bg-white rounded-xl border border-slate-200",
+  "alert-dialog.title": "text-base font-bold text-slate-900",
+  "alert-dialog.description": "text-sm text-slate-500",
+  "alert-dialog.actions": "flex-row justify-end gap-2",
+  // Drawer: the Sheet's bottom panel with its own surface, a 32 px handle bar centred at the top, and the sheet's parts.
+  "drawer.panel": "w-full flex-col gap-2 p-4 bg-white border border-slate-200 rounded-xl",
+  "drawer.handle.row": "w-full flex-row justify-center",
+  "drawer.handle": "w-8 h-1 rounded-[2px] bg-slate-300",
+  "drawer.footer": "flex-row justify-end gap-2",
+  // HoverCard: a focusable label and a small anchored panel of supplementary lines.
+  "hover-card.trigger": "h-8 px-1 flex-row items-center rounded-md border-2 border-transparent bg-white",
+  "hover-card.focus": "focus:border-blue-600",
+  "hover-card.text": "text-sm font-bold text-slate-900",
+  "hover-card.panel": "flex-col gap-1 p-3 w-[200px] bg-white border border-slate-200 rounded-md",
+  "hover-card.title": "text-sm font-bold text-slate-900",
+  "hover-card.body": "text-sm text-slate-500",
+  // ContextMenu: the region a long press is held on; its panel and items are the dropdown's tokens.
+  "context-menu.trigger": "h-9 px-3 flex-row items-center rounded-md border-2 border-slate-300 bg-white",
+  "context-menu.focus": "focus:border-blue-600",
+  // Menubar: a bar of triggers with the open one filled; its panels are the dropdown's tokens.
+  "menubar.bar": "h-10 flex-row items-center gap-1 px-1 bg-white border border-slate-200 rounded-md",
+  "menubar.trigger": "h-8 px-3 flex-row items-center rounded-md border-2 border-transparent",
+  "menubar.focus": "focus:border-blue-600",
+  "menubar.text": "text-sm text-slate-700",
+  "menubar.open": "bg-slate-100",
+  "menubar.open.text": "text-sm font-bold text-slate-900",
+  // Form: the Field unit's column and its fixed message row, under the form's own keys.
+  "form.field": "flex-col gap-1 w-full",
+  "form.message": "h-4 w-full flex-row items-center",
+  // ScrollArea: the clipped viewport and the plain column box each mounted row sits in.
+  "scroll-area.viewport": "w-full overflow-hidden flex-col bg-white",
+  "scroll-area.row": "w-full flex-col",
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
@@ -541,6 +599,32 @@ const DARK: Partial<Record<TokenKey, string>> = {
   "calendar.selected": "bg-white border-white",
   "calendar.selected.text": "text-sm font-bold text-slate-900",
   "calendar.press": "active:bg-slate-700",
+  "toggle.off": "bg-slate-900 border-slate-600",
+  "toggle.off.press": "active:bg-slate-800",
+  "toggle.text.off": "text-sm font-bold text-white",
+  "toggle.on": "bg-white border-white",
+  "toggle.on.press": "active:bg-slate-200",
+  "toggle.text.on": "text-sm font-bold text-slate-900",
+  "toggle.disabled": "bg-slate-800 border-transparent",
+  "collapsible.press": "active:bg-slate-700",
+  "collapsible.trigger.text": "text-sm font-bold text-white",
+  "collapsible.body": "text-sm text-slate-200",
+  "alert-dialog.panel": "flex-col gap-2 p-4 w-[300px] bg-slate-800 rounded-xl border border-slate-700",
+  "alert-dialog.title": "text-base font-bold text-white",
+  "alert-dialog.description": "text-sm text-slate-300",
+  "drawer.panel": "w-full flex-col gap-2 p-4 bg-slate-800 border border-slate-700 rounded-xl",
+  "drawer.handle": "w-8 h-1 rounded-[2px] bg-slate-600",
+  "hover-card.trigger": "h-8 px-1 flex-row items-center rounded-md border-2 border-transparent bg-slate-900",
+  "hover-card.text": "text-sm font-bold text-white",
+  "hover-card.panel": "flex-col gap-1 p-3 w-[200px] bg-slate-800 border border-slate-700 rounded-md",
+  "hover-card.title": "text-sm font-bold text-white",
+  "hover-card.body": "text-sm text-slate-300",
+  "context-menu.trigger": "h-9 px-3 flex-row items-center rounded-md border-2 border-slate-600 bg-slate-900",
+  "menubar.bar": "h-10 flex-row items-center gap-1 px-1 bg-slate-800 border border-slate-700 rounded-md",
+  "menubar.text": "text-sm text-slate-300",
+  "menubar.open": "bg-slate-700",
+  "menubar.open.text": "text-sm font-bold text-white",
+  "scroll-area.viewport": "w-full overflow-hidden flex-col bg-slate-900",
 };
 
 export const THEMES: Record<ThemeName, TokenTable> = {

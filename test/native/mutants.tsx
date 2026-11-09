@@ -32,7 +32,7 @@ import { clearToasts, toast, Toaster } from "../../src/native/toast.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../src/native/table.tsx";
 import { Alert } from "../../src/native/alert.tsx";
 import { Empty } from "../../src/native/empty.tsx";
-import { ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage, SidebarPage, SIDEBAR_GROUPS, ResizablePage, CarouselPage, CAROUSEL_SLIDES, CalendarPage, ComboboxPage, FRAMEWORKS } from "./gallery/pages.tsx";
+import { ThemePage, BreadcrumbPage, AlertPage, EmptyPage, FormFieldPage, PaginationPage, InputOTPPage, NavigationPage, CommandPage, SidebarPage, SIDEBAR_GROUPS, ResizablePage, CarouselPage, CAROUSEL_SLIDES, CalendarPage, ComboboxPage, FRAMEWORKS, AlertDialogPage, HoverCardPage, ContextMenuPage, MenubarPage, CollapsiblePage, TogglePage, ToggleGroupPage, DrawerPage, FormPage, ScrollAreaPage, AspectRatioPage } from "./gallery/pages.tsx";
 import { Breadcrumb } from "../../src/native/breadcrumb.tsx";
 import { Tooltip, TooltipTrigger } from "../../src/native/tooltip.tsx";
 import type { Driver } from "../../tools/qa/acceptance/drivers.ts";
@@ -978,4 +978,107 @@ export const MUTANTS: Record<string, Mutant> = {
     gate: "G3", defect: false, driver: null,
     render: () => <View className={ROOT}><ComboboxPage /></View>,
   },
+  // The gap batch: one dead body and its control per new page (the driver is the page's own), plus the aspect box's
+  // zero-area defect for gate 2.
+  "dead-alert-dialog": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Delete file", metrics: ["layer"] },
+    render: () => <View className={ROOT}><Button>Delete file</Button></View>,
+  },
+  "dead-alert-dialog-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Delete file", metrics: ["layer"] },
+    render: () => <View className={ROOT}><AlertDialogPage /></View>,
+  },
+  "dead-hover-card": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "@design", metrics: ["text", "layer"], opens: "focus" },
+    render: () => <View className={ROOT}><Focusable look="h-8 px-1 bg-white"><Text className="text-sm font-bold text-slate-900">@design</Text></Focusable></View>,
+  },
+  "dead-hover-card-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "@design", metrics: ["text", "layer"], opens: "focus" },
+    render: () => <View className={ROOT}><HoverCardPage /></View>,
+  },
+  "dead-context-menu": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Report item", metrics: ["menu"], keys: [BTN.TRIANGLE] },
+    render: () => <View className={ROOT}><Focusable look="h-9 px-3 bg-white"><Text className="text-sm text-slate-900">Report item</Text></Focusable></View>,
+  },
+  "dead-context-menu-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Report item", metrics: ["menu"], keys: [BTN.TRIANGLE] },
+    render: () => <View className={ROOT}><ContextMenuPage /></View>,
+  },
+  "dead-menubar": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "File", metrics: ["menu"] },
+    render: () => <View className={ROOT}><Focusable look="h-8 px-3 bg-white"><Text className="text-sm text-slate-900">File</Text></Focusable></View>,
+  },
+  "dead-menubar-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "File", metrics: ["menu"] },
+    render: () => <View className={ROOT}><MenubarPage /></View>,
+  },
+  "dead-collapsible": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Show details", metrics: ["text"] },
+    render: () => <View className={ROOT}><Focusable look="h-9 px-2 bg-white"><Text className="text-sm font-bold text-slate-900">Show details</Text></Focusable></View>,
+  },
+  "dead-collapsible-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Show details", metrics: ["text"] },
+    render: () => <View className={ROOT}><CollapsiblePage /></View>,
+  },
+  "dead-toggle": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Bold", metrics: ["text", "ink"] },
+    render: () => <View className={ROOT}><Focusable look="h-8 px-3 bg-white"><Text className="text-sm font-bold text-slate-900">Bold</Text></Focusable></View>,
+  },
+  "dead-toggle-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Bold", metrics: ["text", "ink"] },
+    render: () => <View className={ROOT}><TogglePage /></View>,
+  },
+  "dead-toggle-group": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Center", metrics: ["text"] },
+    render: () => <View className={ROOT}><Focusable look="h-8 px-3 bg-white"><Text className="text-sm font-bold text-slate-900">Center</Text></Focusable></View>,
+  },
+  "dead-toggle-group-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Center", metrics: ["text"] },
+    render: () => <View className={ROOT}><ToggleGroupPage /></View>,
+  },
+  "dead-drawer": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Open drawer", metrics: ["layer"] },
+    render: () => <View className={ROOT}><Button>Open drawer</Button></View>,
+  },
+  "dead-drawer-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Open drawer", metrics: ["layer"] },
+    render: () => <View className={ROOT}><DrawerPage /></View>,
+  },
+  "dead-form": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Check email", metrics: ["text"] },
+    render: () => <View className={ROOT}><Button variant="outline">Check email</Button></View>,
+  },
+  "dead-form-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Check email", metrics: ["text"] },
+    render: () => <View className={ROOT}><FormPage /></View>,
+  },
+  "dead-scroll-area": {
+    gate: "G4", defect: true, driver: { kind: "driven", trigger: "Row 0", metrics: ["text"], keys: [BTN.DOWN, BTN.DOWN, BTN.DOWN, BTN.DOWN, BTN.DOWN] },
+    render: () => (
+      <View className={ROOT}>
+        {Array.from({ length: 12 }, (_, i) => "Row " + i).map((row) => (
+          <Focusable key={row} look="h-6 px-1 bg-white"><Text className="text-sm text-slate-900">{row}</Text></Focusable>
+        ))}
+      </View>
+    ),
+  },
+  "dead-scroll-area-control": {
+    gate: "G4", defect: false, driver: { kind: "driven", trigger: "Row 0", metrics: ["text"], keys: [BTN.DOWN, BTN.DOWN, BTN.DOWN, BTN.DOWN, BTN.DOWN] },
+    render: () => <View className={ROOT}><ScrollAreaPage /></View>,
+  },
+  "aspect-zero-width": {
+    gate: "G2", defect: true, driver: null,
+    render: () => (
+      <View className={ROOT}>
+        <View className="w-full overflow-hidden bg-slate-100" style={{ width: 0 }}>
+          <Text className="text-sm text-slate-900">16:9</Text>
+        </View>
+      </View>
+    ),
+  },
+  "aspect-zero-width-control": {
+    gate: "G2", defect: false, driver: null,
+    render: () => <View className={ROOT}><AspectRatioPage /></View>,
+  },
+
 };

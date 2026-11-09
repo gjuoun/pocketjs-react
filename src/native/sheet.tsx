@@ -71,11 +71,21 @@ export interface SheetContentProps {
   side?: SheetSide;
   /** The panel's extent along its edge, as a percent of the screen (default 75). */
   size?: number;
+  /** The panel's look, when a variant (the Drawer) brings its own surface. */
+  panelClass?: string;
+  /** The panel's debugName in the mirror (the Drawer reads "drawer-panel"). */
+  panelName?: string;
   children?: ReactNode;
 }
 
 /** The layer: a scrim and a docked, focus-scoped panel. Mounted only while the sheet is open. */
-function SheetLayer(props: { side: SheetSide; size: number; children?: ReactNode }) {
+function SheetLayer(props: {
+  side: SheetSide;
+  size: number;
+  panelClass?: string;
+  panelName?: string;
+  children?: ReactNode;
+}) {
   const T = useTokens() as Record<string, string>;
   const ctx = useSheet("SheetContent");
   const panel = useRef<NodeMirror | null>(null);
@@ -90,11 +100,11 @@ function SheetLayer(props: { side: SheetSide; size: number; children?: ReactNode
     <View className={[T["sheet.shell"], T["sheet.side." + props.side]].join(" ")}>
       <View className={T["sheet.scrim"]} />
       <FocusScope
-        className={horizontal ? T["sheet.panel.row"] : T["sheet.panel.col"]}
+        className={props.panelClass ?? (horizontal ? T["sheet.panel.row"] : T["sheet.panel.col"])}
         nodeRef={panel}
         autoFocus
         style={style}
-        debugName="sheet-panel"
+        debugName={props.panelName ?? "sheet-panel"}
       >
         {props.children}
       </FocusScope>
@@ -105,6 +115,15 @@ function SheetLayer(props: { side: SheetSide; size: number; children?: ReactNode
 export function SheetContent(props: SheetContentProps) {
   const ctx = useSheet("SheetContent");
   if (!ctx.open) return null;
-  const layer = <SheetLayer side={props.side ?? "right"} size={props.size ?? 75}>{props.children}</SheetLayer>;
+  const layer = (
+    <SheetLayer
+      side={props.side ?? "right"}
+      size={props.size ?? 75}
+      panelClass={props.panelClass}
+      panelName={props.panelName}
+    >
+      {props.children}
+    </SheetLayer>
+  );
   return reconciler.createPortal(layer, getOverlayLayer(), null) as ReactNode;
 }
